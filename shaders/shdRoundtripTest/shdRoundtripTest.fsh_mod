@@ -1,0 +1,137 @@
+// Date: 2025-06-18T17:05:45.3323453-05:00
+// begin import shdSandSimCommon.fsh.__shady_export
+// begin import shdMaths.fsh.__shady_export
+int float_to_byte(float x) {
+    return int(floor(clamp(x, 0.0, 1.0) * 255.0 + 0.5));
+}
+float byte_to_float(int x) {
+    return clamp(float(x), 0.0, 255.0) / 255.0;
+}
+int imod(int x, int y) {
+    return x - y * int(floor(float(x) / float(y)));
+}
+int bit_shift_left(int x, int n) {
+    return int(float(x) * pow(2.0, float(n)));
+}
+int bit_shift_right(int x, int n) {
+    return int(floor(float(x) / pow(2.0, float(n))));
+}
+int bitwise_and(int x, int mask) {
+    return x - (x / (mask + 1)) * (mask + 1); // equivalent to x % (mask + 1) if mask is a power-of-two minus 1
+}
+int bitwise_and_of_pow2(int x, int pow2) {
+    return imod(x, pow2);
+}
+int bitwise_or(int x, int y) {
+    int result = 0;
+    for (int i = 0; i < 8; ++i) {
+        int bit = int(pow(2.0, float(i)));
+        if (mod(float(x), float(2 * bit)) >= float(bit) ||
+            mod(float(y), float(2 * bit)) >= float(bit)) {
+            result += bit;
+        }
+    }
+    return result;
+}
+int bitwise_xor(int x, int y) {
+    int result = 0;
+    for (int i = 0; i < 8; ++i) {
+        int bit = int(pow(2.0, float(i)));
+        bool a = mod(float(x), float(2 * bit)) >= float(bit);
+        bool b = mod(float(y), float(2 * bit)) >= float(bit);
+        if (a != b) {
+            result += bit;
+        }
+    }
+    return result;
+}
+int bitwise_not(int x, int bit_count) {
+    return int(pow(2.0, float(bit_count)) - 1.0) - x;
+}
+int clamp(int v, int lower, int upper) {
+	return (v < lower) ? lower : ((v > upper) ? upper : v);
+}
+float abs_float(float x) {
+    return x < 0.0 ? -x : x;
+}
+int abs_int(int x) {
+    return x < 0 ? -x : x;
+}
+float rand(vec2 coord, float seed) {
+    return fract(sin(dot(coord + seed, vec2(12.9898, 78.233))) * 43758.5453);
+}
+// end import shdMaths.fsh.__shady_export
+int get_cell_index(vec4 px) {
+    return int(floor(px.r * 255.0 + 0.5));
+}
+struct ElemMeta {
+    int id;
+	ivec2 vel;
+    int x_dir;
+    int y_dir;
+    int x_speed;
+    int y_speed;
+};
+#region Elem getter functions
+int elem_get_index(vec4 px) {
+    return int(floor(px.r * 255.0 + 0.5));
+}
+ivec2 elem_get_velocity(vec4 pixel) {
+    int g = float_to_byte(pixel.g);
+    int y_speed = bitwise_and(bit_shift_right(g, 6), 0x03);
+    int y_dir   = bitwise_and(bit_shift_right(g, 5), 0x01);
+    int x_speed = bitwise_and(bit_shift_right(g, 2), 0x03);
+    int x_dir   = bitwise_and(bit_shift_right(g, 1), 0x01);
+    int vx = (x_dir == 1) ? x_speed : -x_speed;
+    int vy = (y_dir == 1) ? y_speed : -y_speed;
+    return ivec2(vx, vy);
+}
+int elem_get_xdir(vec4 pixel) {
+    return bitwise_and(bit_shift_right(float_to_byte(pixel.g), 1), 1);
+}
+int elem_get_ydir(vec4 pixel) {
+    return bitwise_and(bit_shift_right(float_to_byte(pixel.g), 5), 1);
+}
+int elem_get_xspeed(vec4 pixel) {
+    return bitwise_and(bit_shift_right(float_to_byte(pixel.g), 2), 3);
+}
+int elem_get_yspeed(vec4 pixel) {
+    return bitwise_and(bit_shift_right(float_to_byte(pixel.g), 6), 3);
+}
+#endregion
+void unpack_pixel(vec4 pixel, inout ElemMeta meta) {
+	meta.id = elem_get_index(pixel);
+    int g = float_to_byte(pixel.g);
+    meta.y_speed = elem_get_yspeed(pixel);
+    meta.y_dir   = elem_get_ydir(pixel);
+    meta.x_speed = elem_get_xspeed(pixel);
+    meta.x_dir   = elem_get_xdir(pixel);
+    meta.vel = ivec2(
+        (meta.x_dir == 1) ? meta.x_speed : -meta.x_speed,
+        (meta.y_dir == 1) ? meta.y_speed : -meta.y_speed
+    );
+}
+vec2 vel_to_rg(ivec2 vel) {
+    return (vec2(vel) + 128.0) / 255.0;
+}
+ivec2 rg_to_vel(vec2 rg) {
+    return ivec2(floor(rg * 255.0 + 0.5)) - 128;
+}
+// end import shdSandSimCommon.fsh.__shady_export
+
+varying vec2 v_vTexcoord;
+
+
+
+void main() {
+    ivec2 original_vel = ivec2(-1, 1); // test vector
+    vec2 encoded = vel_to_rg(original_vel);
+    ivec2 decoded = rg_to_vel(encoded);
+
+    // Compare result — if match, green; else, red
+    if (all(equal(original_vel, decoded))) {
+        gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0); // match
+    } else {
+        gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0); // mismatch
+    }
+}

@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"scrGmlInput",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"scrGmlInput",
+  "parent":{
+    "name":"InputController",
+    "path":"folders/_Libraries/InputController.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}

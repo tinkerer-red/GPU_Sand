@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"function_execute",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"function_execute",
+  "parent":{
+    "name":"SimThread",
+    "path":"folders/_Libraries/SimThread.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}

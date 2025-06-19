@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"Macros",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"Macros",
+  "parent":{
+    "name":"Settings",
+    "path":"folders/_Config/Settings.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}

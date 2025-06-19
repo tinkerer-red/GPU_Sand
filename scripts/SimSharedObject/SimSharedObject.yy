@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"SimSharedObject",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"SimSharedObject",
+  "parent":{
+    "name":"SimThread",
+    "path":"folders/_Libraries/SimThread.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}

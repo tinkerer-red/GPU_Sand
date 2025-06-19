@@ -1,0 +1,123 @@
+// Date: 2025-06-17T15:05:31.9946620-05:00
+// begin import shdSandSimCommon.fsh.__shady_export
+// begin import shdMaths.fsh.__shady_export
+int imod(int x, int y) {
+    return x - y * int(floor(float(x) / float(y)));
+}
+int bit_shift_left(int x, int n) {
+    return int(float(x) * pow(2.0, float(n)));
+}
+int bit_shift_right(int x, int n) {
+    return int(floor(float(x) / pow(2.0, float(n))));
+}
+int bitwise_and(int x, int mask) {
+    return x - (x / (mask + 1)) * (mask + 1); // equivalent to x % (mask + 1) if mask is a power-of-two minus 1
+}
+int bitwise_and_of_pow2(int x, int pow2) {
+    return imod(x, pow2);
+}
+int bitwise_or(int x, int y) {
+    int result = 0;
+    for (int i = 0; i < 8; ++i) {
+        int bit = int(pow(2.0, float(i)));
+        if (mod(float(x), float(2 * bit)) >= float(bit) ||
+            mod(float(y), float(2 * bit)) >= float(bit)) {
+            result += bit;
+        }
+    }
+    return result;
+}
+int bitwise_xor(int x, int y) {
+    int result = 0;
+    for (int i = 0; i < 8; ++i) {
+        int bit = int(pow(2.0, float(i)));
+        bool a = mod(float(x), float(2 * bit)) >= float(bit);
+        bool b = mod(float(y), float(2 * bit)) >= float(bit);
+        if (a != b) {
+            result += bit;
+        }
+    }
+    return result;
+}
+int bitwise_not(int x, int bit_count) {
+    return int(pow(2.0, float(bit_count)) - 1.0) - x;
+}
+int clamp(int v, int lower, int upper) {
+	return (v < lower) ? lower : ((v > upper) ? upper : v);
+}
+float absf(float x) {
+    return x < 0.0 ? -x : x;
+}
+float rand(vec2 coord, float seed) {
+    return fract(sin(dot(coord + seed, vec2(12.9898, 78.233))) * 43758.5453);
+}
+// end import shdMaths.fsh.__shady_export
+int get_cell_index(vec4 px) {
+    return int(floor(px.r * 255.0 + 0.5));
+}
+vec2 vel_to_rg(ivec2 velocity) {
+    return (vec2(velocity) + 128.0) / 255.0;
+}
+ivec2 rg_to_vel(vec2 rg) {
+    return ivec2(floor((rg * 255.0) + 0.5)) - 128;
+}
+// end import shdSandSimCommon.fsh.__shady_export
+
+#define OFFSET_RADIUS 3
+#define DEBUG_CLAIM_DIRECTION 0  // Set to 0 to disable direction debug output
+
+varying vec2 v_vTexcoord;
+uniform vec2 u_texel_size;
+uniform float u_frame;
+uniform sampler2D gm_SecondaryTexture; // velocity surface (RG)
+
+// Actual distance (you can replace with squared if needed)
+float compute_claim_score(vec2 offset) {
+    return offset.x * offset.x + offset.y * offset.y;
+}
+
+void main() {
+    vec2 uv = v_vTexcoord;
+
+    float best_score = 99999.0;
+    ivec2 best_offset = ivec2(0, 0);
+
+    for (int oy = -OFFSET_RADIUS; oy <= OFFSET_RADIUS; ++oy) {
+        for (int ox = -OFFSET_RADIUS; ox <= OFFSET_RADIUS; ++ox) {
+            vec2 offset = vec2(float(ox), float(oy));
+            vec2 neighbor_uv = uv + offset * u_texel_size;
+			
+            if (neighbor_uv.x < 0.0 || neighbor_uv.y < 0.0 ||
+                neighbor_uv.x > 1.0 || neighbor_uv.y > 1.0)
+                continue;
+			
+            vec4 neighbor_px = texture2D(gm_SecondaryTexture, neighbor_uv);
+            ivec2 vel = rg_to_vel(neighbor_px.rg);
+			
+            if ((vel.x != 0 || vel.y != 0)
+			&& (vel.x == -ox && vel.y == -oy)) {
+                float score = compute_claim_score(offset);
+				
+                if (score < best_score) {
+                    best_score = score;
+                    best_offset = -vel;
+                }
+            }
+        }
+    }
+	
+	#if DEBUG_CLAIM_DIRECTION
+	    vec3 color = vec3(0.0);
+	    if (best_score < 99999.0) {
+	        if (best_offset.x < 0) color.r = 1.0; // Left
+	        else if (best_offset.x > 0) color.g = 1.0; // Right
+	        if (best_offset.y < 0) color.b = 1.0; // Down
+			gl_FragColor = vec4(color, 1.0);
+	    }
+		else {
+			gl_FragColor = vec4(color, 1.0);
+		}
+	#else
+	    gl_FragColor = vec4(vel_to_rg(best_offset), 0.0, 1.0);
+	#endif
+}

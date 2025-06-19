@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"__SimThreadConfig",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"__SimThreadConfig",
+  "parent":{
+    "name":"SimThread",
+    "path":"folders/_Libraries/SimThread.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}

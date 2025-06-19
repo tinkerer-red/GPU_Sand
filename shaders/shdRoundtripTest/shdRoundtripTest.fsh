@@ -1,0 +1,18 @@
+#pragma shady: import(shdSandSimCommon)
+
+varying vec2 v_vTexcoord;
+
+
+
+void main() {
+    ivec2 original_vel = ivec2(-1, 1); // test vector
+    vec2 encoded = vel_to_rg(original_vel);
+    ivec2 decoded = rg_to_vel(encoded);
+
+    // Compare result — if match, green; else, red
+    if (all(equal(original_vel, decoded))) {
+        gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0); // match
+    } else {
+        gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0); // mismatch
+    }
+}

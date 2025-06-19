@@ -1,0 +1,81 @@
+// Date: 2025-06-17T12:15:34.3935530-05:00
+// begin import shdSandSimCommon.fsh.__shady_export
+// begin import shdMaths.fsh.__shady_export
+int imod(int x, int y) {
+    return x - y * int(floor(float(x) / float(y)));
+}
+int bit_shift_left(int x, int n) {
+    return int(float(x) * pow(2.0, float(n)));
+}
+int bit_shift_right(int x, int n) {
+    return int(floor(float(x) / pow(2.0, float(n))));
+}
+int bitwise_and(int x, int mask) {
+    return x - (x / (mask + 1)) * (mask + 1); // equivalent to x % (mask + 1) if mask is a power-of-two minus 1
+}
+int bitwise_and_of_pow2(int x, int pow2) {
+    return imod(x, pow2);
+}
+int bitwise_or(int x, int y) {
+    int result = 0;
+    for (int i = 0; i < 8; ++i) {
+        int bit = int(pow(2.0, float(i)));
+        if (mod(float(x), float(2 * bit)) >= float(bit) ||
+            mod(float(y), float(2 * bit)) >= float(bit)) {
+            result += bit;
+        }
+    }
+    return result;
+}
+int bitwise_xor(int x, int y) {
+    int result = 0;
+    for (int i = 0; i < 8; ++i) {
+        int bit = int(pow(2.0, float(i)));
+        bool a = mod(float(x), float(2 * bit)) >= float(bit);
+        bool b = mod(float(y), float(2 * bit)) >= float(bit);
+        if (a != b) {
+            result += bit;
+        }
+    }
+    return result;
+}
+int bitwise_not(int x, int bit_count) {
+    return int(pow(2.0, float(bit_count)) - 1.0) - x;
+}
+int clamp(int v, int lower, int upper) {
+	return (v < lower) ? lower : ((v > upper) ? upper : v);
+}
+float rand(vec2 coord, float seed) {
+    return fract(sin(dot(coord + seed, vec2(12.9898, 78.233))) * 43758.5453);
+}
+// end import shdMaths.fsh.__shady_export
+int get_cell_index(vec4 px) {
+    return int(floor(px.r * 255.0 + 0.5));
+}
+float vel_to_float(int v) {
+    return float(clamp(v + 128, 0, 255)) / 255.0;
+}
+int float_to_vel(float ch) {
+    return int(floor(ch * 255.0 + 0.5)) - 128;
+}
+float normalize_range(float v, float min_val, float max_val) {
+    return clamp((v - min_val) / (max_val - min_val), 0.0, 1.0);
+}
+float unnormalize_range(float norm, float min_val, float max_val) {
+    return mix(min_val, max_val, clamp(norm, 0.0, 1.0));
+}
+// end import shdSandSimCommon.fsh.__shady_export
+
+varying vec2 v_vTexcoord;
+
+void main() {
+    int dx = -1;
+    float enc = vel_to_float(dx);
+    int dec = float_to_vel(enc);
+
+    bool match = (dec == dx);
+
+    gl_FragColor = match
+        ? vec4(0.0, 1.0, 0.0, 1.0)  // Green: round trip succeeded
+        : vec4(1.0, 0.0, 0.0, 1.0); // Red: mismatch
+}

@@ -1,0 +1,131 @@
+// Date: 2025-06-17T22:33:16.3749676-05:00
+// begin import shdSandSimCommon.fsh.__shady_export
+// begin import shdMaths.fsh.__shady_export
+int imod(int x, int y) {
+    return x - y * int(floor(float(x) / float(y)));
+}
+int bit_shift_left(int x, int n) {
+    return int(float(x) * pow(2.0, float(n)));
+}
+int bit_shift_right(int x, int n) {
+    return int(floor(float(x) / pow(2.0, float(n))));
+}
+int bitwise_and(int x, int mask) {
+    return x - (x / (mask + 1)) * (mask + 1); // equivalent to x % (mask + 1) if mask is a power-of-two minus 1
+}
+int bitwise_and_of_pow2(int x, int pow2) {
+    return imod(x, pow2);
+}
+int bitwise_or(int x, int y) {
+    int result = 0;
+    for (int i = 0; i < 8; ++i) {
+        int bit = int(pow(2.0, float(i)));
+        if (mod(float(x), float(2 * bit)) >= float(bit) ||
+            mod(float(y), float(2 * bit)) >= float(bit)) {
+            result += bit;
+        }
+    }
+    return result;
+}
+int bitwise_xor(int x, int y) {
+    int result = 0;
+    for (int i = 0; i < 8; ++i) {
+        int bit = int(pow(2.0, float(i)));
+        bool a = mod(float(x), float(2 * bit)) >= float(bit);
+        bool b = mod(float(y), float(2 * bit)) >= float(bit);
+        if (a != b) {
+            result += bit;
+        }
+    }
+    return result;
+}
+int bitwise_not(int x, int bit_count) {
+    return int(pow(2.0, float(bit_count)) - 1.0) - x;
+}
+int clamp(int v, int lower, int upper) {
+	return (v < lower) ? lower : ((v > upper) ? upper : v);
+}
+float absf(float x) {
+    return x < 0.0 ? -x : x;
+}
+float rand(vec2 coord, float seed) {
+    return fract(sin(dot(coord + seed, vec2(12.9898, 78.233))) * 43758.5453);
+}
+// end import shdMaths.fsh.__shady_export
+int get_cell_index(vec4 px) {
+    return int(floor(px.r * 255.0 + 0.5));
+}
+vec2 vel_to_rg(ivec2 velocity) {
+    return (vec2(velocity) + 128.0) / 255.0;
+}
+ivec2 rg_to_vel(vec2 rg) {
+    return ivec2(floor((rg * 255.0) + 0.5)) - 128;
+}
+// end import shdSandSimCommon.fsh.__shady_export
+
+#define OFFSET_RADIUS 3
+#define DEBUG_CONFIRM_DIRECTION 0
+
+varying vec2 v_vTexcoord;
+uniform vec2 u_texel_size;
+// gm_BaseTexture // pre-passed validity (RG)
+
+void main() {
+    vec2 px_rg = texture2D(gm_BaseTexture, v_vTexcoord).rg;
+    ivec2 my_vel = rg_to_vel(px_rg);
+
+    // === Case 1: I'm already moving (keep current velocity)
+    if (my_vel.x != 0 || my_vel.y != 0) {
+        #if DEBUG_CONFIRM_DIRECTION
+            gl_FragColor = vec4(0.2, 0.8, 0.2, 1.0); // greenish: already confirmed
+        #else
+            gl_FragColor = vec4(px_rg, 0.0, 1.0);
+        #endif
+        return;
+    }
+
+    // === Case 2: Find any neighbor pointing to us
+    bool found = false;
+    ivec2 from = ivec2(0);
+
+    for (int oy = -OFFSET_RADIUS; oy <= OFFSET_RADIUS; ++oy) {
+        for (int ox = -OFFSET_RADIUS; ox <= OFFSET_RADIUS; ++ox) {
+            vec2 offset = vec2(float(ox), float(oy));
+            vec2 neighbor_uv = v_vTexcoord + offset * u_texel_size;
+
+            if (neighbor_uv.x < 0.0 || neighbor_uv.y < 0.0 ||
+                neighbor_uv.x > 1.0 || neighbor_uv.y > 1.0)
+                continue;
+
+            vec2 n_rg = texture2D(gm_BaseTexture, neighbor_uv).rg;
+            ivec2 vel = rg_to_vel(n_rg);
+
+            if (vel == ivec2(0)) continue;
+
+            if (vel == -ivec2(ox, oy)) {
+                from = ivec2(ox, oy);
+                found = true;
+                break;
+            }
+        }
+        if (found) break;
+    }
+
+	gl_FragColor = vec4(vec3(0.0), 1.0);
+	
+    #if DEBUG_CONFIRM_DIRECTION
+        vec3 color = vec3(0.0);
+        if (found) {
+            if (from.x < 0) color.r = 0.75;
+			if (from.x > 0) color.g = 0.75;
+			if (from.y > 0) color.b = 0.75;
+			if (from.y < 0) color.rgb += 0.15; // magenta = upward
+        } else {
+            color = vec3(0.0); // black = no movement
+        }
+        gl_FragColor = vec4(color, 1.0);
+		return;
+    #else
+        gl_FragColor = vec4(vel_to_rg(found ? from : ivec2(0)), 0.0, 1.0);
+    #endif
+}

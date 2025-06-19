@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"__SimSanitize",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"__SimSanitize",
+  "parent":{
+    "name":"System",
+    "path":"folders/_Libraries/SimThread/System.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}
