@@ -33,6 +33,7 @@ function CanvasSandShader() : SimulationCore() constructor {
 		shader_set_uniform_f(uniform_frame, frame_count);
 		
 		frame_count++
+		frame_count = (frame_count>= 60) ? -60 : frame_count;
 	};
 	
 	static set_sampler_indices = function(_shader) {

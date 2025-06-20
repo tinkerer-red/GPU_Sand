@@ -57,8 +57,22 @@ float abs_float(float x) {
 int abs_int(int x) {
     return x < 0 ? -x : x;
 }
-float rand(vec2 coord, float seed) {
-    return fract(sin(dot(coord + seed, vec2(12.9898, 78.233))) * 43758.5453);
+float rand(vec2 p, float seed) {
+    vec2 K1 = vec2(23.14069263277926, 2.665144142690225);
+    p += vec2(seed, seed * 1.61803); // Golden twist
+    return fract(cos(dot(p, K1)) * 12345.6789);
+}
+int irand(int max_val, vec2 p, float seed) {
+    return int(floor(rand(p, seed) * float(max_val)));
+}
+bool chance(float probability, vec2 p, float seed) {
+    return rand(p, seed) < probability;
+}
+float rand_range(float min_val, float max_val, vec2 p, float seed) {
+    return mix(min_val, max_val, rand(p, seed));
+}
+int irand_range(int min_val, int max_val, vec2 p, float seed) {
+    return min_val + irand(max_val - min_val + 1, p, seed);
 }
 int round(float x) {
     return int(floor(x + 0.5));

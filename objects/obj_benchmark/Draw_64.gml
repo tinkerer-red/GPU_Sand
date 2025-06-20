@@ -20,5 +20,13 @@ draw_text(10, 70, "Drop Timer: " + string(drop_timer));
 
 // Bind and draw full-screen test shader
 //shader_set(shdMetadatePackingRoundTripTest); // Replace with your shader name
+//
+//uniform_frame      = shader_get_uniform(shdMetadatePackingRoundTripTest, "u_frame");
+//shader_set_uniform_f(uniform_frame, frame_count);
+//frame_count++
+//frame_count = (frame_count>= 60) ? -60 : frame_count;
+//
+//
 //draw_sprite_stretched(sprPixel, 0, 0, 0, 900, 900)
+//
 //shader_reset();
