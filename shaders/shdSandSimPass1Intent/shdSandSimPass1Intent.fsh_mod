@@ -1,4 +1,4 @@
-// Date: 2025-06-18T21:32:00.1041807-05:00
+// Date: 2025-06-19T13:09:46.0181117-05:00
 // begin import shdSandSimCommon.fsh.__shady_export
 // begin import shdMaths.fsh.__shady_export
 int float_to_byte(float x) {
@@ -60,10 +60,10 @@ int abs_int(int x) {
 float rand(vec2 coord, float seed) {
     return fract(sin(dot(coord + seed, vec2(12.9898, 78.233))) * 43758.5453);
 }
-// end import shdMaths.fsh.__shady_export
-int get_cell_index(vec4 px) {
-    return int(floor(px.r * 255.0 + 0.5));
+int round(float x) {
+    return int(floor(x + 0.5));
 }
+// end import shdMaths.fsh.__shady_export
 struct ElemMeta {
     int id;
 	ivec2 vel;
@@ -72,16 +72,21 @@ struct ElemMeta {
     int x_speed;
     int y_speed;
 };
+#region Element IDs Enum
+#define Elem_Empty 0
+#define Elem_Water 100
+#define Elem_Sand 255
+#endregion
 #region Elem getter functions
 int elem_get_index(vec4 px) {
     return int(floor(px.r * 255.0 + 0.5));
 }
 ivec2 elem_get_velocity(vec4 pixel) {
     int g = float_to_byte(pixel.g);
-    int y_speed = bitwise_and(bit_shift_right(g, 6), 0x03);
-    int y_dir   = bitwise_and(bit_shift_right(g, 5), 0x01);
-    int x_speed = bitwise_and(bit_shift_right(g, 2), 0x03);
-    int x_dir   = bitwise_and(bit_shift_right(g, 1), 0x01);
+    int y_dir   = bitwise_and(bit_shift_right(g, 7), 1);
+    int y_speed = bitwise_and(bit_shift_right(g, 6), 3);
+    int x_dir   = bitwise_and(bit_shift_right(g, 4), 1);
+	int x_speed = bitwise_and(bit_shift_right(g, 2), 3);
     int vx = (x_dir == 1) ? x_speed : -x_speed;
     int vy = (y_dir == 1) ? y_speed : -y_speed;
     return ivec2(vx, vy);
@@ -99,17 +104,27 @@ int elem_get_yspeed(vec4 pixel) {
     return bitwise_and(bit_shift_right(float_to_byte(pixel.g), 6), 3);
 }
 #endregion
-void unpack_pixel(vec4 pixel, inout ElemMeta meta) {
-	meta.id = elem_get_index(pixel);
+void unpack_pixel(vec4 pixel, inout ElemMeta metadata) {
+    metadata.id = elem_get_index(pixel);
     int g = float_to_byte(pixel.g);
-    meta.y_speed = elem_get_yspeed(pixel);
-    meta.y_dir   = elem_get_ydir(pixel);
-    meta.x_speed = elem_get_xspeed(pixel);
-    meta.x_dir   = elem_get_xdir(pixel);
-    meta.vel = ivec2(
-        (meta.x_dir == 1) ? meta.x_speed : -meta.x_speed,
-        (meta.y_dir == 1) ? meta.y_speed : -meta.y_speed
+    metadata.y_dir   = bitwise_and(bit_shift_right(g, 7), 1);
+    metadata.y_speed = bitwise_and(bit_shift_right(g, 5), 3);
+    metadata.x_dir   = bitwise_and(bit_shift_right(g, 4), 1);
+    metadata.x_speed = bitwise_and(bit_shift_right(g, 2), 3);
+    metadata.vel = ivec2(
+        (metadata.x_dir == 1) ? metadata.x_speed : -metadata.x_speed,
+        (metadata.y_dir == 1) ? metadata.y_speed : -metadata.y_speed
     );
+}
+vec4 pack_pixel(in ElemMeta meta) {
+    int g = 0;
+    g = bitwise_or(g, bit_shift_left(clamp(meta.y_dir  , 0, 1), 7));
+    g = bitwise_or(g, bit_shift_left(clamp(meta.y_speed, 0, 3), 5));
+    g = bitwise_or(g, bit_shift_left(clamp(meta.x_dir  , 0, 1), 4));
+    g = bitwise_or(g, bit_shift_left(clamp(meta.x_speed, 0, 3), 2));
+    float g_float = byte_to_float(g);
+    float r_float = byte_to_float(meta.id); // assuming ID lives in red
+    return vec4(r_float, g_float, 0.0, 1.0);
 }
 vec2 vel_to_rg(ivec2 vel) {
     return (vec2(vel) + 128.0) / 255.0;
@@ -125,48 +140,55 @@ varying vec4 v_vColour;
 uniform vec2 u_texel_size;
 uniform float u_frame;
 
+
 void main() {
-    vec4 self_pixel = texture2D(gm_BaseTexture, v_vTexcoord);
-    int id = get_cell_index(self_pixel);
-
-    ivec2 velocity = ivec2(0, 0);
+    ElemMeta metadata;
+	vec4 self_pixel = texture2D(gm_BaseTexture, v_vTexcoord);
+    unpack_pixel(self_pixel, metadata);
 	
-	//if sand, set intended velocity
-    if (id == 255) {
-        // === 1. Try straight down ===
-        vec2 dir = vec2(0.0, u_texel_size.y);
-        vec2 dst_uv = v_vTexcoord + dir;
-        int dst_id = get_cell_index(texture2D(gm_BaseTexture, dst_uv));
-
-        if (dst_id == 0) {
-            velocity.y = 1;
+    //Use a while loop just so we can break out when we find a match and skip everything else
+	while(true){
+// begin import ElemSand.fsh.__shady_macro_INTENT
+    // Only continue if we're sand
+    if (metadata.id == Elem_Sand) {
+        // === 1. Check straight down
+        vec2 down_uv = v_vTexcoord + vec2(0.0, u_texel_size.y);
+        vec4 down_px = texture2D(gm_BaseTexture, down_uv);
+        int down_id = elem_get_index(down_px);
+		
+        if (down_id == 0) {
+            metadata.vel = ivec2(0, 1);
         } else {
-            // === 2. Randomly choose left or right ===
+            // === 2. Choose diagonal fallback
             float bias = rand(v_vTexcoord, u_frame);
             int dx = (bias < 0.5) ? -1 : 1;
-
-            // First attempt
+			
             vec2 diag1_uv = v_vTexcoord + vec2(float(dx), 1.0) * u_texel_size;
-            int diag1_id = get_cell_index(texture2D(gm_BaseTexture, diag1_uv));
-
+            vec4 diag1_px = texture2D(gm_BaseTexture, diag1_uv);
+            int diag1_id = elem_get_index(diag1_px);
+			
             if (diag1_id == 0) {
-                velocity = ivec2(dx, 1);
+                metadata.vel = ivec2(dx, 1);
             } else {
-                // Invert direction and try other side
                 dx = -dx;
                 vec2 diag2_uv = v_vTexcoord + vec2(float(dx), 1.0) * u_texel_size;
-                int diag2_id = get_cell_index(texture2D(gm_BaseTexture, diag2_uv));
+                vec4 diag2_px = texture2D(gm_BaseTexture, diag2_uv);
+                int diag2_id = elem_get_index(diag2_px);
 
                 if (diag2_id == 0) {
-                    velocity = ivec2(dx, 1);
+                    metadata.vel = ivec2(dx, 1);
                 }
             }
         }
-
-        gl_FragColor = vec4(vel_to_rg(velocity), 0.0, 1.0);
+		break;
     }
-	//default to no velocity
-	else {
-        gl_FragColor = vec4(vel_to_rg(ivec2(0, 0)), 0.0, 1.0);
-    }
+// end import ElemSand.fsh.__shady_macro_INTENT
+		
+		
+		
+		break;
+	}
+    
+	// Default to no movement
+	gl_FragColor = vec4(vel_to_rg(metadata.vel), 0.0, 1.0);
 }

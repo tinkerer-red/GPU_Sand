@@ -19,6 +19,6 @@ draw_text(10, 70, "Drop Timer: " + string(drop_timer));
 
 
 // Bind and draw full-screen test shader
-//shader_set(shdRoundtripTest); // Replace with your shader name
-//draw_rectangle(0, 0, window_get_width(), window_get_height(), false);
+//shader_set(shdMetadatePackingRoundTripTest); // Replace with your shader name
+//draw_sprite_stretched(sprPixel, 0, 0, 0, 900, 900)
 //shader_reset();

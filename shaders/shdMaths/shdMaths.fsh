@@ -83,6 +83,10 @@ float rand(vec2 coord, float seed) {
     return fract(sin(dot(coord + seed, vec2(12.9898, 78.233))) * 43758.5453);
 }
 
+int round(float x) {
+    return int(floor(x + 0.5));
+}
+
 
 
 

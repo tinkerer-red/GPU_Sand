@@ -60,10 +60,10 @@ int abs_int(int x) {
 float rand(vec2 coord, float seed) {
     return fract(sin(dot(coord + seed, vec2(12.9898, 78.233))) * 43758.5453);
 }
-// end import shdMaths.fsh.__shady_export
-int get_cell_index(vec4 px) {
-    return int(floor(px.r * 255.0 + 0.5));
+int round(float x) {
+    return int(floor(x + 0.5));
 }
+// end import shdMaths.fsh.__shady_export
 struct ElemMeta {
     int id;
 	ivec2 vel;
@@ -72,16 +72,21 @@ struct ElemMeta {
     int x_speed;
     int y_speed;
 };
+#region Element IDs Enum
+#define Elem_Empty 0
+#define Elem_Water 100
+#define Elem_Sand 255
+#endregion
 #region Elem getter functions
 int elem_get_index(vec4 px) {
     return int(floor(px.r * 255.0 + 0.5));
 }
 ivec2 elem_get_velocity(vec4 pixel) {
     int g = float_to_byte(pixel.g);
-    int y_speed = bitwise_and(bit_shift_right(g, 6), 0x03);
-    int y_dir   = bitwise_and(bit_shift_right(g, 5), 0x01);
-    int x_speed = bitwise_and(bit_shift_right(g, 2), 0x03);
-    int x_dir   = bitwise_and(bit_shift_right(g, 1), 0x01);
+    int y_dir   = bitwise_and(bit_shift_right(g, 7), 1);
+    int y_speed = bitwise_and(bit_shift_right(g, 6), 3);
+    int x_dir   = bitwise_and(bit_shift_right(g, 4), 1);
+	int x_speed = bitwise_and(bit_shift_right(g, 2), 3);
     int vx = (x_dir == 1) ? x_speed : -x_speed;
     int vy = (y_dir == 1) ? y_speed : -y_speed;
     return ivec2(vx, vy);
@@ -99,17 +104,27 @@ int elem_get_yspeed(vec4 pixel) {
     return bitwise_and(bit_shift_right(float_to_byte(pixel.g), 6), 3);
 }
 #endregion
-void unpack_pixel(vec4 pixel, inout ElemMeta meta) {
-	meta.id = elem_get_index(pixel);
+void unpack_pixel(vec4 pixel, inout ElemMeta metadata) {
+    metadata.id = elem_get_index(pixel);
     int g = float_to_byte(pixel.g);
-    meta.y_speed = elem_get_yspeed(pixel);
-    meta.y_dir   = elem_get_ydir(pixel);
-    meta.x_speed = elem_get_xspeed(pixel);
-    meta.x_dir   = elem_get_xdir(pixel);
-    meta.vel = ivec2(
-        (meta.x_dir == 1) ? meta.x_speed : -meta.x_speed,
-        (meta.y_dir == 1) ? meta.y_speed : -meta.y_speed
+    metadata.y_dir   = bitwise_and(bit_shift_right(g, 7), 1);
+    metadata.y_speed = bitwise_and(bit_shift_right(g, 5), 3);
+    metadata.x_dir   = bitwise_and(bit_shift_right(g, 4), 1);
+    metadata.x_speed = bitwise_and(bit_shift_right(g, 2), 3);
+    metadata.vel = ivec2(
+        (metadata.x_dir == 1) ? metadata.x_speed : -metadata.x_speed,
+        (metadata.y_dir == 1) ? metadata.y_speed : -metadata.y_speed
     );
+}
+vec4 pack_pixel(in ElemMeta meta) {
+    int g = 0;
+    g = bitwise_or(g, bit_shift_left(clamp(meta.y_dir  , 0, 1), 7));
+    g = bitwise_or(g, bit_shift_left(clamp(meta.y_speed, 0, 3), 5));
+    g = bitwise_or(g, bit_shift_left(clamp(meta.x_dir  , 0, 1), 4));
+    g = bitwise_or(g, bit_shift_left(clamp(meta.x_speed, 0, 3), 2));
+    float g_float = byte_to_float(g);
+    float r_float = byte_to_float(meta.id); // assuming ID lives in red
+    return vec4(r_float, g_float, 0.0, 1.0);
 }
 vec2 vel_to_rg(ivec2 vel) {
     return (vec2(vel) + 128.0) / 255.0;

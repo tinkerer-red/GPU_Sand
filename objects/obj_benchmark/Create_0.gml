@@ -1,4 +1,4 @@
-show_debug_overlay(true)
+//show_debug_overlay(true)
 
 var _w = floor(800 / DITHER_STRIDE) * DITHER_STRIDE;
 var _h = floor(800 / DITHER_STRIDE) * DITHER_STRIDE;

@@ -1,0 +1,12 @@
+{
+  "$GMShader":"",
+  "%Name":"ElemSand",
+  "name":"ElemSand",
+  "parent":{
+    "name":"Elements",
+    "path":"folders/GPU_Sand/Elements.yy",
+  },
+  "resourceType":"GMShader",
+  "resourceVersion":"2.0",
+  "type":1,
+}

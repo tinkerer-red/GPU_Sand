@@ -3,8 +3,8 @@
   "%Name":"shdRoundtripTest",
   "name":"shdRoundtripTest",
   "parent":{
-    "name":"Falling Sand Exp",
-    "path":"Falling Sand Exp.yyp",
+    "name":"Test",
+    "path":"folders/GPU_Sand/Test.yy",
   },
   "resourceType":"GMShader",
   "resourceVersion":"2.0",

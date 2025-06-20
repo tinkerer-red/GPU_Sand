@@ -1,0 +1,12 @@
+{
+  "$GMShader":"",
+  "%Name":"shdMetadatePackingRoundTripTest",
+  "name":"shdMetadatePackingRoundTripTest",
+  "parent":{
+    "name":"Test",
+    "path":"folders/GPU_Sand/Test.yy",
+  },
+  "resourceType":"GMShader",
+  "resourceVersion":"2.0",
+  "type":1,
+}

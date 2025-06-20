@@ -31,6 +31,8 @@ function CanvasSandShader() : SimulationCore() constructor {
 		
 		shader_set_uniform_f(uniform_texel_size, 1 / sim_width, 1 / sim_height);
 		shader_set_uniform_f(uniform_frame, frame_count);
+		
+		frame_count++
 	};
 	
 	static set_sampler_indices = function(_shader) {
@@ -42,7 +44,7 @@ function CanvasSandShader() : SimulationCore() constructor {
 	static step = function() {
 		if (!surface_exists(surf_element) || !surface_exists(surf_velocity)) return;
 		
-		frame_count++;
+		//spawn_element_circle("sand", sim_width/2, sim_height/2, 32)
 		
 		surface_clear(surf_velocity);
 		surface_clear(surf_valid_pre);
@@ -59,7 +61,7 @@ function CanvasSandShader() : SimulationCore() constructor {
 			surface_reset_target();
 		}
 		shader_reset();
-
+		
 		// === PASS 2: Validation (intent approval) ===
 		shader_set(shdSandSimPass2Acceptance);
 		{
@@ -93,7 +95,8 @@ function CanvasSandShader() : SimulationCore() constructor {
 		{
 			set_common_uniforms(shdSandSimPass4Resolve);
 			set_sampler_indices(shdSandSimPass4Resolve);
-			texture_set_stage(texture_stage_1, surface_get_texture(surf_valid_post));
+			texture_set_stage(texture_stage_1, surface_get_texture(surf_velocity));
+			texture_set_stage(texture_stage_2, surface_get_texture(surf_valid_post));
 			surface_set_target(surf_temp);
 			draw_surface(surf_element, 0, 0);
 			surface_reset_target();
@@ -117,9 +120,9 @@ function CanvasSandShader() : SimulationCore() constructor {
 		surf_temp       = surface_rebuild(surf_temp,       sim_width, sim_height, surface_rgba8unorm);
 		
 		surf_render     = surface_rebuild(surf_render,     sim_width, sim_height, surface_rgba8unorm);
-
+		
 		if (!surface_exists(surf_render)) return;
-
+		
 		// === PASS 4: Render Output ===
 		shader_set(shdSandSimPass5Render);
 		{
@@ -131,9 +134,7 @@ function CanvasSandShader() : SimulationCore() constructor {
 		}
 		shader_reset();
 		
-		//draw_surface(surf_element, 0, 0);
-		
-			
+		draw_surface(surf_element, 0, 0);
 		
 		// === Debug View: Display Simulation Buffers ===
 		if (debug_view) {
@@ -188,7 +189,10 @@ function CanvasSandShader() : SimulationCore() constructor {
 		
 		//draw_set_alpha(0.25)
 		//draw_surface(surf_element, 0, 0);
-		draw_surface(surf_temp, 0, 0);
+		//draw_surface(surf_velocity, 0, 0);
+		//draw_surface(surf_valid_pre, 0, 0);
+		//draw_surface(surf_valid_post, 0, 0);
+		//draw_surface(surf_temp, 0, 0);
 		//draw_set_alpha(1.0)
 		
 	};

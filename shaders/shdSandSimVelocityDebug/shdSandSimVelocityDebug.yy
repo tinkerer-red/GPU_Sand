@@ -3,8 +3,8 @@
   "%Name":"shdSandSimVelocityDebug",
   "name":"shdSandSimVelocityDebug",
   "parent":{
-    "name":"Falling Sand Exp",
-    "path":"Falling Sand Exp.yyp",
+    "name":"Helpers",
+    "path":"folders/GPU_Sand/Helpers.yy",
   },
   "resourceType":"GMShader",
   "resourceVersion":"2.0",

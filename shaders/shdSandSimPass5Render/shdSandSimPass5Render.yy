@@ -3,8 +3,8 @@
   "%Name":"shdSandSimPass5Render",
   "name":"shdSandSimPass5Render",
   "parent":{
-    "name":"Falling Sand Exp",
-    "path":"Falling Sand Exp.yyp",
+    "name":"Core",
+    "path":"folders/GPU_Sand/Core.yy",
   },
   "resourceType":"GMShader",
   "resourceVersion":"2.0",

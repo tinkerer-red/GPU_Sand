@@ -5,8 +5,8 @@
   "isDnD":false,
   "name":"gen_07_CanvasSand5",
   "parent":{
-    "name":"Falling Sand Exp",
-    "path":"Falling Sand Exp.yyp",
+    "name":"Old Scripts",
+    "path":"folders/Old Scripts.yy",
   },
   "resourceType":"GMScript",
   "resourceVersion":"2.0",
