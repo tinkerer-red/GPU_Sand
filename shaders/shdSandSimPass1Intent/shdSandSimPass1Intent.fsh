@@ -18,6 +18,8 @@ void main() {
 		
 		break;
 	}
+	
+	
     
 	// Default to no movement
 	gl_FragColor = vec4(vel_to_rg(elem_dynamic_data.vel), 0.0, 1.0);

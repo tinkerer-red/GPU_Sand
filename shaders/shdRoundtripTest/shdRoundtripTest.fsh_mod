@@ -93,12 +93,15 @@ int round(float x) {
 #region Data Structures
 struct ElementStaticData {
 	int id;						// The ID of the element
-    int gravity_dir;            // 1 = down, -1 = up (for things like steam)
+    float gravity_force;        // Gravity strength per frame (e.g., 0.25 = slow fall)
     int x_search;               // Horizontal movement range
     int y_search;               // Vertical movement range (in gravity direction)
+	int max_vel_x;              // Maximum horizontal velocity
+    int max_vel_y;              // Maximum vertical velocity
     int stickiness;             // Preference to clump (higher = more sticky)
     int can_slip;               // 1 = can attempt diagonal fallback
     int inertial_resistance;    // Resistance to velocity decay
+	float bounce_chance;        // Chance to bounce on hard landing (0.0 - 1.0)
     int mass;                   // Affects momentum transfer
     int friction_factor;        // How much friction affects motion
     int stopped_moving_threshold; // Frames before considered "stopped"
@@ -144,38 +147,42 @@ ElementStaticData get_element_static_data(int id) {
 	
 	
 	ElementStaticData elem_static_data = ElementStaticData(
-		ELEM_ID_SAND, //ID
+	    ELEM_ID_SAND, // The ID of the element
 		
 	    // Gravity and movement behavior
-	    1,      // gravity_dir
-	    1,      // x_search
-	    1,      // y_search
-	    0,      // stickiness
-	    1,      // can_slip
-	    1,      // inertial_resistance
-
+	    1.0,    // gravity_force         (constant gravity every frame)
+	    1,      // x_search              (can move 1 cell left/right)
+	    1,      // y_search              (can fall 1 cell per fallback)
+	    2,      // max_vel_x             (caps horizontal speed)
+	    3,      // max_vel_y             (caps vertical speed)
+	    0,      // stickiness            (no clumping behavior)
+	    1,      // can_slip              (can diagonally fallback)
+	    1,      // inertial_resistance   (modest horizontal drag)
+	    0.05,   // bounce_chance         (low chance of bouncing)
+		
 	    // Physical characteristics
-	    150,    // mass
-	    9,      // friction_factor
-	    5,      // stopped_moving_threshold
-	    3,      // state_of_matter (solid)
-
+	    150,    // mass                  (affects force transfer)
+	    9,      // friction_factor       (how much to reduce movement when hitting)
+	    5,      // stopped_moving_threshold (frames before considered stationary)
+	    3,      // state_of_matter       (3 = solid)
+		
 	    // Heat and flammability
-	    0,      // flammable
-	    0,      // heat_factor
-	    0,      // fire_damage
-
+	    0,      // flammable             (won’t ignite)
+	    0,      // heat_factor           (does not apply heat)
+	    0,      // fire_damage           (no fire damage)
+		
 	    // Explosive properties
-	    1,      // explosion_resist
-	    0,      // explosion_radius
-
+	    1,      // explosion_resist      (mild resistance)
+	    0,      // explosion_radius      (not explosive)
+		
 	    // Lifecycle
-	    -1,     // lifespan
-
+	    -1,     // lifespan              (infinite lifetime)
+		
 	    // Interaction rules
-	    1,      // replace_count
-	    sand_replace_ids
+	    1,      // replace_count         (can only replace water)
+	    sand_replace_ids // replace_ids[4]  (allowed replacement targets)
 	);
+
 	
 // end import ElemSand.fsh.__shady_macro_DefineElementStaticData
 		return elem_static_data;
@@ -207,6 +214,32 @@ vec4 pack_elem_dynamic_data(in ElementDynamicData elem_dynamic_data) {
     float g_float = byte_to_float(g);
     float r_float = byte_to_float(elem_dynamic_data.id); // assuming ID lives in red
     return vec4(r_float, g_float, 0.0, 1.0);
+}
+#endregion
+#region is_* functions
+bool elem_is_solid(ElementStaticData elem) {
+    return elem.state_of_matter == 3;
+}
+bool elem_is_liquid(ElementStaticData elem) {
+    return elem.state_of_matter == 2;
+}
+bool elem_is_gas(ElementStaticData elem) {
+    return elem.state_of_matter == 1;
+}
+bool elem_is_empty(ElementStaticData elem) {
+    return elem.state_of_matter == 0 || elem.id == ELEM_ID_EMPTY;
+}
+bool cell_is_solid(vec4 pixel) {
+	return get_element_static_data(elem_get_index(pixel)).state_of_matter == 3;
+}
+bool cell_is_liquid(vec4 pixel) {
+    return get_element_static_data(elem_get_index(pixel)).state_of_matter == 2;
+}
+bool cell_is_gas(vec4 pixel) {
+    return get_element_static_data(elem_get_index(pixel)).state_of_matter == 1;
+}
+bool cell_is_empty(vec4 pixel) {
+    return elem_get_index(pixel) == ELEM_ID_EMPTY || get_element_static_data(elem_get_index(pixel)).state_of_matter == 0;
 }
 #endregion
 bool element_can_replace(ElementStaticData src, ElementStaticData dst) {

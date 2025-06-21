@@ -14,38 +14,42 @@ void main()
 	
 	
 	ElementStaticData elem_static_data = ElementStaticData(
-		ELEM_ID_SAND, //ID
+	    ELEM_ID_SAND, // The ID of the element
 		
 	    // Gravity and movement behavior
-	    1,      // gravity_dir
-	    1,      // x_search
-	    1,      // y_search
-	    0,      // stickiness
-	    1,      // can_slip
-	    1,      // inertial_resistance
-
+	    1.0,    // gravity_force         (constant gravity every frame)
+	    1,      // x_search              (can move 1 cell left/right)
+	    1,      // y_search              (can fall 1 cell per fallback)
+	    2,      // max_vel_x             (caps horizontal speed)
+	    3,      // max_vel_y             (caps vertical speed)
+	    0,      // stickiness            (no clumping behavior)
+	    1,      // can_slip              (can diagonally fallback)
+	    1,      // inertial_resistance   (modest horizontal drag)
+	    0.05,   // bounce_chance         (low chance of bouncing)
+		
 	    // Physical characteristics
-	    150,    // mass
-	    9,      // friction_factor
-	    5,      // stopped_moving_threshold
-	    3,      // state_of_matter (solid)
-
+	    150,    // mass                  (affects force transfer)
+	    9,      // friction_factor       (how much to reduce movement when hitting)
+	    5,      // stopped_moving_threshold (frames before considered stationary)
+	    3,      // state_of_matter       (3 = solid)
+		
 	    // Heat and flammability
-	    0,      // flammable
-	    0,      // heat_factor
-	    0,      // fire_damage
-
+	    0,      // flammable             (won’t ignite)
+	    0,      // heat_factor           (does not apply heat)
+	    0,      // fire_damage           (no fire damage)
+		
 	    // Explosive properties
-	    1,      // explosion_resist
-	    0,      // explosion_radius
-
+	    1,      // explosion_resist      (mild resistance)
+	    0,      // explosion_radius      (not explosive)
+		
 	    // Lifecycle
-	    -1,     // lifespan
-
+	    -1,     // lifespan              (infinite lifetime)
+		
 	    // Interaction rules
-	    1,      // replace_count
-	    sand_replace_ids
+	    1,      // replace_count         (can only replace water)
+	    sand_replace_ids // replace_ids[4]  (allowed replacement targets)
 	);
+
 	
 	#pragma shady: macro_end
 	#endregion
