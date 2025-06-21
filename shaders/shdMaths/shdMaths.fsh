@@ -4,6 +4,7 @@
 varying vec2 v_vTexcoord;
 varying vec4 v_vColour;
 
+#region Converters
 // Converts [0.0, 1.0] float to [0, 255] int
 int float_to_byte(float x) {
     return int(floor(clamp(x, 0.0, 1.0) * 255.0 + 0.5));
@@ -13,13 +14,14 @@ int float_to_byte(float x) {
 float byte_to_float(int x) {
     return clamp(float(x), 0.0, 255.0) / 255.0;
 }
-
+#endregion
 
 
 int imod(int x, int y) {
     return x - y * int(floor(float(x) / float(y)));
 }
 
+#region Bitwise Ops
 int bit_shift_left(int x, int n) {
     return int(float(x) * pow(2.0, float(n)));
 }
@@ -66,6 +68,7 @@ int bitwise_xor(int x, int y) {
 int bitwise_not(int x, int bit_count) {
     return int(pow(2.0, float(bit_count)) - 1.0) - x;
 }
+#endregion
 
 int clamp(int v, int lower, int upper) {
 	return (v < lower) ? lower : ((v > upper) ? upper : v);
@@ -79,6 +82,17 @@ int abs_int(int x) {
     return x < 0 ? -x : x;
 }
 
+// Integer sign
+int sign_int(int x) {
+    return (x > 0) ? 1 : ((x < 0) ? -1 : 0);
+}
+
+// Float sign (safe even if built-in isn't trusted)
+float sign_float(float x) {
+    return (x > 0.0) ? 1.0 : ((x < 0.0) ? -1.0 : 0.0);
+}
+
+#region Random
 float rand(vec2 p, float seed) {
     vec2 K1 = vec2(23.14069263277926, 2.665144142690225);
     p += vec2(seed, seed * 1.61803); // Golden twist
@@ -97,11 +111,10 @@ int irand_range(int min_val, int max_val, vec2 p, float seed) {
     return min_val + irand(max_val - min_val + 1, p, seed);
 }
 
-
-
 int round(float x) {
     return int(floor(x + 0.5));
 }
+#endregion
 
 
 

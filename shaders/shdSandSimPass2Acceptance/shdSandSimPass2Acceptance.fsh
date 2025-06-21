@@ -14,9 +14,8 @@ float compute_claim_score(vec2 offset) {
 }
 
 void main() {
-    ElemMeta metadata;
-	vec4 self_pixel = texture2D(gm_BaseTexture, v_vTexcoord);
-    unpack_pixel(self_pixel, metadata);
+    vec4 self_pixel = texture2D(gm_BaseTexture, v_vTexcoord);
+    ElementDynamicData elem_dynamic_data = ununpack_elem_dynamic_data(self_pixel);
 	
 	float best_score = 99999.0;
     ivec2 best_offset = ivec2(0);
@@ -38,8 +37,7 @@ void main() {
             vec4 vel_px   = texture2D(gm_SecondaryTexture, neighbor_uv);
 			vec4 elem_px  = texture2D(gm_BaseTexture,      neighbor_uv);
 			
-			ElemMeta neighbor_metadata;
-			unpack_pixel(elem_px, neighbor_metadata);
+			ElementDynamicData neighbor_elem_dynamic_data = ununpack_elem_dynamic_data(elem_px);
 			
             ivec2 vel = rg_to_vel(vel_px.rg);
 			

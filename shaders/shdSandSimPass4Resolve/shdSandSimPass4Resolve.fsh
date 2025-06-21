@@ -13,20 +13,18 @@ void main() {
     vec2 offset_rg = texture2D(gm_TertiaryTexture, v_vTexcoord).rg;
     ivec2 offset = rg_to_vel(offset_rg);
 
-    vec4 self_elem = texture2D(gm_BaseTexture, v_vTexcoord);
+    vec4 pixel = texture2D(gm_BaseTexture, v_vTexcoord);
 
-    ElemMeta self_meta;
-    unpack_pixel(self_elem, self_meta);
+    ElementDynamicData elem_dynamic_data = ununpack_elem_dynamic_data(pixel);
 
     if (offset.x != 0 || offset.y != 0) {
         // swap pixel: where we moved *from*
         vec2 swap_uv = v_vTexcoord + vec2(offset) * u_texel_size;
-        vec4 swap_px = texture2D(gm_BaseTexture, swap_uv);
+        vec4 swap_pixel = texture2D(gm_BaseTexture, swap_uv);
 
-        ElemMeta swap_meta;
-        unpack_pixel(swap_px, swap_meta);
+        ElementDynamicData swap_elem_dynamic_data = ununpack_elem_dynamic_data(swap_pixel);
 
-        ivec2 old_vel = swap_meta.vel;
+        ivec2 old_vel = swap_elem_dynamic_data.vel;
         
 		vec2 vel_rg = texture2D(gm_SecondaryTexture, swap_uv).rg;
 		ivec2 new_vel = rg_to_vel(vel_rg);
@@ -53,15 +51,15 @@ void main() {
         new_vel.x = clamp(new_vel.x, -3, 3);
         new_vel.y = clamp(new_vel.y, -3, 3);
 
-        // Update velocity bits in metadata
-        swap_meta.vel     = new_vel;
-        swap_meta.y_dir   = (new_vel.y > 0) ? 1 : 0;
-        swap_meta.y_speed = clamp(abs_int(new_vel.y), 0, 3);
-		swap_meta.x_dir   = (new_vel.x > 0) ? 1 : 0;
-        swap_meta.x_speed = clamp(abs_int(new_vel.x), 0, 3);
+        // Update velocity bits in elem_dynamic_data
+        swap_elem_dynamic_data.vel     = new_vel;
+        swap_elem_dynamic_data.y_dir   = (new_vel.y > 0) ? 1 : 0;
+        swap_elem_dynamic_data.y_speed = clamp(abs_int(new_vel.y), 0, 3);
+		swap_elem_dynamic_data.x_dir   = (new_vel.x > 0) ? 1 : 0;
+        swap_elem_dynamic_data.x_speed = clamp(abs_int(new_vel.x), 0, 3);
         
         
-        gl_FragColor = pack_pixel(swap_meta);
+        gl_FragColor = pack_elem_dynamic_data(swap_elem_dynamic_data);
 		
 		#if DEBUG_RESOLVE_VISUALIZE
             // Optional visual debug color
@@ -70,6 +68,6 @@ void main() {
 		
     } else {
         // No motion — just return ourself
-        gl_FragColor = pack_pixel(self_meta);
+        gl_FragColor = pack_elem_dynamic_data(elem_dynamic_data);
     }
 }
