@@ -12,17 +12,17 @@ void main() {
 	}
 	
     vec2 vel_rg = pixel.rg;
-    ivec2 vel = rg_to_vel(vel_rg);
+    vec2 vel = rg_to_vel(vel_rg);
 
     vec4 color = vec4(0.0, 0.0, 0.0, 1.0);
 
-    if (vel.x < 0) color.r += 0.7; // left
-    if (vel.x > 0) color.g += 0.7; // right
-    if (vel.y > 0) color.b += 0.7; // down
-    if (vel.y < 0) color.rgb += 0.25; // up
+    if (vel.x < 0.0) color.r += 0.7; // left
+    if (vel.x > 0.0) color.g += 0.7; // right
+    if (vel.y > 0.0) color.b += 0.7; // down
+    if (vel.y < 0.0) color.rgb += 0.25; // up
 
     // Optional: gray for (0,0)
-    if (all(equal(vel, ivec2(0, 0)))) color = vec4(0.0);
+    if (all(equal(vel, vec2(0.0)))) color = vec4(0.0);
 
     gl_FragColor = color;
 }

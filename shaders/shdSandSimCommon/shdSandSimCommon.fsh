@@ -9,31 +9,30 @@ struct ElementStaticData {
 	int id;						// The ID of the element
 	
     // Gravity and movement behavior
-    float gravity_force;        // Gravity strength per frame (e.g., 0.25 = slow fall)
-    int x_search;               // Horizontal movement range
-    int y_search;               // Vertical movement range (in gravity direction)
-	int max_vel_x;              // Maximum horizontal velocity
-    int max_vel_y;              // Maximum vertical velocity
-    int stickiness;             // Preference to clump (higher = more sticky)
-    int can_slip;               // 1 = can attempt diagonal fallback
-    int inertial_resistance;    // Resistance to velocity decay
-	float bounce_chance;        // Chance to bounce on hard landing (0.0 - 1.0)
-
+    float gravity_force;          // Gravity strength per frame (e.g., 0.25 = slow fall)
+    float x_search;               // Horizontal movement range
+    float y_search;               // Vertical movement range (in gravity direction)
+	float max_vel_x;              // Maximum horizontal velocity
+    float max_vel_y;              // Maximum vertical velocity
+    float stickiness;             // Preference to clump (higher = more sticky)
+    float inertial_resistance;    // Resistance to velocity decay
+	float bounce_chance;          // Chance to bounce on hard landing (0.0 - 1.0)
+	bool can_slip;               // 1 = can attempt diagonal fallback
+    
     // Physical characteristics
-    int mass;                   // Affects momentum transfer
-    int friction_factor;        // How much friction affects motion
-    int stopped_moving_threshold; // Frames before considered "stopped"
-    int state_of_matter;        // 0 = empty, 1 = gas, 2 = liquid, 3 = solid
-
+    int mass;                     // Affects momentum transfer
+    int friction_factor;          // How much friction affects motion
+    int state_of_matter;            // 0 = empty, 1 = gas, 2 = liquid, 3 = solid
+	
     // Heat and flammability
     int flammable;              // 1 = can ignite
     int heat_factor;            // Heat applied to neighbors
     int fire_damage;            // Damage per frame when ignited
-
+	
     // Explosive properties
     int explosion_resist;       // Resistance to explosion
     int explosion_radius;       // Radius if it explodes
-
+	
     // Lifecycle
     int lifespan;               // Frames before death (-1 = infinite)
 
@@ -44,7 +43,7 @@ struct ElementStaticData {
 
 struct ElementDynamicData {
     int id;
-	ivec2 vel;
+	vec2 vel;
     int x_dir;
     int y_dir;
     int x_speed;
@@ -98,7 +97,7 @@ ElementDynamicData ununpack_elem_dynamic_data(vec4 pixel) {
     elem_dynamic_data.x_dir   = bitwise_and(bit_shift_right(g, 4), 1);
     elem_dynamic_data.x_speed = bitwise_and(bit_shift_right(g, 2), 3);
 
-    elem_dynamic_data.vel = ivec2(
+    elem_dynamic_data.vel = vec2(
         (elem_dynamic_data.x_dir == 1) ? elem_dynamic_data.x_speed : -elem_dynamic_data.x_speed,
         (elem_dynamic_data.y_dir == 1) ? elem_dynamic_data.y_speed : -elem_dynamic_data.y_speed
     );
@@ -198,16 +197,16 @@ bool element_can_replace(ElementStaticData src, ElementStaticData dst) {
 }
 
 
-// === Encode velocity (ivec2) into RG float pair (vec2)
-// Maps signed int [-128,127] to float [0.0,1.0]
-vec2 vel_to_rg(ivec2 vel) {
+// === Encode velocity (vec2) into RG float pair (vec2)
+// Maps signed float [-128.0,127.0] to float [0.0,1.0]
+vec2 vel_to_rg(vec2 vel) {
     return (vec2(vel) + 128.0) / 255.0;
 }
 
-// === Decode RG float pair (vec2) back into velocity (ivec2)
-// Maps float [0.0,1.0] to signed int [-128,127]
-ivec2 rg_to_vel(vec2 rg) {
-    return ivec2(floor(rg * 255.0 + 0.5)) - 128;
+// === Decode RG float pair (vec2) back into velocity (vec2)
+// Maps float [0.0,1.0] to signed float [-128.0,127.0]
+vec2 rg_to_vel(vec2 rg) {
+    return vec2(floor(rg * 255.0 + 0.5)) - 128.0;
 }
 
 
@@ -247,120 +246,6 @@ void main()
 {
     //this is only here to prevent errors
 	#ifdef EXCLUDE
-	
-	#region GENERIC_INTENT
-	#pragma shady: macro_begin GENERIC_INTENT
-
-	// === Cache static fields for clarity ===
-	float gravity_force       = elem_static_data.gravity_force;
-	int x_search              = elem_static_data.x_search;
-	int y_search              = elem_static_data.y_search;
-	int max_vel_x             = elem_static_data.max_vel_x;
-	int max_vel_y             = elem_static_data.max_vel_y;
-	int stickiness            = elem_static_data.stickiness;
-	int can_slip              = elem_static_data.can_slip;
-	int inertial_resist       = elem_static_data.inertial_resistance;
-	float bounce_chance       = elem_static_data.bounce_chance;
-
-	// === Apply Gravity Accumulator ===
-	// (Assumes a float gravity accumulator system)
-	float accumulated_gravity = float(elem_dynamic_data.vel.y) + gravity_force;
-	elem_dynamic_data.vel.y = clamp(int(round(accumulated_gravity)), -max_vel_y, max_vel_y);
-
-	// === Air Resistance on X ===
-	if (abs_int(elem_dynamic_data.vel.x) >= max_vel_x && inertial_resist > 0) {
-		if (chance(0.2, v_vTexcoord + vec2(1.234, 4.567), u_frame)) {
-			int dir = sign_int(elem_dynamic_data.vel.x);
-			elem_dynamic_data.vel.x = clamp(elem_dynamic_data.vel.x - dir, -max_vel_x, max_vel_x);
-			elem_dynamic_data.x_speed = abs_int(elem_dynamic_data.vel.x);
-			elem_dynamic_data.x_dir = (dir > 0) ? 1 : 0;
-		}
-	}
-
-	// === Attempt velocity-based movement ===
-	if (elem_dynamic_data.vel.x != 0 || elem_dynamic_data.vel.y != 0) {
-		vec2 vel_uv = v_vTexcoord + vec2(elem_dynamic_data.vel) * u_texel_size;
-		vec4 vel_px = texture2D(gm_BaseTexture, vel_uv);
-		int vel_id = elem_get_index(vel_px);
-		ElementStaticData vel_static_data = get_element_static_data(vel_id);
-
-		if (vel_id == 0 || element_can_replace(elem_static_data, vel_static_data)) {
-			break; // Success: move into intended velocity cell
-		}
-
-		// === Bounce Logic ===
-		if (chance(bounce_chance, v_vTexcoord + vec2(0.987, 0.321), u_frame)) {
-			// === Sample 4-neighbor cells to estimate slope ===
-			bool s_l = cell_is_solid(texture2D(gm_BaseTexture, v_vTexcoord + vec2(-1,  0) * u_texel_size));
-			bool s_r = cell_is_solid(texture2D(gm_BaseTexture, v_vTexcoord + vec2( 1,  0) * u_texel_size));
-			bool s_u = cell_is_solid(texture2D(gm_BaseTexture, v_vTexcoord + vec2( 0, -1) * u_texel_size));
-			bool s_d = cell_is_solid(texture2D(gm_BaseTexture, v_vTexcoord + vec2( 0,  1) * u_texel_size));
-
-			float g_x = float(s_r) - float(s_l);
-			float g_y = float(s_d) - float(s_u);
-			vec2 slope = vec2(g_x, g_y);
-
-			if (length(slope) > 0.0) {
-				vec2 v = vec2(elem_dynamic_data.vel);
-				vec2 n = normalize(slope);
-				vec2 bounce = v - 2.0 * dot(v, n) * n;
-
-				// Dampen and add slight randomness
-				float jitter = 0.9 + rand(v_vTexcoord, u_frame) * 0.15;
-				bounce *= jitter;
-
-				// Clamp and assign back to dynamic data
-				bounce.x = clamp(bounce.x, -float(max_vel_x), float(max_vel_x));
-				bounce.y = clamp(bounce.y, -float(max_vel_y), float(max_vel_y));
-
-				elem_dynamic_data.vel = ivec2(bounce);
-				elem_dynamic_data.x_speed = abs_int(elem_dynamic_data.vel.x);
-				elem_dynamic_data.x_dir   = (elem_dynamic_data.vel.x > 0) ? 1 : 0;
-				elem_dynamic_data.y_speed = abs_int(elem_dynamic_data.vel.y);
-				elem_dynamic_data.y_dir   = (elem_dynamic_data.vel.y > 0) ? 1 : 0;
-
-				break; // Bounce intent issued
-			}
-		}
-	}
-
-	// === Fallback vertical search ===
-	bool moved = false;
-	int g_dir = sign_int(int(gravity_force));
-	for (int dy = g_dir; abs_int(dy) <= y_search; dy += g_dir) {
-		vec2 down_uv = v_vTexcoord + vec2(0.0, float(dy)) * u_texel_size;
-		vec4 down_px = texture2D(gm_BaseTexture, down_uv);
-		int down_id = elem_get_index(down_px);
-		ElementStaticData down_static = get_element_static_data(down_id);
-
-		if (down_id == 0 || element_can_replace(elem_static_data, down_static)) {
-			elem_dynamic_data.vel = ivec2(0, dy);
-			moved = true;
-			break;
-		}
-	}
-
-	// === Fallback slip diagonally ===
-	if (!moved && can_slip == 1) {
-		int dx = (rand(v_vTexcoord, u_frame) < 0.5) ? -1 : 1;
-		for (int i = 1; i <= x_search; ++i) {
-			vec2 diag_uv = v_vTexcoord + vec2(float(i * dx), g_dir) * u_texel_size;
-			vec4 diag_px = texture2D(gm_BaseTexture, diag_uv);
-			int diag_id = elem_get_index(diag_px);
-			ElementStaticData diag_static = get_element_static_data(diag_id);
-
-			if (diag_id == 0 || element_can_replace(elem_static_data, diag_static)) {
-				elem_dynamic_data.vel = ivec2(i * dx, g_dir);
-				break;
-			}
-		}
-	}
-
-	#pragma shady: macro_end
-	#endregion
-
-
-
 	
 	#endif
 }

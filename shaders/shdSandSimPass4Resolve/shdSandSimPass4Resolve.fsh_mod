@@ -1,4 +1,4 @@
-// Date: 2025-06-21T05:55:14.1164664-05:00
+// Date: 2025-06-22T05:32:47.4371593-05:00
 // begin import shdSandSimCommon.fsh.__shady_export
 // begin import shdMaths.fsh.__shady_export
 #region Converters
@@ -93,19 +93,18 @@ int round(float x) {
 #region Data Structures
 struct ElementStaticData {
 	int id;						// The ID of the element
-    float gravity_force;        // Gravity strength per frame (e.g., 0.25 = slow fall)
-    int x_search;               // Horizontal movement range
-    int y_search;               // Vertical movement range (in gravity direction)
-	int max_vel_x;              // Maximum horizontal velocity
-    int max_vel_y;              // Maximum vertical velocity
-    int stickiness;             // Preference to clump (higher = more sticky)
-    int can_slip;               // 1 = can attempt diagonal fallback
-    int inertial_resistance;    // Resistance to velocity decay
-	float bounce_chance;        // Chance to bounce on hard landing (0.0 - 1.0)
-    int mass;                   // Affects momentum transfer
-    int friction_factor;        // How much friction affects motion
-    int stopped_moving_threshold; // Frames before considered "stopped"
-    int state_of_matter;        // 0 = empty, 1 = gas, 2 = liquid, 3 = solid
+    float gravity_force;          // Gravity strength per frame (e.g., 0.25 = slow fall)
+    float x_search;               // Horizontal movement range
+    float y_search;               // Vertical movement range (in gravity direction)
+	float max_vel_x;              // Maximum horizontal velocity
+    float max_vel_y;              // Maximum vertical velocity
+    float stickiness;             // Preference to clump (higher = more sticky)
+    float inertial_resistance;    // Resistance to velocity decay
+	float bounce_chance;          // Chance to bounce on hard landing (0.0 - 1.0)
+	bool can_slip;               // 1 = can attempt diagonal fallback
+    int mass;                     // Affects momentum transfer
+    int friction_factor;          // How much friction affects motion
+    int state_of_matter;            // 0 = empty, 1 = gas, 2 = liquid, 3 = solid
     int flammable;              // 1 = can ignite
     int heat_factor;            // Heat applied to neighbors
     int fire_damage;            // Damage per frame when ignited
@@ -117,7 +116,7 @@ struct ElementStaticData {
 };
 struct ElementDynamicData {
     int id;
-	ivec2 vel;
+	vec2 vel;
     int x_dir;
     int y_dir;
     int x_speed;
@@ -150,20 +149,19 @@ ElementStaticData get_element_static_data(int id) {
 	    ELEM_ID_SAND, // The ID of the element
 		
 	    // Gravity and movement behavior
-	    1.0,    // gravity_force         (constant gravity every frame)
-	    1,      // x_search              (can move 1 cell left/right)
-	    1,      // y_search              (can fall 1 cell per fallback)
-	    2,      // max_vel_x             (caps horizontal speed)
-	    3,      // max_vel_y             (caps vertical speed)
-	    0,      // stickiness            (no clumping behavior)
-	    1,      // can_slip              (can diagonally fallback)
-	    1,      // inertial_resistance   (modest horizontal drag)
-	    0.05,   // bounce_chance         (low chance of bouncing)
-		
+	    1.0,   // gravity_force         (constant gravity every frame)
+	    1.0,   // x_search              (can move 1 cell left/right)
+	    1.0,   // y_search              (can fall 1 cell per fallback)
+	    2.0,   // max_vel_x             (caps horizontal speed)
+	    3.0,   // max_vel_y             (caps vertical speed)
+	    0.0,   // stickiness            (no clumping behavior)
+	    1.0,   // inertial_resistance   (modest horizontal drag)
+	    0.1,   // bounce_chance         (low chance of bouncing)
+		true,  // can_slip              (can diagonally fallback)
+	    
 	    // Physical characteristics
 	    150,    // mass                  (affects force transfer)
 	    9,      // friction_factor       (how much to reduce movement when hitting)
-	    5,      // stopped_moving_threshold (frames before considered stationary)
 	    3,      // state_of_matter       (3 = solid)
 		
 	    // Heat and flammability
@@ -199,7 +197,7 @@ ElementDynamicData ununpack_elem_dynamic_data(vec4 pixel) {
     elem_dynamic_data.y_speed = bitwise_and(bit_shift_right(g, 5), 3);
     elem_dynamic_data.x_dir   = bitwise_and(bit_shift_right(g, 4), 1);
     elem_dynamic_data.x_speed = bitwise_and(bit_shift_right(g, 2), 3);
-    elem_dynamic_data.vel = ivec2(
+    elem_dynamic_data.vel = vec2(
         (elem_dynamic_data.x_dir == 1) ? elem_dynamic_data.x_speed : -elem_dynamic_data.x_speed,
         (elem_dynamic_data.y_dir == 1) ? elem_dynamic_data.y_speed : -elem_dynamic_data.y_speed
     );
@@ -256,11 +254,11 @@ bool element_can_replace(ElementStaticData src, ElementStaticData dst) {
     }
     return false;
 }
-vec2 vel_to_rg(ivec2 vel) {
+vec2 vel_to_rg(vec2 vel) {
     return (vec2(vel) + 128.0) / 255.0;
 }
-ivec2 rg_to_vel(vec2 rg) {
-    return ivec2(floor(rg * 255.0 + 0.5)) - 128;
+vec2 rg_to_vel(vec2 rg) {
+    return vec2(floor(rg * 255.0 + 0.5)) - 128.0;
 }
 // end import shdSandSimCommon.fsh.__shady_export
 
@@ -275,52 +273,45 @@ uniform sampler2D gm_TertiaryTexture;  // surf_valid_pre (offsets)
 
 void main() {
     vec2 offset_rg = texture2D(gm_TertiaryTexture, v_vTexcoord).rg;
-    ivec2 offset = rg_to_vel(offset_rg);
+    vec2 offset = rg_to_vel(offset_rg);
 
     vec4 pixel = texture2D(gm_BaseTexture, v_vTexcoord);
 
     ElementDynamicData elem_dynamic_data = ununpack_elem_dynamic_data(pixel);
 
-    if (offset.x != 0 || offset.y != 0) {
+    if (offset.x != 0.0 || offset.y != 0.0) {
         // swap pixel: where we moved *from*
         vec2 swap_uv = v_vTexcoord + vec2(offset) * u_texel_size;
         vec4 swap_pixel = texture2D(gm_BaseTexture, swap_uv);
 
         ElementDynamicData swap_elem_dynamic_data = ununpack_elem_dynamic_data(swap_pixel);
 
-        ivec2 old_vel = swap_elem_dynamic_data.vel;
+        vec2 old_vel = swap_elem_dynamic_data.vel;
         
 		vec2 vel_rg = texture2D(gm_SecondaryTexture, swap_uv).rg;
-		ivec2 new_vel = rg_to_vel(vel_rg);
+		vec2 new_vel = rg_to_vel(vel_rg);
 		
-
-        // Case 1: stationary → adopt move vector
-        if (old_vel == ivec2(0)) {
-            //new_vel = offset;
-        } else {
-            // Case 2: average motion (clean rounding for now)
-            vec2 average = (vec2(old_vel) + vec2(new_vel)) * 0.5;
-            new_vel = ivec2(round(average.x), round(average.y));
+		vec2 average = (old_vel + new_vel) * 0.5;
+        new_vel = vec2(round(average.x), round(average.y));
 		
-            // === RANDOMIZED ROUNDING DISABLED ===
-             float rand_seed = rand(v_vTexcoord, u_frame);
-             float ax = abs_float(fract(average.x));
-             float ay = abs_float(fract(average.y));
-             new_vel.x = int(floor(average.x + ((rand_seed < ax) ? 1.0 : 0.0)));
-             rand_seed = rand(v_vTexcoord + 0.123, u_frame);
-             new_vel.y = int(floor(average.y + ((rand_seed < ay) ? 1.0 : 0.0)));
-        }
-
+        // === RANDOMIZED ROUNDING DISABLED ===
+        float rand_seed = rand(v_vTexcoord, u_frame);
+        float ax = abs_float(fract(average.x));
+        float ay = abs_float(fract(average.y));
+        new_vel.x = floor(average.x + ((rand_seed < ax) ? 1.0 : 0.0));
+        rand_seed = rand(v_vTexcoord + 0.123, u_frame);
+        new_vel.y = floor(average.y + ((rand_seed < ay) ? 1.0 : 0.0));
+        
         // Clamp to allowed max
-        new_vel.x = clamp(new_vel.x, -3, 3);
-        new_vel.y = clamp(new_vel.y, -3, 3);
+        new_vel.x = clamp(new_vel.x, -3.0, 3.0);
+        new_vel.y = clamp(new_vel.y, -3.0, 3.0);
 
         // Update velocity bits in elem_dynamic_data
         swap_elem_dynamic_data.vel     = new_vel;
-        swap_elem_dynamic_data.y_dir   = (new_vel.y > 0) ? 1 : 0;
-        swap_elem_dynamic_data.y_speed = clamp(abs_int(new_vel.y), 0, 3);
-		swap_elem_dynamic_data.x_dir   = (new_vel.x > 0) ? 1 : 0;
-        swap_elem_dynamic_data.x_speed = clamp(abs_int(new_vel.x), 0, 3);
+        swap_elem_dynamic_data.y_dir   = (new_vel.y > 0.0) ? 1 : 0;
+        swap_elem_dynamic_data.y_speed = int(clamp(abs_float(new_vel.y), 0.0, 3.0));
+		swap_elem_dynamic_data.x_dir   = (new_vel.x > 0.0) ? 1 : 0;
+        swap_elem_dynamic_data.x_speed = int(clamp(abs_float(new_vel.x), 0.0, 3.0));
         
         
         gl_FragColor = pack_elem_dynamic_data(swap_elem_dynamic_data);
