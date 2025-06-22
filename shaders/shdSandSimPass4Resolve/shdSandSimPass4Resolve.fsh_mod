@@ -1,4 +1,4 @@
-// Date: 2025-06-21T05:55:14.1164664-05:00
+// Date: 2025-06-22T05:45:57.4473932-05:00
 // begin import shdSandSimCommon.fsh.__shady_export
 // begin import shdMaths.fsh.__shady_export
 #region Converters
@@ -117,11 +117,14 @@ struct ElementStaticData {
 };
 struct ElementDynamicData {
     int id;
-	ivec2 vel;
+	ElementStaticData static_data;
+    vec2 vel;
     int x_dir;
     int y_dir;
     int x_speed;
     int y_speed;
+    bool is_moving;
+	bool unused_movement_bool;
 };
 #endregion
 #region Element IDs Enum
@@ -150,7 +153,7 @@ ElementStaticData get_element_static_data(int id) {
 	    ELEM_ID_SAND, // The ID of the element
 		
 	    // Gravity and movement behavior
-	    1.0,    // gravity_force         (constant gravity every frame)
+	    0.3,    // gravity_force         (constant gravity every frame)
 	    1,      // x_search              (can move 1 cell left/right)
 	    1,      // y_search              (can fall 1 cell per fallback)
 	    2,      // max_vel_x             (caps horizontal speed)
@@ -194,25 +197,38 @@ ElementStaticData get_element_static_data(int id) {
 ElementDynamicData ununpack_elem_dynamic_data(vec4 pixel) {
     ElementDynamicData elem_dynamic_data;
     elem_dynamic_data.id = elem_get_index(pixel);
+	elem_dynamic_data.static_data = get_element_static_data(elem_dynamic_data.id);
     int g = float_to_byte(pixel.g);
-    elem_dynamic_data.y_dir   = bitwise_and(bit_shift_right(g, 7), 1);
-    elem_dynamic_data.y_speed = bitwise_and(bit_shift_right(g, 5), 3);
-    elem_dynamic_data.x_dir   = bitwise_and(bit_shift_right(g, 4), 1);
-    elem_dynamic_data.x_speed = bitwise_and(bit_shift_right(g, 2), 3);
-    elem_dynamic_data.vel = ivec2(
-        (elem_dynamic_data.x_dir == 1) ? elem_dynamic_data.x_speed : -elem_dynamic_data.x_speed,
-        (elem_dynamic_data.y_dir == 1) ? elem_dynamic_data.y_speed : -elem_dynamic_data.y_speed
+    elem_dynamic_data.y_dir               = bitwise_and(bit_shift_right(g, 7), 1);
+    elem_dynamic_data.y_speed             = bitwise_and(bit_shift_right(g, 5), 3);
+    elem_dynamic_data.x_dir               = bitwise_and(bit_shift_right(g, 4), 1);
+    elem_dynamic_data.x_speed             = bitwise_and(bit_shift_right(g, 2), 3);
+    elem_dynamic_data.is_moving            = bool(bitwise_and(bit_shift_right(g, 1), 1));
+    elem_dynamic_data.unused_movement_bool = bool(bitwise_and(bit_shift_right(g, 0), 1));
+    float x_norm = float(elem_dynamic_data.x_speed) / 3.0;
+    float y_norm = float(elem_dynamic_data.y_speed) / 3.0;
+    float x_signed = x_norm * (elem_dynamic_data.x_dir == 0 ? 1.0 : -1.0);
+    float y_signed = y_norm * (elem_dynamic_data.y_dir == 0 ? 1.0 : -1.0);
+    elem_dynamic_data.vel = vec2(
+        x_signed * float(elem_dynamic_data.static_data.max_vel_x),
+        y_signed * float(elem_dynamic_data.static_data.max_vel_y)
     );
-	return elem_dynamic_data;
+    return elem_dynamic_data;
 }
 vec4 pack_elem_dynamic_data(in ElementDynamicData elem_dynamic_data) {
     int g = 0;
-    g = bitwise_or(g, bit_shift_left(clamp(elem_dynamic_data.y_dir  , 0, 1), 7));
-    g = bitwise_or(g, bit_shift_left(clamp(elem_dynamic_data.y_speed, 0, 3), 5));
-    g = bitwise_or(g, bit_shift_left(clamp(elem_dynamic_data.x_dir  , 0, 1), 4));
-    g = bitwise_or(g, bit_shift_left(clamp(elem_dynamic_data.x_speed, 0, 3), 2));
+	int x_speed = int(round(clamp(abs(elem_dynamic_data.vel.x) / float(elem_dynamic_data.static_data.max_vel_x), 0.0, 1.0) * 3.0));
+	int y_speed = int(round(clamp(abs(elem_dynamic_data.vel.y) / float(elem_dynamic_data.static_data.max_vel_y), 0.0, 1.0) * 3.0));
+    int x_dir = elem_dynamic_data.vel.x >= 0.0 ? 0 : 1;
+    int y_dir = elem_dynamic_data.vel.y >= 0.0 ? 0 : 1;
+    g = bitwise_or(g, bit_shift_left(clamp(y_dir   , 0, 1), 7));
+    g = bitwise_or(g, bit_shift_left(clamp(y_speed , 0, 3), 5));
+    g = bitwise_or(g, bit_shift_left(clamp(x_dir   , 0, 1), 4));
+    g = bitwise_or(g, bit_shift_left(clamp(x_speed , 0, 3), 2));
+    g = (elem_dynamic_data.is_moving)            ? bitwise_or(g, bit_shift_left(1, 1)) : g;
+	g = (elem_dynamic_data.unused_movement_bool) ? bitwise_or(g, bit_shift_left(1, 0)) : g;
     float g_float = byte_to_float(g);
-    float r_float = byte_to_float(elem_dynamic_data.id); // assuming ID lives in red
+    float r_float = byte_to_float(elem_dynamic_data.id);
     return vec4(r_float, g_float, 0.0, 1.0);
 }
 #endregion
@@ -256,11 +272,11 @@ bool element_can_replace(ElementStaticData src, ElementStaticData dst) {
     }
     return false;
 }
-vec2 vel_to_rg(ivec2 vel) {
-    return (vec2(vel) + 128.0) / 255.0;
+vec2 vel_to_rg(vec2 vel) {
+    return (vel + 128.0) / 255.0;
 }
-ivec2 rg_to_vel(vec2 rg) {
-    return ivec2(floor(rg * 255.0 + 0.5)) - 128;
+vec2 rg_to_vel(vec2 rg) {
+    return vec2(floor(rg * 255.0 + 0.5)) - vec2(128.0);
 }
 // end import shdSandSimCommon.fsh.__shady_export
 
@@ -275,52 +291,47 @@ uniform sampler2D gm_TertiaryTexture;  // surf_valid_pre (offsets)
 
 void main() {
     vec2 offset_rg = texture2D(gm_TertiaryTexture, v_vTexcoord).rg;
-    ivec2 offset = rg_to_vel(offset_rg);
+    vec2 offset = rg_to_vel(offset_rg);
 
     vec4 pixel = texture2D(gm_BaseTexture, v_vTexcoord);
 
     ElementDynamicData elem_dynamic_data = ununpack_elem_dynamic_data(pixel);
 
-    if (offset.x != 0 || offset.y != 0) {
+    if (offset.x != 0.0 || offset.y != 0.0) {
         // swap pixel: where we moved *from*
         vec2 swap_uv = v_vTexcoord + vec2(offset) * u_texel_size;
         vec4 swap_pixel = texture2D(gm_BaseTexture, swap_uv);
 
         ElementDynamicData swap_elem_dynamic_data = ununpack_elem_dynamic_data(swap_pixel);
 
-        ivec2 old_vel = swap_elem_dynamic_data.vel;
+        vec2 old_vel = swap_elem_dynamic_data.vel;
         
 		vec2 vel_rg = texture2D(gm_SecondaryTexture, swap_uv).rg;
-		ivec2 new_vel = rg_to_vel(vel_rg);
+		vec2 new_vel = rg_to_vel(vel_rg);
 		
-
-        // Case 1: stationary → adopt move vector
-        if (old_vel == ivec2(0)) {
-            //new_vel = offset;
-        } else {
-            // Case 2: average motion (clean rounding for now)
-            vec2 average = (vec2(old_vel) + vec2(new_vel)) * 0.5;
-            new_vel = ivec2(round(average.x), round(average.y));
+        // Case 2: average motion (clean rounding for now)
+        vec2 average = (vec2(old_vel) + vec2(new_vel)) * 0.5;
+        new_vel = vec2(round(average.x), round(average.y));
 		
-            // === RANDOMIZED ROUNDING DISABLED ===
-             float rand_seed = rand(v_vTexcoord, u_frame);
-             float ax = abs_float(fract(average.x));
-             float ay = abs_float(fract(average.y));
-             new_vel.x = int(floor(average.x + ((rand_seed < ax) ? 1.0 : 0.0)));
-             rand_seed = rand(v_vTexcoord + 0.123, u_frame);
-             new_vel.y = int(floor(average.y + ((rand_seed < ay) ? 1.0 : 0.0)));
-        }
-
+        // === RANDOMIZED ROUNDING DISABLED ===
+         float rand_seed = rand(v_vTexcoord, u_frame);
+         float ax = abs_float(fract(average.x));
+         float ay = abs_float(fract(average.y));
+         new_vel.x = floor(average.x + ((rand_seed < ax) ? 1.0 : 0.0));
+         rand_seed = rand(v_vTexcoord + 0.123, u_frame);
+         new_vel.y = floor(average.y + ((rand_seed < ay) ? 1.0 : 0.0));
+        
         // Clamp to allowed max
-        new_vel.x = clamp(new_vel.x, -3, 3);
-        new_vel.y = clamp(new_vel.y, -3, 3);
+        new_vel.x = clamp(new_vel.x, -3.0, 3.0);
+        new_vel.y = clamp(new_vel.y, -3.0, 3.0);
 
         // Update velocity bits in elem_dynamic_data
         swap_elem_dynamic_data.vel     = new_vel;
-        swap_elem_dynamic_data.y_dir   = (new_vel.y > 0) ? 1 : 0;
-        swap_elem_dynamic_data.y_speed = clamp(abs_int(new_vel.y), 0, 3);
-		swap_elem_dynamic_data.x_dir   = (new_vel.x > 0) ? 1 : 0;
-        swap_elem_dynamic_data.x_speed = clamp(abs_int(new_vel.x), 0, 3);
+        swap_elem_dynamic_data.y_dir   = (new_vel.y > 0.0) ? 1 : 0;
+        swap_elem_dynamic_data.y_speed = int(clamp(abs_float(new_vel.y), 0.0, 3.0));
+		swap_elem_dynamic_data.x_dir   = (new_vel.x > 0.0) ? 1 : 0;
+        swap_elem_dynamic_data.x_speed = int(clamp(abs_float(new_vel.x), 0.0, 3.0));
+        swap_elem_dynamic_data.is_moving = true;
         
         
         gl_FragColor = pack_elem_dynamic_data(swap_elem_dynamic_data);
@@ -332,6 +343,8 @@ void main() {
 		
     } else {
         // No motion — just return ourself
+		elem_dynamic_data.vel = vec2(0.0, 0.0);
+		elem_dynamic_data.is_moving = false;
         gl_FragColor = pack_elem_dynamic_data(elem_dynamic_data);
     }
 }

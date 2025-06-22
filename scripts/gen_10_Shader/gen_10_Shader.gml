@@ -201,8 +201,8 @@ function CanvasSandShader() : SimulationCore() constructor {
 	// === Spawn Elements ===
 	static spawn_element_circle = function(_element, _x, _y, _radius) {
 		if (!surface_exists(surf_element)) return;
-		var _col = (_element == "sand") ? c_red : c_black;
-
+		var _col = (_element == "sand") ? make_color_rgb(255, 0b0_00_0_00_1_0, 0) : make_color_rgb(0, 0b0_000_0_000_1_0, 0);
+		
 		surface_set_target(surf_element);
 		draw_set_color(_col);
 		draw_circle(_x, _y, _radius, false);

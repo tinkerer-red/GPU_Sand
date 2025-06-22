@@ -5,9 +5,9 @@ varying vec2 v_vTexcoord;
 
 
 void main() {
-    ivec2 original_vel = ivec2(-1, 1); // test vector
+    vec2 original_vel = vec2(-1, 1); // test vector
     vec2 encoded = vel_to_rg(original_vel);
-    ivec2 decoded = rg_to_vel(encoded);
+    vec2 decoded = rg_to_vel(encoded);
 
     // Compare result — if match, green; else, red
     if (all(equal(original_vel, decoded))) {

@@ -17,7 +17,7 @@ void main()
 	    ELEM_ID_SAND, // The ID of the element
 		
 	    // Gravity and movement behavior
-	    1.0,    // gravity_force         (constant gravity every frame)
+	    0.3,    // gravity_force         (constant gravity every frame)
 	    1,      // x_search              (can move 1 cell left/right)
 	    1,      // y_search              (can fall 1 cell per fallback)
 	    2,      // max_vel_x             (caps horizontal speed)

@@ -18,7 +18,7 @@ void main() {
     ElementDynamicData elem_dynamic_data = ununpack_elem_dynamic_data(self_pixel);
 	
 	float best_score = 99999.0;
-    ivec2 best_offset = ivec2(0);
+    vec2 best_offset = vec2(0);
 	
     for (int oy = -OFFSET_RADIUS; oy <= OFFSET_RADIUS; ++oy) {
         for (int ox = -OFFSET_RADIUS; ox <= OFFSET_RADIUS; ++ox) {
@@ -39,10 +39,10 @@ void main() {
 			
 			ElementDynamicData neighbor_elem_dynamic_data = ununpack_elem_dynamic_data(elem_px);
 			
-            ivec2 vel = rg_to_vel(vel_px.rg);
+            vec2 vel = rg_to_vel(vel_px.rg);
 			
             // Is the neighbor trying to move into us?
-            ivec2 offset_dir = ivec2(ox, oy);
+            vec2 offset_dir = vec2(ox, oy);
 			
 			if (all(equal(-vel, offset_dir))) {
 			    // === Permission check (custom element logic goes here)

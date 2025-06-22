@@ -1,4 +1,4 @@
-// Date: 2025-06-21T14:56:14.4994327-05:00
+// Date: 2025-06-22T05:42:59.0395130-05:00
 // begin import shdSandSimCommon.fsh.__shady_export
 // begin import shdMaths.fsh.__shady_export
 #region Converters
@@ -117,11 +117,14 @@ struct ElementStaticData {
 };
 struct ElementDynamicData {
     int id;
-	ivec2 vel;
+	ElementStaticData static_data;
+    vec2 vel;
     int x_dir;
     int y_dir;
     int x_speed;
     int y_speed;
+    bool is_moving;
+	bool unused_movement_bool;
 };
 #endregion
 #region Element IDs Enum
@@ -150,7 +153,7 @@ ElementStaticData get_element_static_data(int id) {
 	    ELEM_ID_SAND, // The ID of the element
 		
 	    // Gravity and movement behavior
-	    1.0,    // gravity_force         (constant gravity every frame)
+	    0.3,    // gravity_force         (constant gravity every frame)
 	    1,      // x_search              (can move 1 cell left/right)
 	    1,      // y_search              (can fall 1 cell per fallback)
 	    2,      // max_vel_x             (caps horizontal speed)
@@ -194,25 +197,38 @@ ElementStaticData get_element_static_data(int id) {
 ElementDynamicData ununpack_elem_dynamic_data(vec4 pixel) {
     ElementDynamicData elem_dynamic_data;
     elem_dynamic_data.id = elem_get_index(pixel);
+	elem_dynamic_data.static_data = get_element_static_data(elem_dynamic_data.id);
     int g = float_to_byte(pixel.g);
-    elem_dynamic_data.y_dir   = bitwise_and(bit_shift_right(g, 7), 1);
-    elem_dynamic_data.y_speed = bitwise_and(bit_shift_right(g, 5), 3);
-    elem_dynamic_data.x_dir   = bitwise_and(bit_shift_right(g, 4), 1);
-    elem_dynamic_data.x_speed = bitwise_and(bit_shift_right(g, 2), 3);
-    elem_dynamic_data.vel = ivec2(
-        (elem_dynamic_data.x_dir == 1) ? elem_dynamic_data.x_speed : -elem_dynamic_data.x_speed,
-        (elem_dynamic_data.y_dir == 1) ? elem_dynamic_data.y_speed : -elem_dynamic_data.y_speed
+    elem_dynamic_data.y_dir               = bitwise_and(bit_shift_right(g, 7), 1);
+    elem_dynamic_data.y_speed             = bitwise_and(bit_shift_right(g, 5), 3);
+    elem_dynamic_data.x_dir               = bitwise_and(bit_shift_right(g, 4), 1);
+    elem_dynamic_data.x_speed             = bitwise_and(bit_shift_right(g, 2), 3);
+    elem_dynamic_data.is_moving            = bool(bitwise_and(bit_shift_right(g, 1), 1));
+    elem_dynamic_data.unused_movement_bool = bool(bitwise_and(bit_shift_right(g, 0), 1));
+    float x_norm = float(elem_dynamic_data.x_speed) / 3.0;
+    float y_norm = float(elem_dynamic_data.y_speed) / 3.0;
+    float x_signed = x_norm * (elem_dynamic_data.x_dir == 0 ? 1.0 : -1.0);
+    float y_signed = y_norm * (elem_dynamic_data.y_dir == 0 ? 1.0 : -1.0);
+    elem_dynamic_data.vel = vec2(
+        x_signed * float(elem_dynamic_data.static_data.max_vel_x),
+        y_signed * float(elem_dynamic_data.static_data.max_vel_y)
     );
-	return elem_dynamic_data;
+    return elem_dynamic_data;
 }
 vec4 pack_elem_dynamic_data(in ElementDynamicData elem_dynamic_data) {
     int g = 0;
-    g = bitwise_or(g, bit_shift_left(clamp(elem_dynamic_data.y_dir  , 0, 1), 7));
-    g = bitwise_or(g, bit_shift_left(clamp(elem_dynamic_data.y_speed, 0, 3), 5));
-    g = bitwise_or(g, bit_shift_left(clamp(elem_dynamic_data.x_dir  , 0, 1), 4));
-    g = bitwise_or(g, bit_shift_left(clamp(elem_dynamic_data.x_speed, 0, 3), 2));
+	int x_speed = int(round(clamp(abs(elem_dynamic_data.vel.x) / float(elem_dynamic_data.static_data.max_vel_x), 0.0, 1.0) * 3.0));
+	int y_speed = int(round(clamp(abs(elem_dynamic_data.vel.y) / float(elem_dynamic_data.static_data.max_vel_y), 0.0, 1.0) * 3.0));
+    int x_dir = elem_dynamic_data.vel.x >= 0.0 ? 0 : 1;
+    int y_dir = elem_dynamic_data.vel.y >= 0.0 ? 0 : 1;
+    g = bitwise_or(g, bit_shift_left(clamp(y_dir   , 0, 1), 7));
+    g = bitwise_or(g, bit_shift_left(clamp(y_speed , 0, 3), 5));
+    g = bitwise_or(g, bit_shift_left(clamp(x_dir   , 0, 1), 4));
+    g = bitwise_or(g, bit_shift_left(clamp(x_speed , 0, 3), 2));
+    g = (elem_dynamic_data.is_moving)            ? bitwise_or(g, bit_shift_left(1, 1)) : g;
+	g = (elem_dynamic_data.unused_movement_bool) ? bitwise_or(g, bit_shift_left(1, 0)) : g;
     float g_float = byte_to_float(g);
-    float r_float = byte_to_float(elem_dynamic_data.id); // assuming ID lives in red
+    float r_float = byte_to_float(elem_dynamic_data.id);
     return vec4(r_float, g_float, 0.0, 1.0);
 }
 #endregion
@@ -256,15 +272,15 @@ bool element_can_replace(ElementStaticData src, ElementStaticData dst) {
     }
     return false;
 }
-vec2 vel_to_rg(ivec2 vel) {
-    return (vec2(vel) + 128.0) / 255.0;
+vec2 vel_to_rg(vec2 vel) {
+    return (vel + 128.0) / 255.0;
 }
-ivec2 rg_to_vel(vec2 rg) {
-    return ivec2(floor(rg * 255.0 + 0.5)) - 128;
+vec2 rg_to_vel(vec2 rg) {
+    return vec2(floor(rg * 255.0 + 0.5)) - vec2(128.0);
 }
 // end import shdSandSimCommon.fsh.__shady_export
 
-#define OFFSET_RADIUS 3
+#define OFFSET_RADIUS 3.0
 
 varying vec2 v_vTexcoord;
 varying vec4 v_vColour;
@@ -274,20 +290,20 @@ uniform vec2 u_texel_size;
 
 void main() {
     vec2 my_rg = texture2D(gm_BaseTexture, v_vTexcoord).rg;
-    ivec2 my_vel = rg_to_vel(my_rg);
+    vec2 my_vel = rg_to_vel(my_rg);
 
     // === Case 1: I'm already validated (no need to participate in confirmation)
-    if (my_vel.x != 0 || my_vel.y != 0) {
+    if (my_vel.x != 0.0 || my_vel.y != 0.0) {
         gl_FragColor = vec4(my_rg, 0.0, 1.0);
         return;
     }
 
     // === Case 2: See if anyone wants to move into my cell
-    ivec2 reply_offset = ivec2(0);
+    vec2 reply_offset = vec2(0);
 
-    for (int oy = -OFFSET_RADIUS; oy <= OFFSET_RADIUS; ++oy) {
-        for (int ox = -OFFSET_RADIUS; ox <= OFFSET_RADIUS; ++ox) {
-            //if (ox == 0 && oy == 0) continue;
+    for (float oy = -OFFSET_RADIUS; oy <= OFFSET_RADIUS; ++oy) {
+        for (float ox = -OFFSET_RADIUS; ox <= OFFSET_RADIUS; ++ox) {
+            if (ox == 0.0 && oy == 0.0) continue;
 
             vec2 offset = vec2(float(ox), float(oy));
             vec2 neighbor_uv = v_vTexcoord + offset * u_texel_size;
@@ -297,17 +313,17 @@ void main() {
                 continue;
 			
             vec2 n_rg = texture2D(gm_BaseTexture, neighbor_uv).rg;
-            ivec2 vel = rg_to_vel(n_rg);
+            vec2 vel = rg_to_vel(n_rg);
 
             // Skip neighbors that aren't trying to move into this cell
-            if (vel.x == 0 && vel.y == 0) continue;
+            if (vel.x == 0.0 && vel.y == 0.0) continue;
 			
             if (vel.x == -ox && vel.y == -oy) {
-                reply_offset = ivec2(ox, oy);
+                reply_offset = vec2(ox, oy);
                 break; // first match wins
             }
         }
-        if (reply_offset.x != 0 && reply_offset.y != 0) break;
+        if (reply_offset.x != 0.0 && reply_offset.y != 0.0) break;
     }
 
     gl_FragColor = vec4(vel_to_rg(reply_offset), 0.0, 1.0);
