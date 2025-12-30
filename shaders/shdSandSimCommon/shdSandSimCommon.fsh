@@ -7,37 +7,45 @@
 #region Data Structures
 struct ElementStaticData {
 	int id;						// The ID of the element
+	int state_of_matter;        // 0 = empty, 1 = gas, 2 = liquid, 3 = solid
 	
-    // Gravity and movement behavior
+    // === Gravity & Movement ===
     float gravity_force;        // Gravity strength per frame (e.g., 0.25 = slow fall)
-    int x_search;               // Horizontal movement range
-    int y_search;               // Vertical movement range (in gravity direction)
-	int max_vel_x;              // Maximum horizontal velocity
-    int max_vel_y;              // Maximum vertical velocity
-    int stickiness;             // Preference to clump (higher = more sticky)
-    int can_slip;               // 1 = can attempt diagonal fallback
-    int inertial_resistance;    // Resistance to velocity decay
+    float max_vel_x;            // Maximum horizontal velocity
+    float max_vel_y;            // Maximum vertical velocity
+    
+	bool can_slip;               // 1 = can attempt diagonal fallback
+    float x_slip_search_range;   // Horizontal movement range
+    float y_slip_search_range;   // Vertical movement range (in gravity direction)
+	
+	float wake_chance; // Chance to wake up from nearby movement (0.0 = inert, 1.0 = always wake)
+	
+	float stickiness_chance;    // Preference to clump (higher = more sticky)
+    
 	float bounce_chance;        // Chance to bounce on hard landing (0.0 - 1.0)
+	float bounce_dampening_multiplier;     // Fraction of velocity retained after a bounce (0.0 = no bounce, 1.0 = perfect)
+	
+	// === Velocity Decay ===
+	float airborne_vel_decay_chance;    // Chance for Velocity decay while airborn (adds better random movements)
+	float friction_vel_decay_chance;    // Chance for Velocity decay while grounded (adds better random movements)
+	
+	
+    // === Physical ===
+    float mass;                   // Affects momentum transfer
+    
+    // === Heat and Flammability ==
+    bool can_ignite;                 // True if it can catch fire
+    float temperature_decay;           //chance to disperse heat or cold
+	float temperature_spread_chance;   //chance of adopting temperature from neighbor
+	
+    // === Explosive properties ===
+    float explosion_resistance;       // Resistance to explosion
+    float explosion_radius;       // Radius if it explodes
 
-    // Physical characteristics
-    int mass;                   // Affects momentum transfer
-    int friction_factor;        // How much friction affects motion
-    int stopped_moving_threshold; // Frames before considered "stopped"
-    int state_of_matter;        // 0 = empty, 1 = gas, 2 = liquid, 3 = solid
+    // === Lifecycle Control ===
+    float custom_event_chance; // Optional: triggers a special effect, defined in the element macro
 
-    // Heat and flammability
-    int flammable;              // 1 = can ignite
-    int heat_factor;            // Heat applied to neighbors
-    int fire_damage;            // Damage per frame when ignited
-
-    // Explosive properties
-    int explosion_resist;       // Resistance to explosion
-    int explosion_radius;       // Radius if it explodes
-
-    // Lifecycle
-    int lifespan;               // Frames before death (-1 = infinite)
-
-    // Interaction rules
+    // === Replacement Rules ===
     int replace_count;          // Number of element types this can move into
     int replace_ids[4];         // Element IDs it can replace
 };
@@ -229,6 +237,21 @@ vec2 rg_to_vel(vec2 rg) {
     return vec2(floor(rg * 255.0 + 0.5)) - vec2(128.0);
 }
 
+vec2 rand_round_vel(vec2 velocity, vec2 texcoord, float seed) {
+    vec2 rounded;
+	
+    float ax = abs(fract(velocity.x));
+    float ay = abs(fract(velocity.y));
+	
+    float rand_x = rand(texcoord, seed);
+    float rand_y = rand(texcoord, seed + 1.0);
+	
+    rounded.x = floor(velocity.x + (rand_x < ax ? 1.0 : 0.0));
+    rounded.y = floor(velocity.y + (rand_y < ay ? 1.0 : 0.0));
+	
+    return rounded;
+}
+
 
 
 
@@ -267,158 +290,13 @@ void main()
     //this is only here to prevent errors
 	#ifdef EXCLUDE
 	
-	#region GENERIC_INTENT
+	//#region GENERIC_INTENT
 	#pragma shady: macro_begin GENERIC_INTENT
-
-	// === Cached Static Values ===
-	float gravity_force       = elem_static_data.gravity_force;
-	int x_search              = elem_static_data.x_search;
-	int y_search              = elem_static_data.y_search;
-	int max_vel_x             = elem_static_data.max_vel_x;
-	int max_vel_y             = elem_static_data.max_vel_y;
-	int stickiness            = elem_static_data.stickiness;
-	int can_slip              = elem_static_data.can_slip;
-	int inertial_resist       = elem_static_data.inertial_resistance;
-	float bounce_chance       = elem_static_data.bounce_chance;
 	
 	
-	if (!elem_dynamic_data.is_moving && elem_dynamic_data.vel == vec2(0.0)) {
-	    bool woke_up = false;
-	    float resist_chance = 1.0 - (float(inertial_resist) / 10.0);
-
-	    for (int dx = -3; dx <= 3; ++dx) {
-	        for (int dy = -3; dy <= 3; ++dy) {
-	            if (dx == 0 && dy == 0) continue;
-
-	            vec2 offset = vec2(float(dx), float(dy));
-	            vec2 neighbor_uv = v_vTexcoord + offset * u_texel_size;
-	            vec4 neighbor_px = texture2D(gm_BaseTexture, neighbor_uv);
-	            int neighbor_id = elem_get_index(neighbor_px);
-
-	            if (neighbor_id != 0) {
-	                ElementDynamicData neighbor_meta = ununpack_elem_dynamic_data(neighbor_px);
-
-	                if (neighbor_meta.is_moving) {
-	                    if (chance(resist_chance, v_vTexcoord + neighbor_uv, u_frame)) {
-	                        elem_dynamic_data.is_moving = true;
-	                        woke_up = true;
-	                        break;
-	                    }
-	                }
-	            }
-	        }
-	        if (woke_up) break;
-	    }
-
-	    if (!woke_up) {
-	        elem_dynamic_data.vel = vec2(0.0, 0.0);
-	        break; // Stay asleep this frame
-	    }
-	}
-
-
-	// === Step 2: Apply Gravity Force ===
-	elem_dynamic_data.vel.y += gravity_force;
-	elem_dynamic_data.vel.y = clamp(elem_dynamic_data.vel.y + gravity_force, -float(max_vel_y), float(max_vel_y));
 	
-	// === Step 3: Bounce Check ===
-	if (abs(elem_dynamic_data.vel.y) >= float(max_vel_y)) {
-	    if (chance(bounce_chance, v_vTexcoord + vec2(0.789, 0.123), u_frame)) {
-	        elem_dynamic_data.vel.y = -elem_dynamic_data.vel.y;
-	        elem_dynamic_data.is_moving = true;
-	    }
-	}
-	
-	// === Step 4: Air Resistance (X Axis) ===
-	if (abs_float(elem_dynamic_data.vel.x) >= float(max_vel_x)) {
-		if (chance(0.2, v_vTexcoord + vec2(1.234, 4.567), u_frame)) {
-			float dir = sign_float(elem_dynamic_data.vel.x);
-			elem_dynamic_data.vel.x -= dir * 0.1; // Gradual decay
-		}
-	}
-
-	// === Step 5: Attempt to Move via Velocity ===
-	if (length(elem_dynamic_data.vel) > 2.0) {
-		vec2 vel_uv = v_vTexcoord + vec2(elem_dynamic_data.vel) * u_texel_size;
-		vec4 vel_px = texture2D(gm_BaseTexture, vel_uv);
-		int vel_id = elem_get_index(vel_px);
-		ElementStaticData vel_static_data = get_element_static_data(vel_id);
-		
-		if (vel_id == 0 || element_can_replace(elem_static_data, vel_static_data)) {
-			elem_dynamic_data.is_moving = true;
-			break; // Success: move into intended velocity cell
-		}
-		
-		// === Bounce Logic ===
-		if (chance(bounce_chance, v_vTexcoord + vec2(0.987, 0.321), u_frame)) {
-			// === Sample 4-neighbor cells to estimate slope ===
-			bool s_l = cell_is_solid(texture2D(gm_BaseTexture, v_vTexcoord + vec2(-1,  0) * u_texel_size));
-			bool s_r = cell_is_solid(texture2D(gm_BaseTexture, v_vTexcoord + vec2( 1,  0) * u_texel_size));
-			bool s_u = cell_is_solid(texture2D(gm_BaseTexture, v_vTexcoord + vec2( 0, -1) * u_texel_size));
-			bool s_d = cell_is_solid(texture2D(gm_BaseTexture, v_vTexcoord + vec2( 0,  1) * u_texel_size));
-		
-			float g_x = float(s_r) - float(s_l);
-			float g_y = float(s_d) - float(s_u);
-			vec2 slope = vec2(g_x, g_y);
-		
-			if (length(slope) > 0.0) {
-				vec2 n = normalize(slope);
-				vec2 bounce = elem_dynamic_data.vel - 2.0 * dot(elem_dynamic_data.vel, n) * n;
-				
-				// Dampen and add slight randomness
-				float jitter = 0.9 + rand(v_vTexcoord, u_frame) * 0.15;
-				bounce *= jitter;
-				
-				// Clamp and assign back to dynamic data
-				bounce.x = clamp(bounce.x, -float(max_vel_x), float(max_vel_x));
-				bounce.y = clamp(bounce.y, -float(max_vel_y), float(max_vel_y));
-				
-				elem_dynamic_data.vel = bounce;
-				
-				break; // Bounce intent issued
-			}
-		}
-	}
-
-	//// === Step 6: Fallback Downward ===
-	bool moved = false;
-	int y_dir = (gravity_force >= 0.0) ? 1 : -1;
-	for (int dy = y_dir; abs_int(dy) <= y_search; dy += y_dir) {
-		
-	    if (dy == 0) continue;
-	    vec2 test_uv = v_vTexcoord + vec2(0.0, float(dy)) * u_texel_size;
-	    vec4 test_px = texture2D(gm_BaseTexture, test_uv);
-	    int test_id = elem_get_index(test_px);
-	    ElementStaticData test_static = get_element_static_data(test_id);
-
-	    if (test_id == 0 || element_can_replace(elem_static_data, test_static)) {
-	        elem_dynamic_data.vel = vec2(0.0, float(dy));
-	        elem_dynamic_data.is_moving = true;
-	        moved = true;
-	        break;
-	    }
-	}
-
-	// === Step 7: Fallback Diagonal Slip ===
-	if (!moved && can_slip == 1) {
-	    int dx = (rand(v_vTexcoord, u_frame) < 0.5) ? -1 : 1;
-
-	    for (int i = 1; i <= x_search; ++i) {
-	        vec2 diag_uv = v_vTexcoord + vec2(float(i * dx), gravity_force > 0.0 ? 1.0 : -1.0) * u_texel_size;
-	        vec4 diag_px = texture2D(gm_BaseTexture, diag_uv);
-	        int diag_id = elem_get_index(diag_px);
-	        ElementStaticData diag_static = get_element_static_data(diag_id);
-
-	        if (diag_id == 0 || element_can_replace(elem_static_data, diag_static)) {
-	            elem_dynamic_data.vel = vec2(float(i * dx), gravity_force > 0.0 ? 1.0 : -1.0);
-	            elem_dynamic_data.is_moving = true;
-	            break;
-	        }
-	    }
-	}
-
 	#pragma shady: macro_end
-	#endregion
+	//#endregion
 
 	
 	#endif

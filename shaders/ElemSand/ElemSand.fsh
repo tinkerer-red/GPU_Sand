@@ -14,41 +14,49 @@ void main()
 	
 	
 	ElementStaticData elem_static_data = ElementStaticData(
-	    ELEM_ID_SAND, // The ID of the element
+	    ELEM_ID_SAND,       // id
+	    3,                  // state_of_matter (solid)
+
+	    // === Gravity & Movement ===
+	    1.0,                // gravity_force
+	    2.0,                // max_vel_x
+	    2.0,                // max_vel_y
+
+	    true,               // can_slip
+	    1.0,                // x_slip_search_range
+	    1.0,                // y_slip_search_range
 		
-	    // Gravity and movement behavior
-	    0.3,    // gravity_force         (constant gravity every frame)
-	    1,      // x_search              (can move 1 cell left/right)
-	    1,      // y_search              (can fall 1 cell per fallback)
-	    2,      // max_vel_x             (caps horizontal speed)
-	    3,      // max_vel_y             (caps vertical speed)
-	    0,      // stickiness            (no clumping behavior)
-	    1,      // can_slip              (can diagonally fallback)
-	    1,      // inertial_resistance   (modest horizontal drag)
-	    0.05,   // bounce_chance         (low chance of bouncing)
-		
-	    // Physical characteristics
-	    150,    // mass                  (affects force transfer)
-	    9,      // friction_factor       (how much to reduce movement when hitting)
-	    5,      // stopped_moving_threshold (frames before considered stationary)
-	    3,      // state_of_matter       (3 = solid)
-		
-	    // Heat and flammability
-	    0,      // flammable             (won’t ignite)
-	    0,      // heat_factor           (does not apply heat)
-	    0,      // fire_damage           (no fire damage)
-		
-	    // Explosive properties
-	    1,      // explosion_resist      (mild resistance)
-	    0,      // explosion_radius      (not explosive)
-		
-	    // Lifecycle
-	    -1,     // lifespan              (infinite lifetime)
-		
-	    // Interaction rules
-	    1,      // replace_count         (can only replace water)
-	    sand_replace_ids // replace_ids[4]  (allowed replacement targets)
+		1.0,                // wake_chance
+
+	    0.0,                // stickiness_chance
+
+	    0.1,                // bounce_chance
+	    0.4,                // bounce_dampening_multiplier (moderate energy loss)
+
+	    // === Velocity Decay ===
+	    0.35,                // airborne_vel_decay_chance (slow air decay)
+	    0.65,                // friction_vel_decay_chance (stronger on ground)
+
+	    // === Physical ===
+	    150.0,              // mass
+
+	    // === Heat and Flammability ===
+	    false,              // can_ignite
+	    0.0,                // temperature_decay
+	    0.0,                // temperature_spread_chance
+
+	    // === Explosive Properties ===
+	    1.0,                // explosion_resistance
+	    0.0,                // explosion_radius
+
+	    // === Lifecycle Control ===
+	    0.0,                // custom_event_chance (none)
+
+	    // === Replacement Rules ===
+	    1,                  // replace_count
+	    sand_replace_ids    // replace_ids[4]
 	);
+
 
 	
 	#pragma shady: macro_end

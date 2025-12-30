@@ -1,4 +1,4 @@
-// Date: 2025-06-22T05:42:59.0385091-05:00
+// Date: 2025-12-30T01:08:45.4657261-06:00
 // begin import shdSandSimCommon.fsh.__shady_export
 // begin import shdMaths.fsh.__shady_export
 #region Converters
@@ -77,13 +77,16 @@ int irand(int max_val, vec2 p, float seed) {
     return int(floor(rand(p, seed) * float(max_val)));
 }
 bool chance(float probability, vec2 p, float seed) {
+	if (probability >= 1.0) {
+		return true;
+	}
     return rand(p, seed) < probability;
 }
 float rand_range(float min_val, float max_val, vec2 p, float seed) {
     return mix(min_val, max_val, rand(p, seed));
 }
 int irand_range(int min_val, int max_val, vec2 p, float seed) {
-    return min_val + irand(max_val - min_val + 1, p, seed);
+    return min_val + irand(max_val - min_val, p, seed);
 }
 int round(float x) {
     return int(floor(x + 0.5));
@@ -93,25 +96,26 @@ int round(float x) {
 #region Data Structures
 struct ElementStaticData {
 	int id;						// The ID of the element
+	int state_of_matter;        // 0 = empty, 1 = gas, 2 = liquid, 3 = solid
     float gravity_force;        // Gravity strength per frame (e.g., 0.25 = slow fall)
-    int x_search;               // Horizontal movement range
-    int y_search;               // Vertical movement range (in gravity direction)
-	int max_vel_x;              // Maximum horizontal velocity
-    int max_vel_y;              // Maximum vertical velocity
-    int stickiness;             // Preference to clump (higher = more sticky)
-    int can_slip;               // 1 = can attempt diagonal fallback
-    int inertial_resistance;    // Resistance to velocity decay
+    float max_vel_x;            // Maximum horizontal velocity
+    float max_vel_y;            // Maximum vertical velocity
+	bool can_slip;               // 1 = can attempt diagonal fallback
+    float x_slip_search_range;   // Horizontal movement range
+    float y_slip_search_range;   // Vertical movement range (in gravity direction)
+	float wake_chance; // Chance to wake up from nearby movement (0.0 = inert, 1.0 = always wake)
+	float stickiness_chance;    // Preference to clump (higher = more sticky)
 	float bounce_chance;        // Chance to bounce on hard landing (0.0 - 1.0)
-    int mass;                   // Affects momentum transfer
-    int friction_factor;        // How much friction affects motion
-    int stopped_moving_threshold; // Frames before considered "stopped"
-    int state_of_matter;        // 0 = empty, 1 = gas, 2 = liquid, 3 = solid
-    int flammable;              // 1 = can ignite
-    int heat_factor;            // Heat applied to neighbors
-    int fire_damage;            // Damage per frame when ignited
-    int explosion_resist;       // Resistance to explosion
-    int explosion_radius;       // Radius if it explodes
-    int lifespan;               // Frames before death (-1 = infinite)
+	float bounce_dampening_multiplier;     // Fraction of velocity retained after a bounce (0.0 = no bounce, 1.0 = perfect)
+	float airborne_vel_decay_chance;    // Chance for Velocity decay while airborn (adds better random movements)
+	float friction_vel_decay_chance;    // Chance for Velocity decay while grounded (adds better random movements)
+    float mass;                   // Affects momentum transfer
+    bool can_ignite;                 // True if it can catch fire
+    float temperature_decay;           //chance to disperse heat or cold
+	float temperature_spread_chance;   //chance of adopting temperature from neighbor
+    float explosion_resistance;       // Resistance to explosion
+    float explosion_radius;       // Radius if it explodes
+    float custom_event_chance; // Optional: triggers a special effect, defined in the element macro
     int replace_count;          // Number of element types this can move into
     int replace_ids[4];         // Element IDs it can replace
 };
@@ -150,41 +154,49 @@ ElementStaticData get_element_static_data(int id) {
 	
 	
 	ElementStaticData elem_static_data = ElementStaticData(
-	    ELEM_ID_SAND, // The ID of the element
+	    ELEM_ID_SAND,       // id
+	    3,                  // state_of_matter (solid)
+
+	    // === Gravity & Movement ===
+	    1.0,                // gravity_force
+	    2.0,                // max_vel_x
+	    2.0,                // max_vel_y
+
+	    true,               // can_slip
+	    1.0,                // x_slip_search_range
+	    1.0,                // y_slip_search_range
 		
-	    // Gravity and movement behavior
-	    0.3,    // gravity_force         (constant gravity every frame)
-	    1,      // x_search              (can move 1 cell left/right)
-	    1,      // y_search              (can fall 1 cell per fallback)
-	    2,      // max_vel_x             (caps horizontal speed)
-	    3,      // max_vel_y             (caps vertical speed)
-	    0,      // stickiness            (no clumping behavior)
-	    1,      // can_slip              (can diagonally fallback)
-	    1,      // inertial_resistance   (modest horizontal drag)
-	    0.05,   // bounce_chance         (low chance of bouncing)
-		
-	    // Physical characteristics
-	    150,    // mass                  (affects force transfer)
-	    9,      // friction_factor       (how much to reduce movement when hitting)
-	    5,      // stopped_moving_threshold (frames before considered stationary)
-	    3,      // state_of_matter       (3 = solid)
-		
-	    // Heat and flammability
-	    0,      // flammable             (won’t ignite)
-	    0,      // heat_factor           (does not apply heat)
-	    0,      // fire_damage           (no fire damage)
-		
-	    // Explosive properties
-	    1,      // explosion_resist      (mild resistance)
-	    0,      // explosion_radius      (not explosive)
-		
-	    // Lifecycle
-	    -1,     // lifespan              (infinite lifetime)
-		
-	    // Interaction rules
-	    1,      // replace_count         (can only replace water)
-	    sand_replace_ids // replace_ids[4]  (allowed replacement targets)
+		1.0,                // wake_chance
+
+	    0.0,                // stickiness_chance
+
+	    0.1,                // bounce_chance
+	    0.4,                // bounce_dampening_multiplier (moderate energy loss)
+
+	    // === Velocity Decay ===
+	    0.35,                // airborne_vel_decay_chance (slow air decay)
+	    0.65,                // friction_vel_decay_chance (stronger on ground)
+
+	    // === Physical ===
+	    150.0,              // mass
+
+	    // === Heat and Flammability ===
+	    false,              // can_ignite
+	    0.0,                // temperature_decay
+	    0.0,                // temperature_spread_chance
+
+	    // === Explosive Properties ===
+	    1.0,                // explosion_resistance
+	    0.0,                // explosion_radius
+
+	    // === Lifecycle Control ===
+	    0.0,                // custom_event_chance (none)
+
+	    // === Replacement Rules ===
+	    1,                  // replace_count
+	    sand_replace_ids    // replace_ids[4]
 	);
+
 
 	
 // end import ElemSand.fsh.__shady_macro_DefineElementStaticData
@@ -278,9 +290,20 @@ vec2 vel_to_rg(vec2 vel) {
 vec2 rg_to_vel(vec2 rg) {
     return vec2(floor(rg * 255.0 + 0.5)) - vec2(128.0);
 }
+vec2 rand_round_vel(vec2 velocity, vec2 texcoord, float seed) {
+    vec2 rounded;
+    float ax = abs(fract(velocity.x));
+    float ay = abs(fract(velocity.y));
+    float rand_x = rand(texcoord, seed);
+    float rand_y = rand(texcoord, seed + 1.0);
+    rounded.x = floor(velocity.x + (rand_x < ax ? 1.0 : 0.0));
+    rounded.y = floor(velocity.y + (rand_y < ay ? 1.0 : 0.0));
+    return rounded;
+}
 // end import shdSandSimCommon.fsh.__shady_export
 
 #define OFFSET_RADIUS 3
+
 
 varying vec2 v_vTexcoord;
 varying vec4 v_vColour;
@@ -318,6 +341,9 @@ void main() {
 			vec4 elem_px  = texture2D(gm_BaseTexture,      neighbor_uv);
 			
 			ElementDynamicData neighbor_elem_dynamic_data = ununpack_elem_dynamic_data(elem_px);
+			
+			//skip pixels which arent moving
+			if (!neighbor_elem_dynamic_data.is_moving) continue;
 			
             vec2 vel = rg_to_vel(vel_px.rg);
 			

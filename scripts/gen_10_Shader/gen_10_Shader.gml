@@ -179,11 +179,11 @@ function CanvasSandShader() : SimulationCore() constructor {
 			
 			
 			
-			//shader_set(shdSandSimVelocityDebug)
-			//draw_surface(surf_velocity, 0, 0);
+			shader_set(shdSandSimVelocityDebug)
+			draw_surface(surf_velocity, 0, 0);
 			//draw_surface(surf_valid_pre, 0, 0);
 			//draw_surface(surf_valid_post, 0, 0);
-			//shader_reset()
+			shader_reset()
 			
 			
 		}

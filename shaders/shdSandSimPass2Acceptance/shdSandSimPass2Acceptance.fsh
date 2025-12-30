@@ -2,6 +2,7 @@
 
 #define OFFSET_RADIUS 3
 
+
 varying vec2 v_vTexcoord;
 varying vec4 v_vColour;
 
@@ -38,6 +39,9 @@ void main() {
 			vec4 elem_px  = texture2D(gm_BaseTexture,      neighbor_uv);
 			
 			ElementDynamicData neighbor_elem_dynamic_data = ununpack_elem_dynamic_data(elem_px);
+			
+			//skip pixels which arent moving
+			if (!neighbor_elem_dynamic_data.is_moving) continue;
 			
             vec2 vel = rg_to_vel(vel_px.rg);
 			

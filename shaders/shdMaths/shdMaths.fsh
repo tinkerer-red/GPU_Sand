@@ -102,13 +102,16 @@ int irand(int max_val, vec2 p, float seed) {
     return int(floor(rand(p, seed) * float(max_val)));
 }
 bool chance(float probability, vec2 p, float seed) {
+	if (probability >= 1.0) {
+		return true;
+	}
     return rand(p, seed) < probability;
 }
 float rand_range(float min_val, float max_val, vec2 p, float seed) {
     return mix(min_val, max_val, rand(p, seed));
 }
 int irand_range(int min_val, int max_val, vec2 p, float seed) {
-    return min_val + irand(max_val - min_val + 1, p, seed);
+    return min_val + irand(max_val - min_val, p, seed);
 }
 
 int round(float x) {

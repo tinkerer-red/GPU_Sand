@@ -16,7 +16,7 @@ draw_text(10, 30, $"Step Time: {string_format(_avg_step, 0, 2)}ms ({string_forma
 draw_text(10, 50, $"Draw Time: {string_format(_avg_draw, 0, 2)}ms ({string_format(draw_times[frame_index mod fps_window], 0, 2)})");
 draw_text(10, 70, "Drop Timer: " + string(drop_timer));
 
-
+draw_text(device_mouse_x_to_gui(0), device_mouse_y_to_gui(0), json(debug_inspect_element(device_mouse_x_to_gui(0), device_mouse_y_to_gui(0))))
 
 // Bind and draw full-screen test shader
 //shader_set(shdMetadatePackingRoundTripTest); // Replace with your shader name

@@ -1,6 +1,6 @@
 // Time step()
 var _step_start = current_time;
-repeat (4) simulation.step();
+repeat (10) simulation.step();
 var _step_end = current_time;
 
 // Store microseconds (or ms, depending on your preference)
