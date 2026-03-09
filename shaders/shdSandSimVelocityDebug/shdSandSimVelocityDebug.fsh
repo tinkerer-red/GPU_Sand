@@ -1,4 +1,5 @@
 #pragma shady: import(shdSandSimCommon)
+#pragma shady: inline(shdSandSimCommon.Uniforms)
 
 varying vec2 v_vTexcoord;
 varying vec4 v_vColour;

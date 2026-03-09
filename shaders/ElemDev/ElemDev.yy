@@ -4,7 +4,7 @@
   "name":"ElemDev",
   "parent":{
     "name":"Elements",
-    "path":"folders/GPU_Sand/Elements.yy",
+    "path":"folders/GPU_Sand/Shaders/Elements.yy",
   },
   "resourceType":"GMShader",
   "resourceVersion":"2.0",

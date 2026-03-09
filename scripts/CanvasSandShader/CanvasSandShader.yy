@@ -5,8 +5,8 @@
   "isDnD":false,
   "name":"CanvasSandShader",
   "parent":{
-    "name":"Falling Sand Exp",
-    "path":"Falling Sand Exp.yyp",
+    "name":"GPU_Sand",
+    "path":"folders/GPU_Sand.yy",
   },
   "resourceType":"GMScript",
   "resourceVersion":"2.0",

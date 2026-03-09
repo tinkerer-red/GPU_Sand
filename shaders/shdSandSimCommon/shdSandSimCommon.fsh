@@ -1,8 +1,50 @@
 //
 // Simple passthrough fragment shader
 //
-
+#pragma shady: skip_compilation
 #pragma shady: import(shdMaths)
+
+#region Uniforms
+#pragma shady: macro_begin Uniforms
+uniform float u_dev_state_of_matter;
+
+uniform float u_dev_gravity_force;
+uniform float u_dev_max_vel_x;
+uniform float u_dev_max_vel_y;
+
+uniform float u_dev_can_slip;
+uniform float u_dev_x_slip_search_range;
+uniform float u_dev_y_slip_search_range;
+
+uniform float u_dev_wake_chance;
+uniform float u_dev_stickiness_chance;
+
+uniform float u_dev_bounce_chance;
+uniform float u_dev_bounce_dampening_multiplier;
+
+uniform float u_dev_airborne_vel_decay_chance;
+uniform float u_dev_friction_vel_decay_chance;
+
+uniform float u_dev_mass;
+
+uniform float u_dev_can_ignite;
+uniform float u_dev_temperature_decay;
+uniform float u_dev_temperature_spread_chance;
+
+uniform float u_dev_explosion_resistance;
+uniform float u_dev_explosion_radius;
+
+uniform float u_dev_custom_event_chance;
+
+uniform float u_dev_replace_count;
+uniform float u_dev_replace_id_0;
+uniform float u_dev_replace_id_1;
+uniform float u_dev_replace_id_2;
+uniform float u_dev_replace_id_3;
+
+uniform float u_dev_color;
+#pragma shady: macro_end
+#endregion
 
 #region Data Structures
 struct ElementStaticData {
@@ -70,6 +112,7 @@ struct ElementDynamicData {
 
 #define ELEM_ID_EMPTY 0
 #define ELEM_ID_WATER 100
+#define ELEM_ID_DEV 200
 #define ELEM_ID_SAND 255
 
 #endregion

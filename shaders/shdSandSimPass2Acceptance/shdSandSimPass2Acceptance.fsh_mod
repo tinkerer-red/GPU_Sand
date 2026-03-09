@@ -1,4 +1,4 @@
-// Date: 2026-03-09T13:41:13.1371228-05:00
+// Date: 2026-03-09T17:09:34.3565560-05:00
 // begin import shdSandSimCommon.fsh.__shady_export
 // begin import shdMaths.fsh.__shady_export
 #line 33
@@ -185,6 +185,10 @@ int round(float x) {
 #endregion
 // end import shdMaths.fsh.__shady_export
 #line 33
+#region Uniforms
+#line 33
+#endregion
+#line 33
 #region Data Structures
 #line 33
 struct ElementStaticData {
@@ -264,6 +268,8 @@ struct ElementDynamicData {
 #define ELEM_ID_EMPTY 0
 #line 33
 #define ELEM_ID_WATER 100
+#line 33
+#define ELEM_ID_DEV 200
 #line 33
 #define ELEM_ID_SAND 255
 #line 33
@@ -561,7 +567,61 @@ vec2 rand_round_vel(vec2 velocity, vec2 texcoord, float seed) {
 #line 33
 }
 // end import shdSandSimCommon.fsh.__shady_export
+// begin import shdSandSimCommon.fsh.__shady_macro_Uniforms
 #line 34
+uniform float u_dev_state_of_matter;
+#line 34
+uniform float u_dev_gravity_force;
+#line 34
+uniform float u_dev_max_vel_x;
+#line 34
+uniform float u_dev_max_vel_y;
+#line 34
+uniform float u_dev_can_slip;
+#line 34
+uniform float u_dev_x_slip_search_range;
+#line 34
+uniform float u_dev_y_slip_search_range;
+#line 34
+uniform float u_dev_wake_chance;
+#line 34
+uniform float u_dev_stickiness_chance;
+#line 34
+uniform float u_dev_bounce_chance;
+#line 34
+uniform float u_dev_bounce_dampening_multiplier;
+#line 34
+uniform float u_dev_airborne_vel_decay_chance;
+#line 34
+uniform float u_dev_friction_vel_decay_chance;
+#line 34
+uniform float u_dev_mass;
+#line 34
+uniform float u_dev_can_ignite;
+#line 34
+uniform float u_dev_temperature_decay;
+#line 34
+uniform float u_dev_temperature_spread_chance;
+#line 34
+uniform float u_dev_explosion_resistance;
+#line 34
+uniform float u_dev_explosion_radius;
+#line 34
+uniform float u_dev_custom_event_chance;
+#line 34
+uniform float u_dev_replace_count;
+#line 34
+uniform float u_dev_replace_id_0;
+#line 34
+uniform float u_dev_replace_id_1;
+#line 34
+uniform float u_dev_replace_id_2;
+#line 34
+uniform float u_dev_replace_id_3;
+#line 34
+uniform float u_dev_color;
+// end import shdSandSimCommon.fsh.__shady_macro_Uniforms
+#line 35
 
 #define OFFSET_RADIUS 3
 
@@ -613,16 +673,26 @@ void main() {
 				//Use a while loop just so we can break out when we find a match and skip everything else
 				while(true){
 // begin import ElemSand.fsh.__shady_macro_ACCEPT
-#line 84
+#line 85
 	if (elem_dynamic_data.id == ELEM_ID_SAND) {
-#line 84
+#line 85
 		accepted = false;
-#line 84
+#line 85
 		break;
-#line 84
+#line 85
 	}
 // end import ElemSand.fsh.__shady_macro_ACCEPT
-#line 85
+// begin import ElemDev.fsh.__shady_macro_ACCEPT
+#line 86
+	if (elem_dynamic_data.id == ELEM_ID_DEV) {
+#line 86
+		accepted = false;
+#line 86
+		break;
+#line 86
+	}
+// end import ElemDev.fsh.__shady_macro_ACCEPT
+#line 87
 					
 					accepted = true;
 					break;

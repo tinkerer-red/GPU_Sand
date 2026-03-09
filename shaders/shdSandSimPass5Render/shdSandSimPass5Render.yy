@@ -4,7 +4,7 @@
   "name":"shdSandSimPass5Render",
   "parent":{
     "name":"Core",
-    "path":"folders/GPU_Sand/Core.yy",
+    "path":"folders/GPU_Sand/Shaders/Core.yy",
   },
   "resourceType":"GMShader",
   "resourceVersion":"2.0",

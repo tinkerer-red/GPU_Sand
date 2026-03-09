@@ -6,7 +6,7 @@
   "name":"ShaderToHuman",
   "parent":{
     "name":"ShaderToHuman",
-    "path":"folders/Extensions/ShaderToHuman.yy",
+    "path":"folders/_Libraries/Extensions/ShaderToHuman.yy",
   },
   "resourceType":"GMScript",
   "resourceVersion":"2.0",

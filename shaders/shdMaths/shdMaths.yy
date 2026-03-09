@@ -4,7 +4,7 @@
   "name":"shdMaths",
   "parent":{
     "name":"Helpers",
-    "path":"folders/GPU_Sand/Helpers.yy",
+    "path":"folders/GPU_Sand/Shaders/Helpers.yy",
   },
   "resourceType":"GMShader",
   "resourceVersion":"2.0",

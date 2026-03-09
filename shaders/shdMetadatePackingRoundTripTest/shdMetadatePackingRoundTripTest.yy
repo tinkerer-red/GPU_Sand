@@ -4,7 +4,7 @@
   "name":"shdMetadatePackingRoundTripTest",
   "parent":{
     "name":"Test",
-    "path":"folders/GPU_Sand/Test.yy",
+    "path":"folders/GPU_Sand/Shaders/Test.yy",
   },
   "resourceType":"GMShader",
   "resourceVersion":"2.0",

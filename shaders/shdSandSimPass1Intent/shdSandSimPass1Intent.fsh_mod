@@ -1,4 +1,4 @@
-// Date: 2026-03-09T13:40:29.0995766-05:00
+// Date: 2026-03-09T17:09:34.3545491-05:00
 // begin import shdSandSimCommon.fsh.__shady_export
 // begin import shdMaths.fsh.__shady_export
 #line 33
@@ -185,6 +185,10 @@ int round(float x) {
 #endregion
 // end import shdMaths.fsh.__shady_export
 #line 33
+#region Uniforms
+#line 33
+#endregion
+#line 33
 #region Data Structures
 #line 33
 struct ElementStaticData {
@@ -264,6 +268,8 @@ struct ElementDynamicData {
 #define ELEM_ID_EMPTY 0
 #line 33
 #define ELEM_ID_WATER 100
+#line 33
+#define ELEM_ID_DEV 200
 #line 33
 #define ELEM_ID_SAND 255
 #line 33
@@ -561,7 +567,61 @@ vec2 rand_round_vel(vec2 velocity, vec2 texcoord, float seed) {
 #line 33
 }
 // end import shdSandSimCommon.fsh.__shady_export
+// begin import shdSandSimCommon.fsh.__shady_macro_Uniforms
 #line 34
+uniform float u_dev_state_of_matter;
+#line 34
+uniform float u_dev_gravity_force;
+#line 34
+uniform float u_dev_max_vel_x;
+#line 34
+uniform float u_dev_max_vel_y;
+#line 34
+uniform float u_dev_can_slip;
+#line 34
+uniform float u_dev_x_slip_search_range;
+#line 34
+uniform float u_dev_y_slip_search_range;
+#line 34
+uniform float u_dev_wake_chance;
+#line 34
+uniform float u_dev_stickiness_chance;
+#line 34
+uniform float u_dev_bounce_chance;
+#line 34
+uniform float u_dev_bounce_dampening_multiplier;
+#line 34
+uniform float u_dev_airborne_vel_decay_chance;
+#line 34
+uniform float u_dev_friction_vel_decay_chance;
+#line 34
+uniform float u_dev_mass;
+#line 34
+uniform float u_dev_can_ignite;
+#line 34
+uniform float u_dev_temperature_decay;
+#line 34
+uniform float u_dev_temperature_spread_chance;
+#line 34
+uniform float u_dev_explosion_resistance;
+#line 34
+uniform float u_dev_explosion_radius;
+#line 34
+uniform float u_dev_custom_event_chance;
+#line 34
+uniform float u_dev_replace_count;
+#line 34
+uniform float u_dev_replace_id_0;
+#line 34
+uniform float u_dev_replace_id_1;
+#line 34
+uniform float u_dev_replace_id_2;
+#line 34
+uniform float u_dev_replace_id_3;
+#line 34
+uniform float u_dev_color;
+// end import shdSandSimCommon.fsh.__shady_macro_Uniforms
+#line 35
 
 #define OFFSET_RADIUS 3
 
@@ -579,76 +639,146 @@ void main() {
 	//Use a while loop just so we can break out when we find a match and skip everything else
 	while(true){
 // begin import ElemSand.fsh.__shady_macro_INTENT
-#line 50
+#line 51
 	if (elem_dynamic_data.id == ELEM_ID_SAND) {
 // begin import ElemSand.fsh.__shady_macro_DefineElementStaticData
-#line 50
+#line 51
 	int sand_replace_ids[4];
-#line 50
+#line 51
 	sand_replace_ids[0] = ELEM_ID_WATER;
-#line 50
+#line 51
 	sand_replace_ids[1] = 0;
-#line 50
+#line 51
 	sand_replace_ids[2] = 0;
-#line 50
+#line 51
 	sand_replace_ids[3] = 0;
-#line 50
+#line 51
 	ElementStaticData elem_static_data = ElementStaticData(
-#line 50
+#line 51
 	    ELEM_ID_SAND,       // id
-#line 50
+#line 51
 	    3,                  // state_of_matter (solid)
-#line 50
+#line 51
 	    1.0,                // gravity_force
-#line 50
+#line 51
 	    2.0,                // max_vel_x
-#line 50
+#line 51
 	    2.0,                // max_vel_y
-#line 50
+#line 51
 	    true,               // can_slip
-#line 50
+#line 51
 	    1.0,                // x_slip_search_range
-#line 50
+#line 51
 	    1.0,                // y_slip_search_range
-#line 50
+#line 51
 		1.0,                // wake_chance
-#line 50
+#line 51
 	    0.0,                // stickiness_chance
-#line 50
+#line 51
 	    0.1,                // bounce_chance
-#line 50
+#line 51
 	    0.4,                // bounce_dampening_multiplier (moderate energy loss)
-#line 50
+#line 51
 	    0.35,                // airborne_vel_decay_chance (slow air decay)
-#line 50
+#line 51
 	    0.65,                // friction_vel_decay_chance (stronger on ground)
-#line 50
+#line 51
 	    150.0,              // mass
-#line 50
+#line 51
 	    false,              // can_ignite
-#line 50
+#line 51
 	    0.0,                // temperature_decay
-#line 50
+#line 51
 	    0.0,                // temperature_spread_chance
-#line 50
+#line 51
 	    1.0,                // explosion_resistance
-#line 50
+#line 51
 	    0.0,                // explosion_radius
-#line 50
+#line 51
 	    0.0,                // custom_event_chance (none)
-#line 50
+#line 51
 	    1,                  // replace_count
-#line 50
+#line 51
 	    sand_replace_ids    // replace_ids[4]
-#line 50
+#line 51
 	);
 // end import ElemSand.fsh.__shady_macro_DefineElementStaticData
-#line 50
+#line 51
 	    break;
-#line 50
+#line 51
 	}
 // end import ElemSand.fsh.__shady_macro_INTENT
-#line 51
+// begin import ElemDev.fsh.__shady_macro_INTENT
+#line 52
+	if (elem_dynamic_data.id == ELEM_ID_DEV) {
+// begin import ElemDev.fsh.__shady_macro_DefineElementStaticData
+#line 52
+	int dev_replace_ids[4];
+#line 52
+	dev_replace_ids[0] = int(u_dev_replace_id_0);
+#line 52
+	dev_replace_ids[1] = int(u_dev_replace_id_1);
+#line 52
+	dev_replace_ids[2] = int(u_dev_replace_id_2);
+#line 52
+	dev_replace_ids[3] = int(u_dev_replace_id_3);
+#line 52
+	ElementStaticData elem_static_data = ElementStaticData(
+#line 52
+	    ELEM_ID_DEV,                           // id
+#line 52
+	    int(u_dev_state_of_matter),            // state_of_matter
+#line 52
+	    u_dev_gravity_force,                   // gravity_force
+#line 52
+	    u_dev_max_vel_x,                       // max_vel_x
+#line 52
+	    u_dev_max_vel_y,                       // max_vel_y
+#line 52
+	    (u_dev_can_slip > 0.5),                // can_slip
+#line 52
+	    u_dev_x_slip_search_range,             // x_slip_search_range
+#line 52
+	    u_dev_y_slip_search_range,             // y_slip_search_range
+#line 52
+		u_dev_wake_chance,                     // wake_chance
+#line 52
+	    u_dev_stickiness_chance,              // stickiness_chance
+#line 52
+	    u_dev_bounce_chance,                  // bounce_chance
+#line 52
+	    u_dev_bounce_dampening_multiplier,    // bounce_dampening_multiplier
+#line 52
+	    u_dev_airborne_vel_decay_chance,      // airborne_vel_decay_chance
+#line 52
+	    u_dev_friction_vel_decay_chance,      // friction_vel_decay_chance
+#line 52
+	    u_dev_mass,                           // mass
+#line 52
+	    (u_dev_can_ignite > 0.5),             // can_ignite
+#line 52
+	    u_dev_temperature_decay,              // temperature_decay
+#line 52
+	    u_dev_temperature_spread_chance,      // temperature_spread_chance
+#line 52
+	    u_dev_explosion_resistance,           // explosion_resistance
+#line 52
+	    u_dev_explosion_radius,               // explosion_radius
+#line 52
+	    u_dev_custom_event_chance,            // custom_event_chance
+#line 52
+	    int(u_dev_replace_count),             // replace_count
+#line 52
+	    dev_replace_ids                       // replace_ids[4]
+#line 52
+	);
+// end import ElemDev.fsh.__shady_macro_DefineElementStaticData
+#line 52
+	    break;
+#line 52
+	}
+// end import ElemDev.fsh.__shady_macro_INTENT
+#line 53
 		
 		break;
 	}

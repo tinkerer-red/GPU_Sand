@@ -6,7 +6,7 @@
   "name":"ShaderMouse",
   "parent":{
     "name":"Extensions",
-    "path":"folders/Extensions.yy",
+    "path":"folders/_Libraries/Extensions.yy",
   },
   "resourceType":"GMScript",
   "resourceVersion":"2.0",

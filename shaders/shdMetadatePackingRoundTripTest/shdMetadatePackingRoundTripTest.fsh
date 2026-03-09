@@ -1,4 +1,5 @@
 #pragma shady: import(shdSandSimCommon)
+#pragma shady: inline(shdSandSimCommon.Uniforms)
 
 varying vec2 v_vTexcoord;
 uniform float u_frame;

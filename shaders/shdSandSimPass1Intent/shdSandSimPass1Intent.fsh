@@ -1,4 +1,5 @@
 #pragma shady: import(shdSandSimCommon)
+#pragma shady: inline(shdSandSimCommon.Uniforms)
 
 #define OFFSET_RADIUS 3
 
@@ -16,6 +17,7 @@ void main() {
 	//Use a while loop just so we can break out when we find a match and skip everything else
 	while(true){
 		#pragma shady: inline(ElemSand.INTENT)
+		#pragma shady: inline(ElemDev.INTENT)
 		
 		break;
 	}

@@ -1,4 +1,5 @@
 #pragma shady: import(shdSandSimCommon)
+#pragma shady: inline(shdSandSimCommon.Uniforms)
 
 #define DEBUG_RESOLVE_VISUALIZE 0
 #define OFFSET_RADIUS 3

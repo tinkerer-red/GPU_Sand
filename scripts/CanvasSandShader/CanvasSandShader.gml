@@ -1,7 +1,3 @@
-#macro DITHER_STRIDE 3
-#macro CELL_NONE 0
-#macro CELL_SAND 1
-
 function CanvasSandShader() constructor {
 	surface_id = surface_create(1, 1);
 	
@@ -82,6 +78,8 @@ function CanvasSandShader() constructor {
 		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_replace_id_1"), dev_settings.replace_id_1);
 		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_replace_id_2"), dev_settings.replace_id_2);
 		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_replace_id_3"), dev_settings.replace_id_3);
+		
+		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_color"), dev_settings.color);
 	};
 	
 	static rebuild_surfaces = function() {
@@ -201,7 +199,7 @@ function CanvasSandShader() constructor {
 		
 		var _col;
 		
-		switch (_element) {
+		switch (string_lower(_element)) {
 			case "sand":
 				_col = make_color_rgb(255, 0, 0);
 			break;
