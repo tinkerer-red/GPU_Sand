@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"ShaderToHuman",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"ShaderToHuman",
+  "parent":{
+    "name":"ShaderToHuman",
+    "path":"folders/Extensions/ShaderToHuman.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}

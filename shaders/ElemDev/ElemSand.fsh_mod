@@ -1,0 +1,149 @@
+// Date: 2026-03-09T10:33:58.1580113-05:00
+void main()
+{
+    
+	//this is only here to prevent errors
+	#ifdef EXCLUDE
+	
+	#region DefineElementStaticData
+	#pragma shady: macro_begin DefineElementStaticData
+	int sand_replace_ids[4];
+	sand_replace_ids[0] = ELEM_ID_WATER;
+	sand_replace_ids[1] = 0;
+	sand_replace_ids[2] = 0;
+	sand_replace_ids[3] = 0;
+	
+	
+	ElementStaticData elem_static_data = ElementStaticData(
+	    ELEM_ID_SAND,       // id
+	    3,                  // state_of_matter (solid)
+
+	    // === Gravity & Movement ===
+	    1.0,                // gravity_force
+	    2.0,                // max_vel_x
+	    2.0,                // max_vel_y
+
+	    true,               // can_slip
+	    1.0,                // x_slip_search_range
+	    1.0,                // y_slip_search_range
+		
+		1.0,                // wake_chance
+
+	    0.0,                // stickiness_chance
+
+	    0.1,                // bounce_chance
+	    0.4,                // bounce_dampening_multiplier (moderate energy loss)
+
+	    // === Velocity Decay ===
+	    0.35,                // airborne_vel_decay_chance (slow air decay)
+	    0.65,                // friction_vel_decay_chance (stronger on ground)
+
+	    // === Physical ===
+	    150.0,              // mass
+
+	    // === Heat and Flammability ===
+	    false,              // can_ignite
+	    0.0,                // temperature_decay
+	    0.0,                // temperature_spread_chance
+
+	    // === Explosive Properties ===
+	    1.0,                // explosion_resistance
+	    0.0,                // explosion_radius
+
+	    // === Lifecycle Control ===
+	    0.0,                // custom_event_chance (none)
+
+	    // === Replacement Rules ===
+	    1,                  // replace_count
+	    sand_replace_ids    // replace_ids[4]
+	);
+
+
+	
+	#pragma shady: macro_end
+	#endregion
+	
+	#region INTENT
+	#pragma shady: macro_begin INTENT
+	if (elem_dynamic_data.id == ELEM_ID_SAND) {
+		
+// begin import ElemSand.fsh.__shady_macro_DefineElementStaticData
+	int sand_replace_ids[4];
+	sand_replace_ids[0] = ELEM_ID_WATER;
+	sand_replace_ids[1] = 0;
+	sand_replace_ids[2] = 0;
+	sand_replace_ids[3] = 0;
+	
+	
+	ElementStaticData elem_static_data = ElementStaticData(
+	    ELEM_ID_SAND,       // id
+	    3,                  // state_of_matter (solid)
+
+	    // === Gravity & Movement ===
+	    1.0,                // gravity_force
+	    2.0,                // max_vel_x
+	    2.0,                // max_vel_y
+
+	    true,               // can_slip
+	    1.0,                // x_slip_search_range
+	    1.0,                // y_slip_search_range
+		
+		1.0,                // wake_chance
+
+	    0.0,                // stickiness_chance
+
+	    0.1,                // bounce_chance
+	    0.4,                // bounce_dampening_multiplier (moderate energy loss)
+
+	    // === Velocity Decay ===
+	    0.35,                // airborne_vel_decay_chance (slow air decay)
+	    0.65,                // friction_vel_decay_chance (stronger on ground)
+
+	    // === Physical ===
+	    150.0,              // mass
+
+	    // === Heat and Flammability ===
+	    false,              // can_ignite
+	    0.0,                // temperature_decay
+	    0.0,                // temperature_spread_chance
+
+	    // === Explosive Properties ===
+	    1.0,                // explosion_resistance
+	    0.0,                // explosion_radius
+
+	    // === Lifecycle Control ===
+	    0.0,                // custom_event_chance (none)
+
+	    // === Replacement Rules ===
+	    1,                  // replace_count
+	    sand_replace_ids    // replace_ids[4]
+	);
+
+
+	
+// end import ElemSand.fsh.__shady_macro_DefineElementStaticData
+// begin import shdSandSimCommon.fsh.__shady_macro_GENERIC_INTENT
+	
+	
+	
+// end import shdSandSimCommon.fsh.__shady_macro_GENERIC_INTENT
+		
+	    break;
+	}
+	#pragma shady: macro_end
+	#endregion
+	
+	#region ACCEPT
+	#pragma shady: macro_begin ACCEPT
+	if (elem_dynamic_data.id == ELEM_ID_SAND) {
+		
+		//currently sand doesnt accept anything else
+		accepted = false;
+		
+		break;
+	}
+	#pragma shady: macro_end
+	#endregion
+	
+	#endif
+}

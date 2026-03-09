@@ -1,0 +1,12 @@
+{
+  "$GMShader":"",
+  "%Name":"sh_s2h_3d",
+  "name":"sh_s2h_3d",
+  "parent":{
+    "name":"ShaderToHuman",
+    "path":"folders/Extensions/ShaderToHuman.yy",
+  },
+  "resourceType":"GMShader",
+  "resourceVersion":"2.0",
+  "type":1,
+}

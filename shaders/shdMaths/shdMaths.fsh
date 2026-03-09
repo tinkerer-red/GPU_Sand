@@ -1,3 +1,5 @@
+#pragma shady: skip_compilation
+
 //
 // Simple passthrough fragment shader
 //

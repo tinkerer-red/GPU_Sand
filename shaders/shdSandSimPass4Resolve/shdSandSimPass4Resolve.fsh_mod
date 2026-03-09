@@ -1,306 +1,567 @@
-// Date: 2025-06-23T05:49:21.4921624-05:00
+// Date: 2026-03-09T13:41:22.6349963-05:00
 // begin import shdSandSimCommon.fsh.__shady_export
 // begin import shdMaths.fsh.__shady_export
+#line 33
 #region Converters
+#line 33
 int float_to_byte(float x) {
+#line 33
     return int(floor(clamp(x, 0.0, 1.0) * 255.0 + 0.5));
+#line 33
 }
+#line 33
 float byte_to_float(int x) {
+#line 33
     return clamp(float(x), 0.0, 255.0) / 255.0;
+#line 33
 }
+#line 33
 #endregion
+#line 33
 int imod(int x, int y) {
+#line 33
     return x - y * int(floor(float(x) / float(y)));
+#line 33
 }
+#line 33
 #region Bitwise Ops
+#line 33
 int bit_shift_left(int x, int n) {
+#line 33
     return int(float(x) * pow(2.0, float(n)));
+#line 33
 }
+#line 33
 int bit_shift_right(int x, int n) {
+#line 33
     return int(floor(float(x) / pow(2.0, float(n))));
+#line 33
 }
+#line 33
 int bitwise_and(int x, int mask) {
+#line 33
     return x - (x / (mask + 1)) * (mask + 1); // equivalent to x % (mask + 1) if mask is a power-of-two minus 1
+#line 33
 }
+#line 33
 int bitwise_and_of_pow2(int x, int pow2) {
+#line 33
     return imod(x, pow2);
+#line 33
 }
+#line 33
 int bitwise_or(int x, int y) {
+#line 33
     int result = 0;
+#line 33
     for (int i = 0; i < 8; ++i) {
+#line 33
         int bit = int(pow(2.0, float(i)));
+#line 33
         if (mod(float(x), float(2 * bit)) >= float(bit) ||
+#line 33
             mod(float(y), float(2 * bit)) >= float(bit)) {
+#line 33
             result += bit;
+#line 33
         }
+#line 33
     }
+#line 33
     return result;
+#line 33
 }
+#line 33
 int bitwise_xor(int x, int y) {
+#line 33
     int result = 0;
+#line 33
     for (int i = 0; i < 8; ++i) {
+#line 33
         int bit = int(pow(2.0, float(i)));
+#line 33
         bool a = mod(float(x), float(2 * bit)) >= float(bit);
+#line 33
         bool b = mod(float(y), float(2 * bit)) >= float(bit);
+#line 33
         if (a != b) {
+#line 33
             result += bit;
+#line 33
         }
+#line 33
     }
+#line 33
     return result;
+#line 33
 }
+#line 33
 int bitwise_not(int x, int bit_count) {
+#line 33
     return int(pow(2.0, float(bit_count)) - 1.0) - x;
+#line 33
 }
+#line 33
 #endregion
+#line 33
 int clamp(int v, int lower, int upper) {
+#line 33
 	return (v < lower) ? lower : ((v > upper) ? upper : v);
+#line 33
 }
+#line 33
 float abs_float(float x) {
+#line 33
     return x < 0.0 ? -x : x;
+#line 33
 }
+#line 33
 int abs_int(int x) {
+#line 33
     return x < 0 ? -x : x;
+#line 33
 }
+#line 33
 int sign_int(int x) {
+#line 33
     return (x > 0) ? 1 : ((x < 0) ? -1 : 0);
+#line 33
 }
+#line 33
 float sign_float(float x) {
+#line 33
     return (x > 0.0) ? 1.0 : ((x < 0.0) ? -1.0 : 0.0);
+#line 33
 }
+#line 33
 #region Random
+#line 33
 float rand(vec2 p, float seed) {
+#line 33
     vec2 K1 = vec2(23.14069263277926, 2.665144142690225);
+#line 33
     p += vec2(seed, seed * 1.61803); // Golden twist
+#line 33
     return fract(cos(dot(p, K1)) * 12345.6789);
+#line 33
 }
+#line 33
 int irand(int max_val, vec2 p, float seed) {
+#line 33
     return int(floor(rand(p, seed) * float(max_val)));
+#line 33
 }
+#line 33
 bool chance(float probability, vec2 p, float seed) {
+#line 33
 	if (probability >= 1.0) {
+#line 33
 		return true;
+#line 33
 	}
+#line 33
     return rand(p, seed) < probability;
+#line 33
 }
+#line 33
 float rand_range(float min_val, float max_val, vec2 p, float seed) {
+#line 33
     return mix(min_val, max_val, rand(p, seed));
+#line 33
 }
+#line 33
 int irand_range(int min_val, int max_val, vec2 p, float seed) {
+#line 33
     return min_val + irand(max_val - min_val, p, seed);
+#line 33
 }
+#line 33
 int round(float x) {
+#line 33
     return int(floor(x + 0.5));
+#line 33
 }
+#line 33
 #endregion
 // end import shdMaths.fsh.__shady_export
+#line 33
 #region Data Structures
+#line 33
 struct ElementStaticData {
+#line 33
 	int id;						// The ID of the element
-	int state_of_matter;        // 0 = empty, 1 = gas, 2 = liquid, 3 = solid
-    float gravity_force;        // Gravity strength per frame (e.g., 0.25 = slow fall)
-    float max_vel_x;            // Maximum horizontal velocity
-    float max_vel_y;            // Maximum vertical velocity
-	bool can_slip;               // 1 = can attempt diagonal fallback
-    float x_slip_search_range;   // Horizontal movement range
-    float y_slip_search_range;   // Vertical movement range (in gravity direction)
-	float wake_chance; // Chance to wake up from nearby movement (0.0 = inert, 1.0 = always wake)
-	float stickiness_chance;    // Preference to clump (higher = more sticky)
-	float bounce_chance;        // Chance to bounce on hard landing (0.0 - 1.0)
-	float bounce_dampening_multiplier;     // Fraction of velocity retained after a bounce (0.0 = no bounce, 1.0 = perfect)
-	float airborne_vel_decay_chance;    // Chance for Velocity decay while airborn (adds better random movements)
-	float friction_vel_decay_chance;    // Chance for Velocity decay while grounded (adds better random movements)
-    float mass;                   // Affects momentum transfer
-    bool can_ignite;                 // True if it can catch fire
-    float temperature_decay;           //chance to disperse heat or cold
-	float temperature_spread_chance;   //chance of adopting temperature from neighbor
-    float explosion_resistance;       // Resistance to explosion
-    float explosion_radius;       // Radius if it explodes
-    float custom_event_chance; // Optional: triggers a special effect, defined in the element macro
-    int replace_count;          // Number of element types this can move into
-    int replace_ids[4];         // Element IDs it can replace
+#line 33
+	int state_of_matter;		// 0 = empty, 1 = gas, 2 = liquid, 3 = solid
+#line 33
+	float gravity_force;		// Gravity strength per frame (e.g., 0.25 = slow fall)
+#line 33
+	float max_vel_x;			// Maximum horizontal velocity
+#line 33
+	float max_vel_y;			// Maximum vertical velocity
+#line 33
+	bool can_slip;				// 1 = can attempt diagonal fallback
+#line 33
+	float x_slip_search_range;	// Horizontal movement range
+#line 33
+	float y_slip_search_range;	// Vertical movement range (in gravity direction)
+#line 33
+	float wake_chance;			// Chance to wake up from nearby movement (0.0 = inert, 1.0 = always wake)
+#line 33
+	float stickiness_chance;	// Preference to clump (higher = more sticky)
+#line 33
+	float bounce_chance;		// Chance to bounce on hard landing (0.0 - 1.0)
+#line 33
+	float bounce_dampening_multiplier;	// Fraction of velocity retained after a bounce (0.0 = no bounce, 1.0 = perfect)
+#line 33
+	float airborne_vel_decay_chance;	// Chance for Velocity decay while airborn (adds better random movements)
+#line 33
+	float friction_vel_decay_chance;	// Chance for Velocity decay while grounded (adds better random movements)
+#line 33
+	float mass;					// Affects momentum transfer
+#line 33
+	bool can_ignite;			// True if it can catch fire
+#line 33
+	float temperature_decay;	// chance to disperse heat or cold
+#line 33
+	float temperature_spread_chance;	// chance of adopting temperature from neighbor
+#line 33
+	float explosion_resistance;	// Resistance to explosion
+#line 33
+	float explosion_radius;		// Radius if it explodes
+#line 33
+	float custom_event_chance;	// Optional: triggers a special effect, defined in the element macro
+#line 33
+	int replace_count;			// Number of element types this can move into
+#line 33
+	int replace_ids[4];			// Element IDs it can replace
+#line 33
 };
+#line 33
 struct ElementDynamicData {
-    int id;
+#line 33
+	int id;
+#line 33
 	ElementStaticData static_data;
-    vec2 vel;
-    int x_dir;
-    int y_dir;
-    int x_speed;
-    int y_speed;
-    bool is_moving;
-	bool unused_movement_bool;
+#line 33
+	vec2 vel;
+#line 33
+	int x_dir;
+#line 33
+	int y_dir;
+#line 33
+	int x_speed;
+#line 33
+	int y_speed;
+#line 33
+	int custom_data;
+#line 33
 };
+#line 33
 #endregion
+#line 33
 #region Element IDs Enum
+#line 33
 #define ELEM_ID_EMPTY 0
+#line 33
 #define ELEM_ID_WATER 100
+#line 33
 #define ELEM_ID_SAND 255
+#line 33
 #endregion
+#line 33
 #region Getter Functions
+#line 33
 int elem_get_index(vec4 px) {
-    return int(floor(px.r * 255.0 + 0.5));
+#line 33
+	return int(floor(px.r * 255.0 + 0.5));
+#line 33
 }
+#line 33
+int elem_get_custom_data(vec4 px) {
+#line 33
+	return float_to_byte(px.b);
+#line 33
+}
+#line 33
 #endregion
+#line 33
 #region Element Static Data
+#line 33
 ElementStaticData get_element_static_data(int id) {
-    ElementStaticData elem_static_data;
+#line 33
+	ElementStaticData elem_static_data;
+#line 33
 	if (id == ELEM_ID_SAND) {
 // begin import ElemSand.fsh.__shady_macro_DefineElementStaticData
+#line 33
 	int sand_replace_ids[4];
+#line 33
 	sand_replace_ids[0] = ELEM_ID_WATER;
+#line 33
 	sand_replace_ids[1] = 0;
+#line 33
 	sand_replace_ids[2] = 0;
+#line 33
 	sand_replace_ids[3] = 0;
-	
-	
+#line 33
 	ElementStaticData elem_static_data = ElementStaticData(
+#line 33
 	    ELEM_ID_SAND,       // id
+#line 33
 	    3,                  // state_of_matter (solid)
-
-	    // === Gravity & Movement ===
+#line 33
 	    1.0,                // gravity_force
+#line 33
 	    2.0,                // max_vel_x
+#line 33
 	    2.0,                // max_vel_y
-
+#line 33
 	    true,               // can_slip
+#line 33
 	    1.0,                // x_slip_search_range
+#line 33
 	    1.0,                // y_slip_search_range
-		
+#line 33
 		1.0,                // wake_chance
-
+#line 33
 	    0.0,                // stickiness_chance
-
+#line 33
 	    0.1,                // bounce_chance
+#line 33
 	    0.4,                // bounce_dampening_multiplier (moderate energy loss)
-
-	    // === Velocity Decay ===
+#line 33
 	    0.35,                // airborne_vel_decay_chance (slow air decay)
+#line 33
 	    0.65,                // friction_vel_decay_chance (stronger on ground)
-
-	    // === Physical ===
+#line 33
 	    150.0,              // mass
-
-	    // === Heat and Flammability ===
+#line 33
 	    false,              // can_ignite
+#line 33
 	    0.0,                // temperature_decay
+#line 33
 	    0.0,                // temperature_spread_chance
-
-	    // === Explosive Properties ===
+#line 33
 	    1.0,                // explosion_resistance
+#line 33
 	    0.0,                // explosion_radius
-
-	    // === Lifecycle Control ===
+#line 33
 	    0.0,                // custom_event_chance (none)
-
-	    // === Replacement Rules ===
+#line 33
 	    1,                  // replace_count
+#line 33
 	    sand_replace_ids    // replace_ids[4]
+#line 33
 	);
-
-
-	
 // end import ElemSand.fsh.__shady_macro_DefineElementStaticData
+#line 33
 		return elem_static_data;
-    }
+#line 33
+	}
+#line 33
 	return elem_static_data;
+#line 33
 }
+#line 33
 #endregion
+#line 33
 #region Dynamic Data
+#line 33
+bool elem_has_motion(ElementDynamicData elem_dynamic_data) {
+#line 33
+	return elem_dynamic_data.x_speed != 0 || elem_dynamic_data.y_speed != 0;
+#line 33
+}
+#line 33
 ElementDynamicData ununpack_elem_dynamic_data(vec4 pixel) {
-    ElementDynamicData elem_dynamic_data;
-    elem_dynamic_data.id = elem_get_index(pixel);
+#line 33
+	ElementDynamicData elem_dynamic_data;
+#line 33
+	elem_dynamic_data.id = elem_get_index(pixel);
+#line 33
 	elem_dynamic_data.static_data = get_element_static_data(elem_dynamic_data.id);
-    int g = float_to_byte(pixel.g);
-    elem_dynamic_data.y_dir               = bitwise_and(bit_shift_right(g, 7), 1);
-    elem_dynamic_data.y_speed             = bitwise_and(bit_shift_right(g, 5), 3);
-    elem_dynamic_data.x_dir               = bitwise_and(bit_shift_right(g, 4), 1);
-    elem_dynamic_data.x_speed             = bitwise_and(bit_shift_right(g, 2), 3);
-    elem_dynamic_data.is_moving            = bool(bitwise_and(bit_shift_right(g, 1), 1));
-    elem_dynamic_data.unused_movement_bool = bool(bitwise_and(bit_shift_right(g, 0), 1));
-    float x_norm = float(elem_dynamic_data.x_speed) / 3.0;
-    float y_norm = float(elem_dynamic_data.y_speed) / 3.0;
-    float x_signed = x_norm * (elem_dynamic_data.x_dir == 0 ? 1.0 : -1.0);
-    float y_signed = y_norm * (elem_dynamic_data.y_dir == 0 ? 1.0 : -1.0);
-    elem_dynamic_data.vel = vec2(
-        x_signed * float(elem_dynamic_data.static_data.max_vel_x),
-        y_signed * float(elem_dynamic_data.static_data.max_vel_y)
-    );
-    return elem_dynamic_data;
+#line 33
+	int g = float_to_byte(pixel.g);
+#line 33
+	elem_dynamic_data.custom_data = float_to_byte(pixel.b);
+#line 33
+	elem_dynamic_data.y_dir = bitwise_and(bit_shift_right(g, 7), 1);
+#line 33
+	elem_dynamic_data.y_speed = bitwise_and(bit_shift_right(g, 4), 7);
+#line 33
+	elem_dynamic_data.x_dir = bitwise_and(bit_shift_right(g, 3), 1);
+#line 33
+	elem_dynamic_data.x_speed = bitwise_and(g, 7);
+#line 33
+	float x_norm = float(elem_dynamic_data.x_speed) / 7.0;
+#line 33
+	float y_norm = float(elem_dynamic_data.y_speed) / 7.0;
+#line 33
+	float x_signed = x_norm * (elem_dynamic_data.x_dir == 0 ? 1.0 : -1.0);
+#line 33
+	float y_signed = y_norm * (elem_dynamic_data.y_dir == 0 ? 1.0 : -1.0);
+#line 33
+	elem_dynamic_data.vel = vec2(
+#line 33
+		x_signed * float(elem_dynamic_data.static_data.max_vel_x),
+#line 33
+		y_signed * float(elem_dynamic_data.static_data.max_vel_y)
+#line 33
+	);
+#line 33
+	return elem_dynamic_data;
+#line 33
 }
+#line 33
 vec4 pack_elem_dynamic_data(in ElementDynamicData elem_dynamic_data) {
-    int g = 0;
-	int x_speed = int(round(clamp(abs(elem_dynamic_data.vel.x) / float(elem_dynamic_data.static_data.max_vel_x), 0.0, 1.0) * 3.0));
-	int y_speed = int(round(clamp(abs(elem_dynamic_data.vel.y) / float(elem_dynamic_data.static_data.max_vel_y), 0.0, 1.0) * 3.0));
-    int x_dir = elem_dynamic_data.vel.x >= 0.0 ? 0 : 1;
-    int y_dir = elem_dynamic_data.vel.y >= 0.0 ? 0 : 1;
-    g = bitwise_or(g, bit_shift_left(clamp(y_dir   , 0, 1), 7));
-    g = bitwise_or(g, bit_shift_left(clamp(y_speed , 0, 3), 5));
-    g = bitwise_or(g, bit_shift_left(clamp(x_dir   , 0, 1), 4));
-    g = bitwise_or(g, bit_shift_left(clamp(x_speed , 0, 3), 2));
-    g = (elem_dynamic_data.is_moving)            ? bitwise_or(g, bit_shift_left(1, 1)) : g;
-	g = (elem_dynamic_data.unused_movement_bool) ? bitwise_or(g, bit_shift_left(1, 0)) : g;
-    float g_float = byte_to_float(g);
-    float r_float = byte_to_float(elem_dynamic_data.id);
-    return vec4(r_float, g_float, 0.0, 1.0);
+#line 33
+	int g = 0;
+#line 33
+	float max_vel_x = max(elem_dynamic_data.static_data.max_vel_x, 0.0001);
+#line 33
+	float max_vel_y = max(elem_dynamic_data.static_data.max_vel_y, 0.0001);
+#line 33
+	int x_speed = int(round(clamp(abs(elem_dynamic_data.vel.x) / max_vel_x, 0.0, 1.0) * 7.0));
+#line 33
+	int y_speed = int(round(clamp(abs(elem_dynamic_data.vel.y) / max_vel_y, 0.0, 1.0) * 7.0));
+#line 33
+	int x_dir = elem_dynamic_data.vel.x < 0.0 ? 1 : 0;
+#line 33
+	int y_dir = elem_dynamic_data.vel.y < 0.0 ? 1 : 0;
+#line 33
+	g = bitwise_or(g, bit_shift_left(clamp(y_dir, 0, 1), 7));
+#line 33
+	g = bitwise_or(g, bit_shift_left(clamp(y_speed, 0, 7), 4));
+#line 33
+	g = bitwise_or(g, bit_shift_left(clamp(x_dir, 0, 1), 3));
+#line 33
+	g = bitwise_or(g, clamp(x_speed, 0, 7));
+#line 33
+	float g_float = byte_to_float(g);
+#line 33
+	float r_float = byte_to_float(elem_dynamic_data.id);
+#line 33
+	float b_float = byte_to_float(clamp(elem_dynamic_data.custom_data, 0, 255));
+#line 33
+	return vec4(r_float, g_float, b_float, 1.0);
+#line 33
 }
+#line 33
 #endregion
+#line 33
 #region is_* functions
+#line 33
 bool elem_is_solid(ElementStaticData elem) {
-    return elem.state_of_matter == 3;
+#line 33
+	return elem.state_of_matter == 3;
+#line 33
 }
+#line 33
 bool elem_is_liquid(ElementStaticData elem) {
-    return elem.state_of_matter == 2;
+#line 33
+	return elem.state_of_matter == 2;
+#line 33
 }
+#line 33
 bool elem_is_gas(ElementStaticData elem) {
-    return elem.state_of_matter == 1;
+#line 33
+	return elem.state_of_matter == 1;
+#line 33
 }
+#line 33
 bool elem_is_empty(ElementStaticData elem) {
-    return elem.state_of_matter == 0 || elem.id == ELEM_ID_EMPTY;
+#line 33
+	return elem.state_of_matter == 0 || elem.id == ELEM_ID_EMPTY;
+#line 33
 }
+#line 33
 bool cell_is_solid(vec4 pixel) {
+#line 33
 	return get_element_static_data(elem_get_index(pixel)).state_of_matter == 3;
+#line 33
 }
+#line 33
 bool cell_is_liquid(vec4 pixel) {
-    return get_element_static_data(elem_get_index(pixel)).state_of_matter == 2;
+#line 33
+	return get_element_static_data(elem_get_index(pixel)).state_of_matter == 2;
+#line 33
 }
+#line 33
 bool cell_is_gas(vec4 pixel) {
-    return get_element_static_data(elem_get_index(pixel)).state_of_matter == 1;
+#line 33
+	return get_element_static_data(elem_get_index(pixel)).state_of_matter == 1;
+#line 33
 }
+#line 33
 bool cell_is_empty(vec4 pixel) {
-    return elem_get_index(pixel) == ELEM_ID_EMPTY || get_element_static_data(elem_get_index(pixel)).state_of_matter == 0;
+#line 33
+	return elem_get_index(pixel) == ELEM_ID_EMPTY || get_element_static_data(elem_get_index(pixel)).state_of_matter == 0;
+#line 33
 }
+#line 33
 #endregion
+#line 33
 bool element_can_replace(ElementStaticData src, ElementStaticData dst) {
-    if (dst.state_of_matter == 3) {
-        return false;
-    }
-    if (dst.state_of_matter <= src.state_of_matter) {
-        return true;
-    }
-    for (int i = 0; i < src.replace_count; ++i) {
-        if (src.replace_ids[i] == dst.id) {
-            return true;
-        }
-    }
-    return false;
+#line 33
+	if (dst.state_of_matter == 3) {
+#line 33
+		return false;
+#line 33
+	}
+#line 33
+	if (dst.state_of_matter <= src.state_of_matter) {
+#line 33
+		return true;
+#line 33
+	}
+#line 33
+	for (int i = 0; i < src.replace_count; ++i) {
+#line 33
+		if (src.replace_ids[i] == dst.id) {
+#line 33
+			return true;
+#line 33
+		}
+#line 33
+	}
+#line 33
+	return false;
+#line 33
 }
+#line 33
 vec2 vel_to_rg(vec2 vel) {
-    return (vel + 128.0) / 255.0;
+#line 33
+	return (vel + 128.0) / 255.0;
+#line 33
 }
+#line 33
 vec2 rg_to_vel(vec2 rg) {
-    return vec2(floor(rg * 255.0 + 0.5)) - vec2(128.0);
+#line 33
+	return vec2(floor(rg * 255.0 + 0.5)) - vec2(128.0);
+#line 33
 }
+#line 33
 vec2 rand_round_vel(vec2 velocity, vec2 texcoord, float seed) {
-    vec2 rounded;
-    float ax = abs(fract(velocity.x));
-    float ay = abs(fract(velocity.y));
-    float rand_x = rand(texcoord, seed);
-    float rand_y = rand(texcoord, seed + 1.0);
-    rounded.x = floor(velocity.x + (rand_x < ax ? 1.0 : 0.0));
-    rounded.y = floor(velocity.y + (rand_y < ay ? 1.0 : 0.0));
-    return rounded;
+#line 33
+	vec2 rounded;
+#line 33
+	float ax = abs(fract(velocity.x));
+#line 33
+	float ay = abs(fract(velocity.y));
+#line 33
+	float rand_x = rand(texcoord, seed);
+#line 33
+	float rand_y = rand(texcoord, seed + 1.0);
+#line 33
+	rounded.x = floor(velocity.x + (rand_x < ax ? 1.0 : 0.0));
+#line 33
+	rounded.y = floor(velocity.y + (rand_y < ay ? 1.0 : 0.0));
+#line 33
+	return rounded;
+#line 33
 }
 // end import shdSandSimCommon.fsh.__shady_export
+#line 34
 
 #define DEBUG_RESOLVE_VISUALIZE 0
 #define OFFSET_RADIUS 3
@@ -310,70 +571,53 @@ uniform vec2 u_texel_size;
 uniform float u_frame;
 
 uniform sampler2D gm_SecondaryTexture;  // surf_velocity (desired velocity of a cell)
-uniform sampler2D gm_TertiaryTexture;  // surf_valid_pre (offsets)
+uniform sampler2D gm_TertiaryTexture;   // surf_valid_pre (offsets)
 
 void main() {
-    vec2 offset_rg = texture2D(gm_TertiaryTexture, v_vTexcoord).rg;
-    vec2 offset = rg_to_vel(offset_rg);
-
-    vec4 pixel = texture2D(gm_BaseTexture, v_vTexcoord);
-
-    ElementDynamicData elem_dynamic_data = ununpack_elem_dynamic_data(pixel);
-
-    if (offset.x != 0.0 || offset.y != 0.0) {
-        // swap pixel: where we moved *from*
-        vec2 swap_uv = v_vTexcoord + vec2(offset) * u_texel_size;
-        vec4 swap_pixel = texture2D(gm_BaseTexture, swap_uv);
-
-        ElementDynamicData swap_elem_dynamic_data = ununpack_elem_dynamic_data(swap_pixel);
-
-        vec2 old_vel = swap_elem_dynamic_data.vel;
-        
+	vec2 offset_rg = texture2D(gm_TertiaryTexture, v_vTexcoord).rg;
+	vec2 offset = rg_to_vel(offset_rg);
+	
+	vec4 pixel = texture2D(gm_BaseTexture, v_vTexcoord);
+	
+	ElementDynamicData elem_dynamic_data = ununpack_elem_dynamic_data(pixel);
+	
+	if (offset.x != 0.0 || offset.y != 0.0) {
+		// swap pixel: where we moved *from*
+		vec2 swap_uv = v_vTexcoord + vec2(offset) * u_texel_size;
+		vec4 swap_pixel = texture2D(gm_BaseTexture, swap_uv);
+		
+		ElementDynamicData swap_elem_dynamic_data = ununpack_elem_dynamic_data(swap_pixel);
+		
+		vec2 old_vel = swap_elem_dynamic_data.vel;
+		
 		vec2 vel_rg = texture2D(gm_SecondaryTexture, swap_uv).rg;
 		vec2 new_vel = rg_to_vel(vel_rg);
 		
-        // === RANDOMIZED ROUNDING ===
+		// === RANDOMIZED ROUNDING ===
 		vec2 average = (vec2(old_vel) + vec2(new_vel)) * 0.5;
 		new_vel = rand_round_vel(average, v_vTexcoord, u_frame + 1.0);
-        
-        // Clamp to allowed max
-        new_vel.x = clamp(new_vel.x, -swap_elem_dynamic_data.static_data.max_vel_x, swap_elem_dynamic_data.static_data.max_vel_x);
-        new_vel.y = clamp(new_vel.y, -swap_elem_dynamic_data.static_data.max_vel_y, swap_elem_dynamic_data.static_data.max_vel_y);
 		
-        // Update velocity bits in elem_dynamic_data
-        swap_elem_dynamic_data.vel     = new_vel;
-        swap_elem_dynamic_data.y_dir   = (new_vel.y > 0.0) ? 1 : 0;
-        swap_elem_dynamic_data.y_speed = int(clamp(abs_float(new_vel.y), 0.0, 3.0));
-		swap_elem_dynamic_data.x_dir   = (new_vel.x > 0.0) ? 1 : 0;
-        swap_elem_dynamic_data.x_speed = int(clamp(abs_float(new_vel.x), 0.0, 3.0));
-        swap_elem_dynamic_data.is_moving = true;
-        
-        gl_FragColor = pack_elem_dynamic_data(swap_elem_dynamic_data);
+		// Clamp to allowed max
+		new_vel.x = clamp(new_vel.x, -swap_elem_dynamic_data.static_data.max_vel_x, swap_elem_dynamic_data.static_data.max_vel_x);
+		new_vel.y = clamp(new_vel.y, -swap_elem_dynamic_data.static_data.max_vel_y, swap_elem_dynamic_data.static_data.max_vel_y);
+		
+		// Update velocity state
+		swap_elem_dynamic_data.vel = new_vel;
+		
+		gl_FragColor = pack_elem_dynamic_data(swap_elem_dynamic_data);
 		
 		#if DEBUG_RESOLVE_VISUALIZE
-            // Optional visual debug color
-            gl_FragColor = vec4(1.0, 0.84, 0.0, 1.0);
-        #endif
+			// Optional visual debug color
+			gl_FragColor = vec4(1.0, 0.84, 0.0, 1.0);
+		#endif
 		
-    } else {
-	    //// === Read velocity intent (from secondary surface) ===
-	    //vec2 vel_rg = texture2D(gm_SecondaryTexture, v_vTexcoord).rg;
-	    //vec2 intended_vel = rg_to_vel(vel_rg);
-
-	    //vec2 actual_vel = elem_dynamic_data.vel;
-
-	    //bool has_intent = (abs(intended_vel.x) > 0.0 || abs(intended_vel.y) > 0.0);
-
-	    //// === Final sleep logic ===
-	    //if (!has_intent) {
-	    //    // All motion signals are zero — cell goes to sleep
-	    //    elem_dynamic_data.is_moving = false;
-	    //} else {
-	    //    // Some form of motion is happening — stay awake
-	    elem_dynamic_data.vel = vec2(0.0);
-	    //}
-
-	    gl_FragColor = pack_elem_dynamic_data(elem_dynamic_data);
+	} else {
+		elem_dynamic_data.vel = vec2(0.0);
+		
+		if (elem_dynamic_data.id == ELEM_ID_EMPTY) {
+			elem_dynamic_data.custom_data = 0;
+		}
+		
+		gl_FragColor = pack_elem_dynamic_data(elem_dynamic_data);
 	}
-
 }
