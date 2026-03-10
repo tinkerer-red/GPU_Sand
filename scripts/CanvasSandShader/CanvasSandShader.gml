@@ -79,7 +79,12 @@ function CanvasSandShader() constructor {
 		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_replace_id_2"), dev_settings.replace_id_2);
 		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_replace_id_3"), dev_settings.replace_id_3);
 		
-		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_color"), dev_settings.color);
+		var _color = dev_settings.color;
+		var _blue = _color & 255;
+		var _green = (_color >> 8) & 255;
+		var _red = (_color >> 16) & 255;
+		var _rgb = (_blue << 16) | (_green << 8) | _red;
+		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_color"), _rgb);
 	};
 	
 	static rebuild_surfaces = function() {

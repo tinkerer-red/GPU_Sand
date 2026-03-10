@@ -2,18 +2,32 @@ gmui_update();
 
 ui_elem();
 ui_dev();
+ui_pass();
 
 simulation.dev_settings = dev_settings;
+simulation.display_mode = ui_passes[selected_pass_index].mode;
 
 var _mouse_gui_x = device_mouse_x_to_gui(0);
 var _mouse_gui_y = device_mouse_y_to_gui(0);
 var _viewport_left = ui_get_viewport_left();
-var _mouse_in_viewport = (_mouse_gui_x >= _viewport_left);
+var _viewport_right = ui_get_viewport_right();
+var _mouse_in_viewport = (_mouse_gui_x >= _viewport_left && _mouse_gui_x <= _viewport_right);
 
-if (_mouse_in_viewport) {
+if (mouse_check_button_pressed(mb_left))
+|| (mouse_check_button_pressed(mb_right)) {
+	viewport_focused = _mouse_in_viewport;
+}
+if (mouse_check_button_released(mb_left))
+|| (mouse_check_button_released(mb_right)) {
+	viewport_focused = _mouse_in_viewport;
+}
+
+if (viewport_focused) {
 	if (mouse_wheel_up()) { paint_radius += 4 }
 	if (mouse_wheel_down()) { paint_radius += 4 }
 	paint_radius = clamp(paint_radius, 1, 1000)
+	
+	
 	
 	if (mouse_check_button(mb_left)) {
 		simulation.spawn_element_circle(selected_element_name, _mouse_gui_x, _mouse_gui_y, paint_radius);

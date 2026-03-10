@@ -44,6 +44,28 @@ ui_get_viewport_left = function() {
 
 	return max(0, _viewport_left);
 };
+
+ui_get_viewport_right = function() {
+	var _viewport_right = display_get_gui_width();
+
+	if (ui_pass_wants_open || (ui_pass_x != ui_pass_closed_x)) {
+		_viewport_right = min(_viewport_right, ui_pass_x);
+	}
+
+	return _viewport_right;
+};
+
+ui_get_pass_surface = function(_pass_index) {
+	switch (_pass_index) {
+		case 1: return simulation.surf_element;
+		case 2: return simulation.surf_velocity;
+		case 3: return simulation.surf_valid_pre;
+		case 4: return simulation.surf_valid_post;
+		case 5: return simulation.surf_temp;
+	}
+
+	return -1;
+};
 #endregion
 
 #region UI Element Panel
@@ -83,11 +105,10 @@ ui_elem = function() {
 	var _panel_should_draw_window = ui_elem_wants_open || (ui_elem_x != ui_elem_closed_x);
 
 	if (_panel_should_draw_window) {
-		var _window_flags = gmui_window_flags.AUTO_VSCROLL | gmui_window_flags.SCROLL_WITH_MOUSE_WHEEL;
+		var _window_flags = gmui_window_flags.AUTO_VSCROLL | gmui_window_flags.SCROLL_WITH_MOUSE_WHEEL | gmui_window_flags.NO_BORDER | gmui_window_flags.NO_TITLE_BAR;
 
 		if (gmui_begin(ui_elem_title, ui_elem_x, ui_elem_nub_y, ui_elem_expanded_width, ui_elem_height, _window_flags)) {
 			gmui_text("Elements");
-
 			gmui_separator();
 
 			var _elem_count = array_length(ui_elements);
@@ -95,7 +116,7 @@ ui_elem = function() {
 			for (var i = 0; i < _elem_count; i++) {
 				var _elem_data = ui_elements[i];
 				var _is_selected = (i == selected_element_index);
-				
+
 				if (gmui_selectable(_elem_data.name, _is_selected)) {
 					selected_element_index = i;
 					selected_element_id = _elem_data.element_id;
@@ -132,7 +153,14 @@ ui_draw_elem_nub = function() {
 
 	if (selected_element_index >= 0 && selected_element_index < array_length(ui_elements)) {
 		var _elem_data = ui_elements[selected_element_index];
-		draw_set_color(_elem_data.color);
+		
+		if (string_lower(_elem_data.name) == "dev") {
+			draw_set_color(dev_settings.color);
+		}
+		else {
+			draw_set_color(_elem_data.color);
+		}
+		
 		draw_rectangle(_nub_left + 7, _nub_top + 8, _nub_left + 20, _nub_top + 21, false);
 	}
 
@@ -180,75 +208,143 @@ ui_dev = function() {
 	var _panel_should_draw_window = ui_dev_wants_open || (ui_dev_x != ui_dev_closed_x);
 
 	if (_panel_should_draw_window) {
-		var _window_flags = gmui_window_flags.AUTO_VSCROLL | gmui_window_flags.SCROLL_WITH_MOUSE_WHEEL;
+		var _window_flags = gmui_window_flags.AUTO_VSCROLL | gmui_window_flags.SCROLL_WITH_MOUSE_WHEEL | gmui_window_flags.NO_BORDER | gmui_window_flags.NO_TITLE_BAR;
 
 		if (gmui_begin(ui_dev_title, ui_dev_x, ui_dev_margin, ui_dev_expanded_width, ui_dev_height, _window_flags)) {
 			gmui_text("Dev Uniforms");
-
 			gmui_separator();
 
-			gmui_text("State Of Matter");
-			if (gmui_selectable("Solid", dev_settings.state_of_matter == 1)) {
-				dev_settings.state_of_matter = 1;
+			ui_dev_section_identity_open = gmui_collapsing_header("Identity / Class", ui_dev_section_identity_open)[0];
+			if (ui_dev_section_identity_open) {
+				var _state_labels = ["None", "Solid", "Liquid", "Gas"];
+				dev_settings.state_of_matter = gmui_combo_simple("State Of Matter", dev_settings.state_of_matter, _state_labels, 180);
+				
+				var _dev_rgba = gmui_color_rgb_to_color_rgba(dev_settings.color, 255);
+				var color_array = gmui_color_rgba_to_array(_dev_rgba);
+				gmui_text("Color"); gmui_same_line(); gmui_color_button(_dev_rgba)
+				
+				
+				// Red channel
+			    gmui_text("R:"); gmui_same_line();
+			    var new_r = gmui_input_int(color_array[0], 1, 0, 255, 60);
+			    color_array[0] = clamp(new_r, 0, 255);
+    
+			    // Green channel
+			    gmui_same_line(); gmui_text("G:"); gmui_same_line();
+			    var new_g = gmui_input_int(color_array[1], 1, 0, 255, 60);
+			    color_array[1] = clamp(new_g, 0, 255);
+    
+			    // Blue channel
+			    gmui_same_line(); gmui_text("B:"); gmui_same_line();
+			    var new_b = gmui_input_int(color_array[2], 1, 0, 255, 60);
+			    color_array[2] = clamp(new_b, 0, 255);
+				
+				dev_settings.color = gmui_color_rgba_to_color_rgb(gmui_array_to_color_rgba(color_array));
+				
+				gmui_collapsing_header_end();
 			}
-			if (gmui_selectable("Liquid", dev_settings.state_of_matter == 2)) {
-				dev_settings.state_of_matter = 2;
+
+			ui_dev_section_movement_open = gmui_collapsing_header("Gravity / Movement", ui_dev_section_movement_open)[0];
+			if (ui_dev_section_movement_open) {
+				gmui_text("Gravity Force"); gmui_same_line(); 
+				dev_settings.gravity_force = gmui_input_float(dev_settings.gravity_force, 0.05, 0.0, 8.0, 96, "");
+
+				gmui_text("Max Vel X"); gmui_same_line();
+				dev_settings.max_vel_x = gmui_input_float(dev_settings.max_vel_x, 0.1, 0.0, 16.0, 96, "");
+
+				gmui_text("Max Vel Y"); gmui_same_line();
+				dev_settings.max_vel_y = gmui_input_float(dev_settings.max_vel_y, 0.1, 0.0, 16.0, 96, "");
+
+				dev_settings.can_slip = gmui_checkbox("Can Slip", dev_settings.can_slip);
+
+				gmui_text("X Slip Search Range"); gmui_same_line();
+				dev_settings.x_slip_search_range = gmui_input_float(dev_settings.x_slip_search_range, 1.0, 0.0, 8.0, 96, "");
+
+				gmui_text("Y Slip Search Range"); gmui_same_line();
+				dev_settings.y_slip_search_range = gmui_input_float(dev_settings.y_slip_search_range, 1.0, 0.0, 8.0, 96, "");
+
+				gmui_text("Wake Chance"); gmui_same_line();
+				dev_settings.wake_chance = gmui_input_float(dev_settings.wake_chance, 0.01, 0.0, 1.0, 96, "");
+
+				gmui_collapsing_header_end();
 			}
-			if (gmui_selectable("Gas", dev_settings.state_of_matter == 3)) {
-				dev_settings.state_of_matter = 3;
+
+			ui_dev_section_motion_open = gmui_collapsing_header("Motion Shaping", ui_dev_section_motion_open)[0];
+			if (ui_dev_section_motion_open) {
+				gmui_text("Stickiness Chance"); gmui_same_line();
+				dev_settings.stickiness_chance = gmui_input_float(dev_settings.stickiness_chance, 0.01, 0.0, 1.0, 96, "");
+
+				gmui_text("Bounce Chance"); gmui_same_line();
+				dev_settings.bounce_chance = gmui_input_float(dev_settings.bounce_chance, 0.01, 0.0, 1.0, 96, "");
+
+				gmui_text("Bounce Dampening"); gmui_same_line();
+				dev_settings.bounce_dampening_multiplier = gmui_input_float(dev_settings.bounce_dampening_multiplier, 0.01, 0.0, 1.0, 96, "");
+
+				gmui_collapsing_header_end();
 			}
 
-			gmui_separator();
+			ui_dev_section_decay_open = gmui_collapsing_header("Velocity Decay", ui_dev_section_decay_open)[0];
+			if (ui_dev_section_decay_open) {
+				gmui_text("Airborne Vel Decay"); gmui_same_line();
+				dev_settings.airborne_vel_decay_chance = gmui_input_float(dev_settings.airborne_vel_decay_chance, 0.01, 0.0, 1.0, 96, "");
 
-			gmui_text("Movement");
-			dev_settings.gravity_force = gmui_slider("Gravity Force", dev_settings.gravity_force, 0.0, 2.0);
-			dev_settings.max_vel_x = gmui_slider("Max Vel X", dev_settings.max_vel_x, 0.0, 8.0);
-			dev_settings.max_vel_y = gmui_slider("Max Vel Y", dev_settings.max_vel_y, 0.0, 8.0);
-			dev_settings.x_slip_search_range = gmui_slider("X Slip Range", dev_settings.x_slip_search_range, 0.0, 8.0);
-			dev_settings.y_slip_search_range = gmui_slider("Y Slip Range", dev_settings.y_slip_search_range, 0.0, 8.0);
+				gmui_text("Friction Vel Decay"); gmui_same_line();
+				dev_settings.friction_vel_decay_chance = gmui_input_float(dev_settings.friction_vel_decay_chance, 0.01, 0.0, 1.0, 96, "");
 
-			gmui_separator();
-
-			gmui_text("Flags");
-			if (gmui_button("Can Slip: " + ((dev_settings.can_slip > 0.5) ? "On" : "Off"))) {
-				dev_settings.can_slip = 1.0 - dev_settings.can_slip;
-			}
-			if (gmui_button("Can Ignite: " + ((dev_settings.can_ignite > 0.5) ? "On" : "Off"))) {
-				dev_settings.can_ignite = 1.0 - dev_settings.can_ignite;
+				gmui_collapsing_header_end();
 			}
 
-			gmui_separator();
+			ui_dev_section_physical_open = gmui_collapsing_header("Physical", ui_dev_section_physical_open)[0];
+			if (ui_dev_section_physical_open) {
+				gmui_text("Mass"); gmui_same_line();
+				dev_settings.mass = gmui_input_float(dev_settings.mass, 1.0, 0.0, 1000.0, 96, "");
 
-			gmui_text("Motion Shaping");
-			dev_settings.wake_chance = gmui_slider("Wake Chance", dev_settings.wake_chance, 0.0, 1.0);
-			dev_settings.stickiness_chance = gmui_slider("Stickiness Chance", dev_settings.stickiness_chance, 0.0, 1.0);
-			dev_settings.bounce_chance = gmui_slider("Bounce Chance", dev_settings.bounce_chance, 0.0, 1.0);
-			dev_settings.bounce_dampening_multiplier = gmui_slider("Bounce Dampening", dev_settings.bounce_dampening_multiplier, 0.0, 1.0);
-			dev_settings.airborne_vel_decay_chance = gmui_slider("Airborne Decay", dev_settings.airborne_vel_decay_chance, 0.0, 1.0);
-			dev_settings.friction_vel_decay_chance = gmui_slider("Friction Decay", dev_settings.friction_vel_decay_chance, 0.0, 1.0);
+				gmui_collapsing_header_end();
+			}
 
-			gmui_separator();
+			ui_dev_section_heat_open = gmui_collapsing_header("Heat / Flammability", ui_dev_section_heat_open)[0];
+			if (ui_dev_section_heat_open) {
+				dev_settings.can_ignite = gmui_checkbox("Can Ignite", dev_settings.can_ignite);
 
-			gmui_text("Physical");
-			dev_settings.mass = gmui_slider("Mass", dev_settings.mass, 0.0, 10.0);
+				gmui_text("Decay"); gmui_same_line();
+				dev_settings.temperature_decay = gmui_input_float(dev_settings.temperature_decay, 0.01, 0.0, 10.0, 96, "");
 
-			gmui_separator();
+				gmui_text("Spread Chance"); gmui_same_line();
+				dev_settings.temperature_spread_chance = gmui_input_float(dev_settings.temperature_spread_chance, 0.01, 0.0, 1.0, 96, "");
 
-			gmui_text("Heat / Special");
-			dev_settings.temperature_decay = gmui_slider("Temperature Decay", dev_settings.temperature_decay, 0.0, 10.0);
-			dev_settings.temperature_spread_chance = gmui_slider("Temp Spread Chance", dev_settings.temperature_spread_chance, 0.0, 1.0);
-			dev_settings.explosion_resistance = gmui_slider("Explosion Resistance", dev_settings.explosion_resistance, 0.0, 10.0);
-			dev_settings.explosion_radius = gmui_slider("Explosion Radius", dev_settings.explosion_radius, 0.0, 10.0);
-			dev_settings.custom_event_chance = gmui_slider("Custom Event Chance", dev_settings.custom_event_chance, 0.0, 1.0);
+				gmui_collapsing_header_end();
+			}
 
-			gmui_separator();
+			ui_dev_section_explosion_open = gmui_collapsing_header("Explosive Properties", ui_dev_section_explosion_open)[0];
+			if (ui_dev_section_explosion_open) {
+				gmui_text("Explosion Resistance"); gmui_same_line();
+				dev_settings.explosion_resistance = gmui_input_float(dev_settings.explosion_resistance, 0.1, 0.0, 10.0, 96, "");
 
-			gmui_text("Replacement Rules");
-			dev_settings.replace_count = round(gmui_slider("Replace Count", dev_settings.replace_count, 0.0, 4.0));
-			dev_settings.replace_id_0 = round(gmui_slider("Replace ID 0", dev_settings.replace_id_0, 0.0, 255.0));
-			dev_settings.replace_id_1 = round(gmui_slider("Replace ID 1", dev_settings.replace_id_1, 0.0, 255.0));
-			dev_settings.replace_id_2 = round(gmui_slider("Replace ID 2", dev_settings.replace_id_2, 0.0, 255.0));
-			dev_settings.replace_id_3 = round(gmui_slider("Replace ID 3", dev_settings.replace_id_3, 0.0, 255.0));
+				gmui_text("Explosion Radius"); gmui_same_line();
+				dev_settings.explosion_radius = gmui_input_float(dev_settings.explosion_radius, 0.1, 0.0, 20.0, 96, "");
+
+				gmui_collapsing_header_end();
+			}
+
+			ui_dev_section_lifecycle_open = gmui_collapsing_header("Lifecycle Control", ui_dev_section_lifecycle_open)[0];
+			if (ui_dev_section_lifecycle_open) {
+				gmui_text("Custom Event Chance"); gmui_same_line();
+				dev_settings.custom_event_chance = gmui_input_float(dev_settings.custom_event_chance, 0.01, 0.0, 1.0, 96, "");
+
+				gmui_collapsing_header_end();
+			}
+
+			ui_dev_section_replace_open = gmui_collapsing_header("Replacement Rules", ui_dev_section_replace_open)[0];
+			if (ui_dev_section_replace_open) {
+				dev_settings.replace_count = gmui_input_int(round(dev_settings.replace_count), 1, 0, 4, 96, "");
+
+				dev_settings.replace_id_0 = gmui_input_int(round(dev_settings.replace_id_0), 1, 0, 255, 96, "");
+				dev_settings.replace_id_1 = gmui_input_int(round(dev_settings.replace_id_1), 1, 0, 255, 96, "");
+				dev_settings.replace_id_2 = gmui_input_int(round(dev_settings.replace_id_2), 1, 0, 255, 96, "");
+				dev_settings.replace_id_3 = gmui_input_int(round(dev_settings.replace_id_3), 1, 0, 255, 96, "");
+
+				gmui_collapsing_header_end();
+			}
 
 			gmui_end();
 		}
@@ -279,5 +375,219 @@ ui_draw_dev_nub = function() {
 	draw_set_color(c_white);
 	draw_text(_nub_left + 8, _nub_top + 8, ">");
 	draw_text_transformed(_nub_left + 7, _nub_top + 72, "DEV", 1, 1, 90);
+};
+#endregion
+
+#region UI Pass Panel
+ui_pass = function() {
+	var _mouse_gui_x = device_mouse_x_to_gui(0);
+	var _mouse_gui_y = device_mouse_y_to_gui(0);
+	var _gui_width = display_get_gui_width();
+	var _gui_width_changed = (_gui_width != ui_pass_last_gui_width);
+
+	ui_pass_open_x = display_get_gui_width() - ui_pass_expanded_width - ui_pass_nub_width - ui_pass_margin;
+	ui_pass_closed_x = _gui_width + ui_pass_margin;
+
+	if (_gui_width_changed) {
+		ui_pass_last_gui_width = _gui_width;
+
+		if (ui_pass_wants_open) {
+			ui_pass_x = ui_pass_open_x;
+			ui_pass_target_x = ui_pass_open_x;
+		}
+		else {
+			ui_pass_x = ui_pass_closed_x;
+			ui_pass_target_x = ui_pass_closed_x;
+		}
+	}
+
+	var _nub_left = _gui_width - ui_pass_nub_width;
+	var _nub_top = ui_pass_nub_y;
+	var _nub_right = _gui_width;
+	var _nub_bottom = ui_pass_nub_y + ui_pass_nub_height;
+
+	var _mouse_over_nub = (
+		_mouse_gui_x >= _nub_left &&
+		_mouse_gui_x <= _nub_right &&
+		_mouse_gui_y >= _nub_top &&
+		_mouse_gui_y <= _nub_bottom
+	);
+
+	if (_mouse_over_nub && mouse_check_button_pressed(mb_left)) {
+		ui_pass_wants_open = !ui_pass_wants_open;
+	}
+
+	ui_pass_target_x = ui_pass_wants_open ? ui_pass_open_x : ui_pass_closed_x;
+	ui_pass_x = lerp(ui_pass_x, ui_pass_target_x, ui_panel_anim_lerp);
+
+	if (abs(ui_pass_x - ui_pass_target_x) < ui_panel_anim_epsilon) {
+		ui_pass_x = ui_pass_target_x;
+	}
+
+	var _panel_should_draw_window = ui_pass_wants_open || (ui_pass_x != ui_pass_closed_x);
+
+	if (_panel_should_draw_window) {
+		var _window_flags = gmui_window_flags.AUTO_VSCROLL | gmui_window_flags.SCROLL_WITH_MOUSE_WHEEL | gmui_window_flags.NO_BORDER | gmui_window_flags.NO_TITLE_BAR;
+
+		if (gmui_begin(ui_pass_title, ui_pass_x, ui_pass_margin, ui_pass_expanded_width, ui_pass_height, _window_flags)) {
+			gmui_text("Pass Views");
+			gmui_separator();
+
+			var _pass_count = array_length(ui_passes);
+
+			for (var i = 0; i < _pass_count; i++) {
+				var _pass_data = ui_passes[i];
+				var _preview_surface = ui_get_pass_preview_surface(i);
+				var _is_selected = (i == selected_pass_index);
+
+				if (_preview_surface != -1) {
+					gmui_surface(_preview_surface);
+				}
+
+				if (gmui_selectable(_pass_data.name, _is_selected)) {
+					selected_pass_index = i;
+				}
+
+				gmui_separator();
+			}
+
+			gmui_end();
+		}
+	}
+};
+
+ui_draw_pass_nub = function() {
+	var _mouse_gui_x = device_mouse_x_to_gui(0);
+	var _mouse_gui_y = device_mouse_y_to_gui(0);
+	var _gui_width = display_get_gui_width();
+
+	var _nub_left = _gui_width - ui_pass_nub_width;
+	var _nub_top = ui_pass_nub_y;
+	var _nub_width = ui_pass_nub_width;
+	var _nub_height = ui_pass_nub_height;
+
+	var _mouse_over_nub = (
+		_mouse_gui_x >= _nub_left &&
+		_mouse_gui_x <= (_nub_left + _nub_width) &&
+		_mouse_gui_y >= _nub_top &&
+		_mouse_gui_y <= (_nub_top + _nub_height)
+	);
+
+	draw_set_alpha(0.9);
+	draw_set_color(_mouse_over_nub ? make_color_rgb(70, 70, 78) : make_color_rgb(48, 48, 54));
+	draw_roundrect(_nub_left, _nub_top, _nub_left + _nub_width, _nub_top + _nub_height, false);
+
+	draw_set_alpha(1);
+	draw_set_color(c_white);
+	draw_text(_nub_left + 8, _nub_top + 8, "<");
+	draw_set_align(1)
+	draw_text_transformed(_nub_left + 6, _nub_top + 38, "PASS", 1, 1, 270);
+	draw_set_align(7)
+};
+
+ui_get_pass_surface = function(_pass_index) {
+	switch (_pass_index) {
+		case 1: return simulation.surf_element;
+		case 2: return simulation.surf_velocity;
+		case 3: return simulation.surf_valid_pre;
+		case 4: return simulation.surf_valid_post;
+		case 5: return simulation.surf_temp;
+	}
+
+	return -1;
+};
+
+ui_draw_pass_surface = function(_pass_index, _draw_x, _draw_y, _scale_x, _scale_y) {
+	var _surface_id = ui_get_pass_surface(_pass_index);
+	var _pass_data = ui_passes[_pass_index];
+
+	if (_surface_id == -1) {
+		if (_scale_x == 1 && _scale_y == 1 && _draw_x == 0 && _draw_y == 0) {
+			simulation.draw();
+		}
+		else {
+			var _cache_width = max(1, round(simulation.sim_width * _scale_x));
+			var _cache_height = max(1, round(simulation.sim_height * _scale_y));
+			var _cache_name = "pass_render_preview_" + string(_cache_width) + "_" + string(_cache_height);
+			var _cache_surface = gmui_cache_surface_get(_cache_name, _cache_width, _cache_height);
+
+			if (surface_exists(_cache_surface)) {
+				surface_set_target(_cache_surface);
+				draw_clear_alpha(c_black, 0);
+				matrix_set(matrix_world, matrix_build(0, 0, 0, 0, 0, 0, _scale_x, _scale_y, 1));
+				simulation.draw();
+				matrix_set(matrix_world, matrix_build_identity());
+				surface_reset_target();
+
+				if (_pass_data.shader_id != -1) {
+					shader_set(_pass_data.shader_id);
+					draw_surface(_cache_surface, _draw_x, _draw_y);
+					shader_reset();
+				}
+				else {
+					draw_surface(_cache_surface, _draw_x, _draw_y);
+				}
+			}
+		}
+
+		exit;
+	}
+
+	if (!surface_exists(_surface_id)) {
+		exit;
+	}
+
+	if (_pass_data.shader_id != -1) {
+		shader_set(_pass_data.shader_id);
+		draw_surface_ext(_surface_id, _draw_x, _draw_y, _scale_x, _scale_y, 0, c_white, 1);
+		shader_reset();
+	}
+	else {
+		draw_surface_ext(_surface_id, _draw_x, _draw_y, _scale_x, _scale_y, 0, c_white, 1);
+	}
+};
+
+ui_get_pass_preview_surface = function(_pass_index) {
+	var _pass_data = ui_passes[_pass_index];
+	var _surface_id = ui_get_pass_surface(_pass_index);
+	var _preview_width = ui_pass_preview_width;
+	var _preview_height = max(1, round(simulation.sim_height * ui_pass_preview_scale));
+	var _cache_name = "pass_preview_" + string(_pass_index);
+	var _preview_surface = gmui_cache_surface_get(_cache_name, _preview_width, _preview_height);
+
+	if (!surface_exists(_preview_surface)) {
+		return -1;
+	}
+
+	surface_set_target(_preview_surface);
+	draw_clear_alpha(c_black, 0);
+
+	if (_surface_id == -1) {
+		var _scale_x = _preview_width / simulation.sim_width;
+		var _scale_y = _preview_height / simulation.sim_height;
+
+		matrix_set(matrix_world, matrix_build(0, 0, 0, 0, 0, 0, _scale_x, _scale_y, 1));
+		simulation.draw();
+		matrix_set(matrix_world, matrix_build_identity());
+	}
+	else {
+		if (surface_exists(_surface_id)) {
+			var _scale_x = _preview_width / surface_get_width(_surface_id);
+			var _scale_y = _preview_height / surface_get_height(_surface_id);
+
+			if (_pass_data.shader_id != -1) {
+				shader_set(_pass_data.shader_id);
+				draw_surface_ext(_surface_id, 0, 0, _scale_x, _scale_y, 0, c_white, 1);
+				shader_reset();
+			}
+			else {
+				draw_surface_ext(_surface_id, 0, 0, _scale_x, _scale_y, 0, c_white, 1);
+			}
+		}
+	}
+
+	surface_reset_target();
+
+	return _preview_surface;
 };
 #endregion

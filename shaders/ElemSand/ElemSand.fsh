@@ -67,11 +67,8 @@ void main()
 	#region INTENT
 	#pragma shady: macro_begin INTENT
 	if (elem_dynamic_data.id == ELEM_ID_SAND) {
-		
-	    #pragma shady: inline(ElemSand.DefineElementStaticData)
-		#pragma shady: inline(shdSandSimCommon.GENERIC_INTENT)
-		
-	    break;
+		#pragma shady: inline(ElemSand.DefineElementStaticData)
+		break;
 	}
 	#pragma shady: macro_end
 	#endregion

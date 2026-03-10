@@ -8,35 +8,58 @@ simulation = new CanvasSandShader();
 gmui_init();
 
 dev_settings = {
+	color: make_color_rgb(255, 64, 255),
+	
+	// === (0) (1)Solid (2)Liquid (3)Gas ===
 	state_of_matter: 3,
-	gravity_force: 0.35,
-	max_vel_x: 1.0,
-	max_vel_y: 3.0,
-	can_slip: 1.0,
+	
+	// === Gravity & Movement ===
+	gravity_force: 1,
+	max_vel_x: 2.0,
+	max_vel_y: 2.0,
+	
+	can_slip: true,
 	x_slip_search_range: 1.0,
-	y_slip_search_range: 3.0,
-	wake_chance: 0.0,
+	y_slip_search_range: 1.0,
+	
+	wake_chance: 1.0,
+	
 	stickiness_chance: 0.0,
-	bounce_chance: 0.0,
-	bounce_dampening_multiplier: 0.5,
-	airborne_vel_decay_chance: 0.02,
-	friction_vel_decay_chance: 0.05,
-	mass: 1.0,
-	can_ignite: 0.0,
+	
+	bounce_chance: 0.1,
+	bounce_dampening_multiplier: 0.4,
+	
+	// === Velocity Decay ===
+	airborne_vel_decay_chance: 0.35,
+	friction_vel_decay_chance: 0.65,
+	
+	// === Physical ===
+	mass: 150.0,
+	
+	// === Heat and Flammability ===
+	can_ignite: false,
 	temperature_decay: 0.0,
 	temperature_spread_chance: 0.0,
-	explosion_resistance: 0.0,
+	
+	// === Explosive Properties ===
+	explosion_resistance: 1.0,
 	explosion_radius: 0.0,
+	
+	// === Lifecycle Control ===
 	custom_event_chance: 0.0,
-	replace_count: 0.0,
+	
+	// === Replacement Rules ===
+	replace_count: 1.0,
 	replace_id_0: 0.0,
 	replace_id_1: 0.0,
 	replace_id_2: 0.0,
 	replace_id_3: 0.0,
-	color: make_color_rgb(255, 64, 255),
+	
 };
+simulation.dev_settings = dev_settings;
 
-paint_radius = 8;
+viewport_focused = false;
+paint_radius = 64;
 
 fps_window = 60;
 fps_buffer = array_create(fps_window, 60);
@@ -57,7 +80,7 @@ ui_panel_anim_epsilon = 0.25;
 
 ui_elements = [
 	{ name: "Sand", color: make_color_rgb(194, 178, 128), element_id: 1 },
-	{ name: "Dev", color: make_color_rgb(255, 64, 255), element_id: 2 },
+	{ name: "Dev", color: undefined, element_id: 2 },
 	{ name: "Water", color: make_color_rgb(64, 128, 255), element_id: 3 },
 	{ name: "Stone", color: make_color_rgb(120, 120, 120), element_id: 4 },
 	{ name: "Fire", color: make_color_rgb(255, 120, 32), element_id: 5 },
@@ -93,3 +116,44 @@ ui_dev_closed_x = -(ui_dev_expanded_width + ui_dev_margin);
 ui_dev_open_x = ui_dev_margin + ui_dev_nub_width;
 ui_dev_x = ui_dev_closed_x;
 ui_dev_target_x = ui_dev_closed_x;
+
+ui_dev_section_identity_open = false;
+ui_dev_section_movement_open = false;
+ui_dev_section_motion_open = false;
+ui_dev_section_decay_open = false;
+ui_dev_section_physical_open = false;
+ui_dev_section_heat_open = false;
+ui_dev_section_explosion_open = false;
+ui_dev_section_lifecycle_open = false;
+ui_dev_section_replace_open = false;
+
+ui_pass_title = "Pass Views";
+ui_pass_wants_open = false;
+ui_pass_margin = 8;
+ui_pass_nub_width = 28;
+ui_pass_expanded_width = 240;
+ui_pass_preview_width = 180;
+ui_pass_preview_scale = 0.18;
+ui_pass_row_gap = 8;
+ui_pass_nub_height = 96;
+ui_pass_nub_y = 8;
+ui_pass_closed_x = display_get_gui_width() + ui_pass_margin + ui_pass_margin;
+ui_pass_open_x = display_get_gui_width() - ui_pass_expanded_width - ui_pass_nub_width - ui_pass_margin;
+ui_pass_x = ui_pass_closed_x;
+ui_pass_target_x = ui_pass_closed_x;
+ui_pass_height = display_get_gui_height() - (ui_pass_margin * 2);
+ui_pass_last_gui_width = -1;
+
+selected_pass_index = 0;
+
+ui_passes = [
+	{ name: "Render", mode: 0, surf_name: "render", shader_id: -1 },
+	{ name: "Element", mode: 1, surf_name: "surf_element", shader_id: -1 },
+	{ name: "Velocity", mode: 2, surf_name: "surf_velocity", shader_id: shdSandSimVelocityDebug },
+	{ name: "Valid Pre", mode: 3, surf_name: "surf_valid_pre", shader_id: shdSandSimVelocityDebug },
+	{ name: "Valid Post", mode: 4, surf_name: "surf_valid_post", shader_id: shdSandSimVelocityDebug },
+	{ name: "Temp", mode: 5, surf_name: "surf_temp", shader_id: -1 }
+];
+
+ui_pass_preview_width = 180;
+ui_pass_preview_scale = 0.18;
