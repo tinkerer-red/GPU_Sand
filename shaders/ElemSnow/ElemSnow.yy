@@ -1,0 +1,12 @@
+{
+  "$GMShader":"",
+  "%Name":"ElemSnow",
+  "name":"ElemSnow",
+  "parent":{
+    "name":"Elements",
+    "path":"folders/GPU_Sand/Shaders/Elements.yy",
+  },
+  "resourceType":"GMShader",
+  "resourceVersion":"2.0",
+  "type":1,
+}

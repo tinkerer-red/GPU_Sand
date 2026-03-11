@@ -9,52 +9,50 @@ gmui_init();
 
 dev_settings = {
 	color: make_color_rgb(255, 64, 255),
-	
-	// === (0) (1)Solid (2)Liquid (3)Gas ===
-	state_of_matter: 3,
-	
-	// === Gravity & Movement ===
-	gravity_force: 1,
+	state_of_matter: StateOfMatter.SOLID,
+	movement_class: MovementClass.POWDER,
+	feature_flags: 0,
+	dynamic_mode: DynamicMode.NONE,
+	gravity_force: 1.0,
 	max_vel_x: 2.0,
 	max_vel_y: 2.0,
-	
 	can_slip: true,
 	x_slip_search_range: 1.0,
 	y_slip_search_range: 1.0,
-	
 	wake_chance: 1.0,
-	
 	stickiness_chance: 0.0,
-	
 	bounce_chance: 0.1,
 	bounce_dampening_multiplier: 0.4,
-	
-	// === Velocity Decay ===
 	airborne_vel_decay_chance: 0.35,
 	friction_vel_decay_chance: 0.65,
-	
-	// === Physical ===
 	mass: 150.0,
-	
-	// === Heat and Flammability ===
-	can_ignite: false,
+	density: 150.0,
+	immovable: false,
+	replace_mode: ReplaceMode.LESS_DENSE_OR_EQUAL,
+	replace_mask: ReplaceMask.EMPTY | ReplaceMask.LIQUID | ReplaceMask.GAS,
+	replace_count: 0,
+	replace_id_0: ElementId.EMPTY,
+	replace_id_1: ElementId.EMPTY,
+	replace_id_2: ElementId.EMPTY,
+	replace_id_3: ElementId.EMPTY,
+	interaction_group: InteractionGroup.MINERAL,
+	interaction_mask: 0,
+	lifetime_max: 0.0,
+	lifetime_decay_chance: 0.0,
+	transition_on_life_end: ElementId.EMPTY,
 	temperature_decay: 0.0,
 	temperature_spread_chance: 0.0,
-	
-	// === Explosive Properties ===
-	explosion_resistance: 1.0,
-	explosion_radius: 0.0,
-	
-	// === Lifecycle Control ===
-	custom_event_chance: 0.0,
-	
-	// === Replacement Rules ===
-	replace_count: 1.0,
-	replace_id_0: 0.0,
-	replace_id_1: 0.0,
-	replace_id_2: 0.0,
-	replace_id_3: 0.0,
-	
+	temperature_min: -128.0,
+	temperature_max: 128.0,
+	transition_on_temp_low: ElementId.EMPTY,
+	transition_on_temp_high: ElementId.EMPTY,
+	ignition_threshold: 0.0,
+	burn_product: ElementId.EMPTY,
+	cooling_product: ElementId.EMPTY,
+	corrosion_resistance: 1.0,
+	wetness_capacity: 0.0,
+	quench_threshold: 0.0,
+	viscosity: 0.0
 };
 simulation.dev_settings = dev_settings;
 
@@ -72,23 +70,45 @@ step_times = array_create(fps_window, 0);
 draw_times = array_create(fps_window, 0);
 
 selected_element_index = 0;
-selected_element_id = 1;
+selected_element_id = ElementId.SAND;
 selected_element_name = "Sand";
 
 ui_panel_anim_lerp = 0.18;
 ui_panel_anim_epsilon = 0.25;
 
 ui_elements = [
-	{ name: "Sand", color: make_color_rgb(194, 178, 128), element_id: 1 },
-	{ name: "Dev", color: undefined, element_id: 2 },
-	{ name: "Water", color: make_color_rgb(64, 128, 255), element_id: 3 },
-	{ name: "Stone", color: make_color_rgb(120, 120, 120), element_id: 4 },
-	{ name: "Fire", color: make_color_rgb(255, 120, 32), element_id: 5 },
-	{ name: "Smoke", color: make_color_rgb(96, 96, 96), element_id: 6 },
-	{ name: "Steam", color: make_color_rgb(210, 210, 210), element_id: 7 },
-	{ name: "Oil", color: make_color_rgb(48, 48, 20), element_id: 8 },
-	{ name: "Acid", color: make_color_rgb(120, 255, 64), element_id: 9 },
-	{ name: "Lava", color: make_color_rgb(255, 80, 0), element_id: 10 }
+	{ name: "Sand", color: make_color_rgb(194, 178, 128), element_id: ElementId.SAND },
+	{ name: "Water", color: make_color_rgb(64, 128, 255), element_id: ElementId.WATER },
+	{ name: "Stone", color: make_color_rgb(120, 120, 120), element_id: ElementId.STONE },
+	{ name: "Wall", color: make_color_rgb(96, 96, 104), element_id: ElementId.WALL },
+	{ name: "Wood", color: make_color_rgb(139, 94, 60), element_id: ElementId.WOOD },
+	{ name: "Fire", color: make_color_rgb(255, 120, 32), element_id: ElementId.FIRE },
+	{ name: "Smoke", color: make_color_rgb(96, 96, 96), element_id: ElementId.SMOKE },
+	{ name: "Steam", color: make_color_rgb(210, 210, 210), element_id: ElementId.STEAM },
+	{ name: "Ice", color: make_color_rgb(196, 232, 255), element_id: ElementId.ICE },
+	{ name: "Snow", color: make_color_rgb(245, 245, 255), element_id: ElementId.SNOW },
+	{ name: "Mud", color: make_color_rgb(101, 72, 50), element_id: ElementId.MUD },
+	{ name: "Dirt", color: make_color_rgb(120, 84, 56), element_id: ElementId.DIRT },
+	{ name: "Wet Sand", color: make_color_rgb(164, 150, 110), element_id: ElementId.WET_SAND },
+	{ name: "Oil", color: make_color_rgb(48, 48, 20), element_id: ElementId.OIL },
+	{ name: "Lava", color: make_color_rgb(255, 80, 0), element_id: ElementId.LAVA },
+	{ name: "Ash", color: make_color_rgb(126, 126, 126), element_id: ElementId.ASH },
+	{ name: "Ember", color: make_color_rgb(255, 160, 72), element_id: ElementId.EMBER },
+	{ name: "Acid", color: make_color_rgb(120, 255, 64), element_id: ElementId.ACID },
+	{ name: "Metal", color: make_color_rgb(160, 168, 176), element_id: ElementId.METAL },
+	{ name: "Rust", color: make_color_rgb(164, 88, 44), element_id: ElementId.RUST },
+	{ name: "Glass", color: make_color_rgb(180, 220, 220), element_id: ElementId.GLASS },
+	{ name: "Salt", color: make_color_rgb(236, 236, 236), element_id: ElementId.SALT },
+	{ name: "Salt Water", color: make_color_rgb(88, 148, 255), element_id: ElementId.SALT_WATER },
+	{ name: "Plant", color: make_color_rgb(64, 160, 72), element_id: ElementId.PLANT },
+	{ name: "Seed", color: make_color_rgb(170, 130, 70), element_id: ElementId.SEED },
+	{ name: "Coal", color: make_color_rgb(36, 36, 36), element_id: ElementId.COAL },
+	{ name: "Gas Fuel", color: make_color_rgb(180, 140, 64), element_id: ElementId.GAS_FUEL },
+	{ name: "Slime", color: make_color_rgb(84, 200, 104), element_id: ElementId.SLIME },
+	{ name: "Obsidian", color: make_color_rgb(34, 22, 48), element_id: ElementId.OBSIDIAN },
+	{ name: "Gravel", color: make_color_rgb(132, 132, 132), element_id: ElementId.GRAVEL },
+	{ name: "Clay", color: make_color_rgb(168, 110, 86), element_id: ElementId.CLAY },
+	{ name: "Dev", color: undefined, element_id: ElementId.DEV }
 ];
 
 ui_elem_title = "Elements";
@@ -122,10 +142,9 @@ ui_dev_section_movement_open = false;
 ui_dev_section_motion_open = false;
 ui_dev_section_decay_open = false;
 ui_dev_section_physical_open = false;
-ui_dev_section_heat_open = false;
-ui_dev_section_explosion_open = false;
+ui_dev_section_interaction_open = false;
 ui_dev_section_lifecycle_open = false;
-ui_dev_section_replace_open = false;
+ui_dev_section_temperature_open = false;
 
 ui_pass_title = "Pass Views";
 ui_pass_wants_open = false;
@@ -147,12 +166,12 @@ ui_pass_last_gui_width = -1;
 selected_pass_index = 0;
 
 ui_passes = [
-	{ name: "Render", mode: 0, surf_name: "render", shader_id: -1 },
-	{ name: "Element", mode: 1, surf_name: "surf_element", shader_id: -1 },
-	{ name: "Velocity", mode: 2, surf_name: "surf_velocity", shader_id: shdSandSimVelocityDebug },
-	{ name: "Valid Pre", mode: 3, surf_name: "surf_valid_pre", shader_id: shdSandSimVelocityDebug },
-	{ name: "Valid Post", mode: 4, surf_name: "surf_valid_post", shader_id: shdSandSimVelocityDebug },
-	{ name: "Temp", mode: 5, surf_name: "surf_temp", shader_id: -1 }
+	{ name: "Render", mode: DisplayMode.RENDER, surf_name: "render", shader_id: -1 },
+	{ name: "Element", mode: DisplayMode.ELEMENT, surf_name: "surf_element", shader_id: -1 },
+	{ name: "Velocity", mode: DisplayMode.VELOCITY, surf_name: "surf_velocity", shader_id: shdSandSimVelocityDebug },
+	{ name: "Valid Pre", mode: DisplayMode.ACCEPT, surf_name: "surf_valid_pre", shader_id: shdSandSimVelocityDebug },
+	{ name: "Valid Post", mode: DisplayMode.CONFIRM, surf_name: "surf_valid_post", shader_id: shdSandSimVelocityDebug },
+	{ name: "Resolve", mode: DisplayMode.RESOLVE, surf_name: "surf_temp", shader_id: -1 }
 ];
 
 ui_pass_preview_width = 180;

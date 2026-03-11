@@ -13,37 +13,31 @@ var _viewport_left = ui_get_viewport_left();
 var _viewport_right = ui_get_viewport_right();
 var _mouse_in_viewport = (_mouse_gui_x >= _viewport_left && _mouse_gui_x <= _viewport_right);
 
-if (mouse_check_button_pressed(mb_left))
-|| (mouse_check_button_pressed(mb_right)) {
+if (mouse_check_button_pressed(mb_left) || mouse_check_button_pressed(mb_right)) {
 	viewport_focused = _mouse_in_viewport;
 }
-if (mouse_check_button_released(mb_left))
-|| (mouse_check_button_released(mb_right)) {
+if (mouse_check_button_released(mb_left) || mouse_check_button_released(mb_right)) {
 	viewport_focused = _mouse_in_viewport;
 }
 
 if (viewport_focused) {
-	if (mouse_wheel_up()) { paint_radius += 4 }
-	if (mouse_wheel_down()) { paint_radius += 4 }
-	paint_radius = clamp(paint_radius, 1, 1000)
-	
-	
-	
+	if (mouse_wheel_up()) { paint_radius += 4; }
+	if (mouse_wheel_down()) { paint_radius -= 4; }
+	paint_radius = clamp(paint_radius, 1, 1000);
+
 	if (mouse_check_button(mb_left)) {
-		simulation.spawn_element_circle(selected_element_name, _mouse_gui_x, _mouse_gui_y, paint_radius);
+		simulation.spawn_element_circle(selected_element_id, _mouse_gui_x, _mouse_gui_y, paint_radius);
 	}
 
 	if (mouse_check_button(mb_right)) {
-		simulation.spawn_element_circle(undefined, _mouse_gui_x, _mouse_gui_y, paint_radius);
+		simulation.spawn_element_circle(ElementId.EMPTY, _mouse_gui_x, _mouse_gui_y, paint_radius);
 	}
 }
 
 var _step_start = current_time;
-
 repeat (10) {
 	simulation.step();
 }
-
 var _step_end = current_time;
 
 step_times[frame_index mod fps_window] = (_step_end - _step_start);

@@ -28,7 +28,7 @@
 *   						  ╚██████╔╝██║ ╚═╝ ██║╚██████╔╝██║		                         *
 *   						   ╚═════╝ ╚═╝     ╚═╝ ╚═════╝ ╚═╝		                         *
 *   						 GameMaker Immediate Mode UI Library	                         *
-*   						          Version 1.11.14				                         *
+*   						          Version 1.12.34				                         *
 *   																                         *
 *   						            by erkan612					                         *
 *   						=======================================	                         *
@@ -79,6 +79,7 @@ enum gmui_window_flags {
     AUTO_VSCROLL					= 1 << 29,
 	NO_MOVE_DEPTH					= 1 << 30,
 	NO_BORDER						= 1 << 31,
+	NO_ROUNDING						= 1 << 32,
 };
 
 enum gmui_pre_window_flags {
@@ -88,11 +89,12 @@ enum gmui_pre_window_flags {
 	CANVAS_CLEAN					= gmui_window_flags.NO_BACKGROUND		| gmui_window_flags.NO_TITLE_BAR		| gmui_window_flags.NO_RESIZE					| gmui_window_flags.NO_BORDER, 
 	CONTEXT_MENU					= gmui_pre_window_flags.CANVAS			| gmui_window_flags.POPUP				| gmui_window_flags.AUTO_VSCROLL				| gmui_window_flags.SCROLL_WITH_MOUSE_WHEEL, 
 	SUB_CONTEXT_MENU				= gmui_pre_window_flags.CANVAS			| gmui_window_flags.AUTO_VSCROLL		| gmui_window_flags.SCROLL_WITH_MOUSE_WHEEL, 
-	MENU							= gmui_pre_window_flags.CANVAS			| gmui_window_flags.NO_MOVE_DEPTH, 
+	MENU							= gmui_pre_window_flags.CANVAS			| gmui_window_flags.NO_MOVE_DEPTH		| gmui_window_flags.NO_ROUNDING,
 	WINS							= gmui_pre_window_flags.CANVAS			| gmui_window_flags.NO_MOVE_DEPTH, 
 	WINS_SET						= gmui_pre_window_flags.WINS			| gmui_window_flags.AUTO_SCROLL			| gmui_window_flags.SCROLL_WITH_MOUSE_WHEEL, 
 	WINS_SET_VERTICAL				= gmui_pre_window_flags.WINS			| gmui_window_flags.AUTO_VSCROLL		| gmui_window_flags.SCROLL_WITH_MOUSE_WHEEL, 
 	WINS_SET_HORIZONTAL				= gmui_pre_window_flags.WINS			| gmui_window_flags.AUTO_HSCROLL		| gmui_window_flags.SCROLL_WITH_MOUSE_WHEEL, 
+	TOOLBOX							= gmui_pre_window_flags.CANVAS			| gmui_window_flags.NO_MOVE_DEPTH		| gmui_window_flags.NO_ROUNDING,
 };
 
 enum gmui_arrow_direction {
@@ -734,6 +736,7 @@ function gmui_window_state() {
         combo_items: undefined,
         combo_items_count: 0,
         combo_current_index: -1,
+        combo_selected_index: -1,
         combo_width: 0,
 		
 		// Scroll state
@@ -840,6 +843,8 @@ function gmui_begin(name, x = 0, y = 0, w = 512, h = 256, flags = 0) {
     
     var window = gmui_get_window(name);
     if (!window) return false;
+	
+	if (flags == -1) { flags = window.flags; };
     
     var no_move = (flags & gmui_window_flags.NO_MOVE) != 0;
 	var no_border = (flags & gmui_window_flags.NO_BORDER) != 0;
@@ -857,13 +862,15 @@ function gmui_begin(name, x = 0, y = 0, w = 512, h = 256, flags = 0) {
     } else if (!no_move) {
         if (x != -1) window.x = x;
         if (y != -1) window.y = y;
-        if (w != -1) window.width = w;
-        if (h != -1) window.height = h;
+        //if (w != -1) window.width = w;
+        //if (h != -1) window.height = h;
     }
     
-    window.flags = flags;
+	if (flags != -1) { window.flags = flags };
     window.active = true;
     gmui_array_clear(window.treeview_stack);
+	
+	window.rounding = (flags & gmui_window_flags.NO_ROUNDING) == 0;
 	
 	// Title bar (handle it in the 'end')
     var has_title_bar = (flags & gmui_window_flags.NO_TITLE_BAR) == 0;
@@ -893,7 +900,7 @@ function gmui_begin(name, x = 0, y = 0, w = 512, h = 256, flags = 0) {
     
     // Recreate surface if size changed
     var size_changed = window.width != w || window.height != h;
-    if ((size_changed && !no_move) || !surface_exists(window.surface)) {
+    if (size_changed || !surface_exists(window.surface)) {
 		surface_free(window.surface);
         gmui_create_surface(window);
     } else {
@@ -1145,6 +1152,7 @@ function gmui_end(_no_repeat = false) {
 			w.combo_items				= window.combo_items;
 			w.combo_items_count			= window.combo_items_count;
 			w.combo_current_index		= window.combo_current_index;
+			w.combo_selected_index		= window.combo_selected_index;
 			w.combo_width				= window.combo_width;
 			w.combo_x					= window.combo_x;
 			w.combo_y					= window.combo_y;
@@ -1156,6 +1164,7 @@ function gmui_end(_no_repeat = false) {
 			window.combo_items			= w.combo_items;
 			window.combo_items_count	= w.combo_items_count;
 			window.combo_current_index  = w.combo_current_index;
+			window.combo_selected_index = w.combo_selected_index;
 			window.combo_width			= w.combo_width;
 			window.combo_x				= w.combo_x;
 			window.combo_y				= w.combo_y;
@@ -1287,6 +1296,14 @@ function gmui_reset_window(name) {
 //////////////////////////////////////
 // INPUT
 //////////////////////////////////////
+function gmui_window_set_cursor(cr) {
+	if (window_has_focus()) {
+		if (window_get_cursor() != cr) {
+			window_set_cursor(cr);
+		}
+	}
+}
+
 function gmui_update_input() {
     if (!global.gmui.initialized) return;
     
@@ -1305,7 +1322,7 @@ function gmui_update_input() {
     
     global.gmui.frame_count++;
 	
-	window_set_cursor(cr_arrow);
+	gmui_window_set_cursor(cr_arrow);
 	
 	// Handle textbox input if one is active
 	if (global.gmui.active_textbox != undefined) {
@@ -2519,6 +2536,36 @@ function gmui_text(text) {
     return false;
 }
 
+function gmui_text_color(text, color, letter_spacing = 1) {
+    if (!global.gmui.initialized || !global.gmui.current_window) return false;
+    
+    var window = global.gmui.current_window;
+    var dc = window.dc;
+    var size = gmui_calc_text_size(text);
+	var bounds = [dc.cursor_x, dc.cursor_y, dc.cursor_x + size[0], dc.cursor_y + size[1]];
+	var is_color_array = is_array(color);
+	if (is_color_array && array_length(color) != string_length(text)) { return; }
+	var letter_width = gmui_calc_text_size("W")[0];
+	
+	if (is_color_array) {
+		for (var i = 0; i < array_length(color); i++) {
+			gmui_add_text(dc.cursor_x, dc.cursor_y, string_char_at(text, i + 1), color[i], bounds);
+			if (i != array_length(color) - 1) { dc.cursor_x += letter_width + letter_spacing; }
+		};
+	}
+	else{
+		gmui_add_text(dc.cursor_x, dc.cursor_y, text, color, bounds);
+	}
+	
+	dc.cursor_previous_x = dc.cursor_x;
+    dc.cursor_x += size[0] + global.gmui.style.item_spacing[0];
+    dc.line_height = max(dc.line_height, size[1]);
+	
+	gmui_new_line();
+	
+    return false;
+} function gmui_text_colour(text, colour) { gmui_text_color(text, colour); };
+
 function gmui_text_clickable(text) {
     if (!global.gmui.initialized || !global.gmui.current_window) return false;
     
@@ -2538,6 +2585,8 @@ function gmui_text_clickable(text) {
     var is_active = false;
     
     if (mouse_over && window.active) {
+		gmui_window_set_cursor(cr_drag);
+		
         global.gmui.is_hovering_element = true;
         if (global.gmui.mouse_clicked[0]) {
             global.gmui.last_pressed_clickable_id = element_id;
@@ -3004,6 +3053,106 @@ function gmui_menu_item(label, context_menu_name = undefined) {
 	//gmui_new_line();
 	
 	gmui_cache_set(item_id, check);
+    
+    return clicked && window.active;
+}
+
+function gmui_image_button1(sprite, subimg = 0, width = -1, height = -1, scale_spr = false) {
+    if (!global.gmui.initialized || !global.gmui.current_window) return false;
+    
+    var window = global.gmui.current_window;
+    var dc = window.dc;
+    var style = global.gmui.style;
+    var element_id = "id_image_button_" + string(sprite) + "_" + string(subimg) + "_" + string(dc.cursor_x) + "_" + string(dc.cursor_y);
+    
+    // Calculate button size
+    var button_width = width != -1 ? width : sprite_get_width(sprite);
+    var button_height = height != -1 ? height : sprite_get_height(sprite);
+	
+	// Calculate image width
+	var image_width = scale_spr ? button_width : sprite_get_width(sprite);
+	var image_height = scale_spr ? button_height : sprite_get_height(sprite);
+    
+    // Calculate button bounds
+    var button_x = dc.cursor_x;
+    var button_y = dc.cursor_y;
+    var button_bounds = [button_x, button_y, button_x + button_width, button_y + button_height];
+    
+    // Calculate sprite position (centered)
+    var sprite_x = button_x + (button_width - image_width) / 2;
+    var sprite_y = button_y + (button_height - image_height) / 2;
+    
+    // Check for mouse interaction
+    var mouse_over = gmui_is_mouse_over_window(window) && 
+                     gmui_is_point_in_rect(global.gmui.mouse_pos[0] - window.x, 
+                                         global.gmui.mouse_pos[1] - window.y, 
+                                         button_bounds) && !global.gmui.is_hovering_element;
+    
+    var clicked = false;
+    var is_active = false;
+    
+    if (mouse_over && window.active) {
+        global.gmui.is_hovering_element = true;
+        if (global.gmui.mouse_clicked[0]) {
+            global.gmui.last_pressed_clickable_id = element_id;
+        }
+        if (global.gmui.mouse_down[0] && global.gmui.last_pressed_clickable_id == element_id) {
+            is_active = true;
+        }
+        if (global.gmui.mouse_released[0] && global.gmui.last_pressed_clickable_id == element_id) {
+            clicked = true;
+        }
+    }
+    
+    // Draw button based on state
+    var bg_color, border_color;
+    
+    if (!window.active) {
+        // Window not active - disabled state
+        bg_color = style.button_disabled_bg_color;
+        border_color = style.button_disabled_border_color;
+    } else if (is_active) {
+        // Button being pressed
+        bg_color = style.button_active_bg_color;
+        border_color = style.button_active_border_color;
+    } else if (mouse_over) {
+        // Mouse hovering
+        bg_color = style.button_hover_bg_color;
+        border_color = style.button_hover_border_color;
+    } else {
+        // Normal state
+        bg_color = style.button_bg_color;
+        border_color = style.button_border_color;
+    }
+    
+    // Draw sprite with optional tint based on state
+    var sprite_color = #FFFFFF; // White color (no tint)
+    var sprite_alpha = 1.0;
+    
+    if (!window.active) {
+        // Disabled state - grayscale effect
+        sprite_alpha = 0.5;
+    } else if (is_active) {
+        gmui_add_rect_round(button_x, button_y, button_width, button_height, bg_color, style.button_rounding, button_bounds);
+    } else if (mouse_over) {
+        gmui_add_rect_round(button_x, button_y, button_width, button_height, bg_color, style.button_rounding, button_bounds);
+    }
+    
+    // Draw the sprite
+    gmui_add_sprite(sprite_x, sprite_y, image_width, image_height, sprite, subimg, button_bounds);
+    
+    // Apply tint by drawing a colored rectangle with blending
+    if (sprite_color != #FFFFFF || sprite_alpha < 1.0) {
+        // This should do the trick for now
+        gmui_add_rect_alpha(sprite_x, sprite_y, image_width, image_height, sprite_color, sprite_alpha * 128, button_bounds);
+    }
+    
+    // Update cursor position
+    dc.cursor_previous_x = dc.cursor_x;
+    dc.cursor_x += button_width + style.item_spacing[0];
+    dc.line_height = max(dc.line_height, button_height);
+    
+    gmui_new_line();
     
     return clicked && window.active;
 }
@@ -3998,8 +4147,8 @@ function gmui_sprite(sprite, subimg = 0) {
     
     // Update cursor position
     dc.cursor_previous_x = dc.cursor_x;
-    dc.cursor_x += surface_get_width(surface) + style.item_spacing[0];
-    dc.line_height = max(dc.line_height, surface_get_height(surface));
+    dc.cursor_x += sprite_get_width(sprite) + style.item_spacing[0];
+    dc.line_height = max(dc.line_height, sprite_get_height(sprite));
 	
 	gmui_new_line();
 };
@@ -4019,8 +4168,8 @@ function gmui_sprite_size(sprite, subimg = 0, width = -1, height = -1) {
     
     // Update cursor position
     dc.cursor_previous_x = dc.cursor_x;
-    dc.cursor_x += surface_get_width(surface) + style.item_spacing[0];
-    dc.line_height = max(dc.line_height, surface_get_height(surface));
+    dc.cursor_x += sprite_get_width(sprite) + style.item_spacing[0];
+    dc.line_height = max(dc.line_height, sprite_get_height(sprite));
 	
 	gmui_new_line();
 };
@@ -6194,6 +6343,69 @@ function gmui_checkbox_box(value, size = -1) {
     return value;
 }
 
+function gmui_checkbox_group(labels, selected_index) {
+    if (!global.gmui.initialized || !global.gmui.current_window) return selected_index;
+    
+    var new_selected = selected_index;
+    
+    for (var i = 0; i < array_length(labels); i++) {
+        var is_selected = (i == selected_index);
+        if (gmui_checkbox(labels[i], is_selected)) {
+            new_selected = i;
+        }
+        
+        if (i != selected_index && new_selected == i) {
+            selected_index = i; // Update for next iteration
+        }
+    }
+    
+    return new_selected;
+}
+
+function gmui_checkbox_group_vertical(labels, selected_index) {
+    if (!global.gmui.initialized || !global.gmui.current_window) return selected_index;
+    
+    var new_selected = selected_index;
+    
+    for (var i = 0; i < array_length(labels); i++) {
+        var is_selected = (i == selected_index);
+        if (gmui_checkbox(labels[i], is_selected)) {
+            new_selected = i;
+        }
+        
+        if (i != selected_index && new_selected == i) {
+            selected_index = i; // Update for next iteration
+        }
+    }
+    
+    return new_selected;
+}
+
+function gmui_checkbox_group_horizontal(labels, selected_index) {
+    if (!global.gmui.initialized || !global.gmui.current_window) return selected_index;
+    
+    var new_selected = selected_index;
+    var start_cursor_x = global.gmui.current_window.dc.cursor_x;
+    
+    for (var i = 0; i < array_length(labels); i++) {
+        var is_selected = (i == selected_index);
+        if (gmui_checkbox(labels[i], is_selected)) {
+            new_selected = i;
+        }
+        
+        if (i != selected_index && new_selected == i) {
+            selected_index = i; // Update for next iteration
+        }
+        
+        // Stay on same line for horizontal layout
+        if (i < array_length(labels) - 1) {
+            gmui_same_line();
+        }
+    }
+    
+    return new_selected;
+}
+
 function gmui_slider(label, value, min_value, max_value, width = -1) {
     if (!global.gmui.initialized || !global.gmui.current_window) return value;
     
@@ -6206,6 +6418,9 @@ function gmui_slider(label, value, min_value, max_value, width = -1) {
     var slider_width = (width > 0) ? width : 100; // Default width if not specified
     var slider_height = max(style.slider_track_height, style.slider_handle_height);
     
+	// Recognize the ## pattern
+	if (string_copy(label, 1, 2) == "##") { text_size = [ 0, 0 ]; }
+	
     // Total width needed (text + spacing + slider)
     var total_width = text_size[0] + style.slider_spacing + slider_width;
     var total_height = max(text_size[1], slider_height);
@@ -6859,7 +7074,7 @@ function gmui_input_float(value, step = 1, min_value = -1000000, max_value = 100
         }
         
         // Update cursor to show dragging
-        window_set_cursor(cr_size_we);
+        gmui_window_set_cursor(cr_size_we);
     } else if (is_dragging && global.gmui.mouse_released[0]) {
         // Stop dragging
         global.gmui.active_drag_textbox = undefined;
@@ -7135,7 +7350,7 @@ function gmui_input_int(value, step = 1, min_value = -1000000, max_value = 10000
             value_changed = true;
         }
         
-        window_set_cursor(cr_size_we);
+        gmui_window_set_cursor(cr_size_we);
     } else if (is_dragging && global.gmui.mouse_released[0]) {
         global.gmui.active_drag_textbox = undefined;
         is_dragging = false;
@@ -7350,6 +7565,7 @@ function gmui_combo(label, current_index, items, items_count = -1, width = -1, p
                 window.combo_items = items;
                 window.combo_items_count = items_count;
                 window.combo_current_index = current_index;
+                window.combo_selected_index = -1;
                 window.combo_width = combo_width;
 				window.combo_x = combo_x;
 				window.combo_y = combo_y;
@@ -7465,9 +7681,12 @@ function gmui_combo(label, current_index, items, items_count = -1, width = -1, p
     //    }
     //}
 	
-	if (window.combo_current_index != -1) {
-		current_index = window.combo_current_index;
+	if (window.combo_selected_index != -1 && window.active_combo == combo_id) {
+		current_index = window.combo_selected_index;
+		window.combo_selected_index = -1;
 		window.combo_current_index = -1;
+		window.active_combo = undefined; // Close dropdown
+		global.gmui.to_delete_combo = true;
 	};
     
     // Update cursor position
@@ -7573,8 +7792,9 @@ function gmui_combo_dropdown() {
         // Handle item selection
         if (item_mouse_over && global.gmui.mouse_clicked[0]) {
             window.combo_current_index = i;
-            window.active_combo = undefined; // Close dropdown
-			global.gmui.to_delete_combo = true;
+			window.combo_selected_index = i;
+            //window.active_combo = undefined; // Close dropdown
+			//global.gmui.to_delete_combo = true;
         }
 		
 		dc.cursor_y += item_height;
@@ -9293,7 +9513,14 @@ function gmui_tabs(tab_labels, selected_index, width = -1, allow_close = false) 
     // Advance cursor for next element
     gmui_new_line();
     
-    // Return selected index (or negative for close)
+	// Handle Close
+	if (selected_index < 0) {
+		selected_index = -selected_index - 1;
+		array_delete(tab_labels, selected_index, 1);
+		selected_index = max(0, selected_index - 1); // Make sure it doesnt go out of bounds
+	}
+	
+    // Return selected index
     return selected_index;
 }
 
@@ -9524,11 +9751,6 @@ function gmui_separator() {
     var window = global.gmui.current_window;
     var dc = window.dc;
     
-    // Move to new line if not at start
-    if (dc.cursor_x != dc.cursor_start_x) {
-        //gmui_new_line();
-    }
-    
     var thickness = 1;
     var _y = dc.cursor_y + thickness;
     gmui_add_rect(dc.cursor_start_x, _y, window.width - global.gmui.style.window_padding[0] * 2, thickness, global.gmui.style.border_color);
@@ -9536,6 +9758,50 @@ function gmui_separator() {
 	dc.cursor_previous_y = dc.cursor_y;
     dc.cursor_y += thickness + global.gmui.style.item_spacing[1];
     dc.line_height = 0;
+	
+	gmui_new_line();
+}
+
+function gmui_separator_text(text) {
+    if (!global.gmui.initialized || !global.gmui.current_window) return;
+    
+    var window = global.gmui.current_window;
+    var dc = window.dc;
+	var text_size = gmui_calc_text_size(text);
+	
+	gmui_add_text(dc.cursor_start_x, dc.cursor_y, text, global.gmui.style.border_color);
+    
+    var thickness = 1;
+    var _y = dc.cursor_y + thickness + text_size[1];
+    gmui_add_rect(dc.cursor_start_x, _y, window.width - global.gmui.style.window_padding[0] * 2, thickness, global.gmui.style.border_color);
+    
+	dc.cursor_previous_y = dc.cursor_y;
+    dc.cursor_y += thickness + global.gmui.style.item_spacing[1];
+    dc.line_height = text_size[1] + thickness;
+	
+	gmui_new_line();
+}
+
+function gmui_separator_text1(text) {
+    if (!global.gmui.initialized || !global.gmui.current_window) return;
+    
+    var window = global.gmui.current_window;
+    var dc = window.dc;
+	var text_size = gmui_calc_text_size(text);
+	
+	var primary_length = 24;
+    var thickness = 1;
+    var _y = dc.cursor_y + text_size[1] / 2;
+	
+	gmui_add_rect(dc.cursor_start_x, _y, primary_length - global.gmui.style.item_spacing[0], thickness, global.gmui.style.border_color);
+	
+	gmui_add_text(dc.cursor_start_x + primary_length, dc.cursor_y, text, global.gmui.style.border_color);
+    
+    gmui_add_rect(dc.cursor_start_x + text_size[0] + global.gmui.style.item_spacing[0] + primary_length, _y, window.width - global.gmui.style.window_padding[0] * 2, thickness, global.gmui.style.border_color);
+    
+	dc.cursor_previous_y = dc.cursor_y;
+    dc.cursor_y += thickness + global.gmui.style.item_spacing[1];
+    dc.line_height = text_size[1] + thickness;
 	
 	gmui_new_line();
 }
@@ -10193,7 +10459,7 @@ function gmui_handle_window_interaction(window) {
 		
 		if (near_right && near_bottom && !global.gmui.is_hovering_element) {
 			global.gmui.is_hovering_element = true;
-			window_set_cursor(cr_size_nwse);
+			gmui_window_set_cursor(cr_size_nwse);
 		}
     }
     
@@ -10208,7 +10474,7 @@ function gmui_handle_window_interaction(window) {
             gmui_create_surface(window); // Recreate surface with new size
         }
 		
-		window_set_cursor(cr_size_nwse);
+		gmui_window_set_cursor(cr_size_nwse);
     } else {
         window.is_resizing = false;
     }
@@ -10359,12 +10625,22 @@ function gmui_get_all_windows_sorted() {
     return result;
 }
 
+function gmui_cache_try(id, data) {
+	if (gmui_cache_get(id) != undefined) { return false; }
+	gmui_cache_set(id, data);
+	return true;
+}
+
 function gmui_cache_get(id) {
 	return global.gmui.cache[? id];
 }
 
 function gmui_cache_set(id, data) {
 	global.gmui.cache[? id] = data;
+}
+
+function gmui_cache_has(id) {
+	return global.gmui.cache[? id] != undefined;
 }
 
 function gmui_cache_delete(id) {
@@ -11616,16 +11892,6 @@ function gmui_demo() {
                 static selected_tab2 = 0;
                 selected_tab2 = gmui_tabs_with_close(temp_labels, selected_tab2);
                 
-                // Handle close (returns negative index)
-                if (selected_tab2 < 0) {
-                    var close_index = -selected_tab2 - 1;
-                    if (close_index >= 0 && close_index < array_length(temp_labels)) {
-                        // Remove tab
-                        array_delete(temp_labels, close_index, 1);
-                        selected_tab2 = max(0, min(selected_tab2, array_length(temp_labels) - 1));
-                    }
-                }
-                
                 gmui_separator();
                 
                 gmui_text("Fixed Width Tabs");
@@ -11822,59 +12088,75 @@ function gmui_demo() {
             static scatter_y = [2, 4, 5, 4, 5, 7, 8, 7, 9, 8];
             static pie_values = [25, 20, 15, 30, 10];
             static pie_labels = ["Red", "Blue", "Green", "Yellow", "Purple"];
-            
-            gmui_text("Data Visualization Examples");
-            gmui_text_disabled("Various chart types with customizable styling");
-            gmui_separator();
-            
-            // Line plot example
-            gmui_text("Line Plot - Time Series Data");
-            gmui_plot_lines("Frame Times (ms)", frame_times, array_length(frame_times), -1, 150);
 			
-            gmui_separator();
-            
-            // Bar chart example
-            gmui_text("Bar Chart - Performance Metrics");
-            gmui_plot_bars("Sensor Readings", plot_data, array_length(plot_data), -1, 150);
+			static d1 = false;
+			var dh = gmui_collapsing_header_ex("Line Plot", d1);
+            d1 = dh[1] ? !d1 : d1;
+			if (dh[0]) {
+				gmui_plot_lines("Line Plot - Time Series Data", frame_times, array_length(frame_times), -1, 150);
+				gmui_collapsing_header_end();
+			}
 			
-            gmui_separator();
-            
-            // Histogram example
-            gmui_text("Histogram - Value Distribution");
-            gmui_plot_histogram("Data Distribution", plot_data, array_length(plot_data), -1, 150, 6);
+			static d2 = false;
+			dh = gmui_collapsing_header_ex("Bar Plot", d2);
+            d2 = dh[1] ? !d2 : d2;
+			if (dh[0]) {
+				gmui_plot_bars("Bar Chart - Performance Metrics", plot_data, array_length(plot_data), -1, 150);
+				gmui_collapsing_header_end();
+			}
 			
-            gmui_separator();
-            
-            // Scatter plot example
-            gmui_text("Scatter Plot - Correlation");
-            gmui_plot_scatter("X vs Y Correlation", scatter_x, scatter_y, array_length(scatter_x), -1, 150);
+			static d3 = false;
+			dh = gmui_collapsing_header_ex("Histogram Plot", d3);
+            d3 = dh[1] ? !d3 : d3;
+			if (dh[0]) {
+				gmui_plot_histogram("Histogram - Value Distribution", plot_data, array_length(plot_data), -1, 150, 6);
+				gmui_collapsing_header_end();
+			}
 			
-            gmui_separator();
-            
-            // Pie plot example
-            gmui_text("Pie Plot - Proportional Data");
-            gmui_plot_pie("Sales Distribution", pie_values, pie_labels, array_length(pie_values), 300, 200);
-            gmui_plot_donut("Donut Chart Example", pie_values, pie_labels, array_length(pie_values), 300, 200, 0.4);
-            gmui_plot_pie_exploded("Exploded View", pie_values, pie_labels, array_length(pie_values), 300, 200, false);
-            
-            gmui_text("Controls");
-            for (var i = 0; i < array_length(pie_values); i++) {
-                gmui_text(pie_labels[i]); gmui_same_line();
-                pie_values[i] = gmui_input_int(pie_values[i], 1, 0, 100, 80);
-            }
+			static d4 = false;
+			dh = gmui_collapsing_header_ex("Scatter Plot", d4);
+            d4 = dh[1] ? !d4 : d4;
+			if (dh[0]) {
+				gmui_plot_scatter("Scatter Plot - X and Y Correlation", scatter_x, scatter_y, array_length(scatter_x), -1, 150);
+				gmui_collapsing_header_end();
+			}
 			
-            gmui_separator();
-            
-            // Stem plot example
-            gmui_text("Stem Plot - Discrete Signal");
-            gmui_plot_stem("Stem Data", plot_data, ["A","B","C","D","E","F","G","H","I","J"], array_length(plot_data), -1, 150, 3, c_lime);
+			static d5 = false;
+			dh = gmui_collapsing_header_ex("Stem Plot", d5);
+            d5 = dh[1] ? !d5 : d5;
+			if (dh[0]) {
+				gmui_plot_stem("Stem Plot - Discrete Signal", plot_data, ["A","B","C","D","E","F","G","H","I","J"], array_length(plot_data), -1, 150, 3, c_lime);
+				gmui_collapsing_header_end();
+			}
 			
-            gmui_separator();
-            
-            // Stair plot example
-            gmui_text("Stair Plot - Step Function");
-            gmui_plot_stair("Step Data", plot_data, array_length(plot_data), -1, 150, "post");
-            
+			static d6 = false;
+			dh = gmui_collapsing_header_ex("Stair Plot", d6);
+            d6 = dh[1] ? !d6 : d6;
+			if (dh[0]) {
+				gmui_plot_stair("Stair Plot - Step Function", plot_data, array_length(plot_data), -1, 150, "post");
+				gmui_collapsing_header_end();
+			}
+			
+			static d7 = false;
+			dh = gmui_collapsing_header_ex("Pie Plots", d7);
+            d7 = dh[1] ? !d7 : d7;
+			if (dh[0]) {
+				gmui_text("Pie Plot - Proportional Data");
+	            gmui_plot_pie("Pie Plot - Proportional Data", pie_values, pie_labels, array_length(pie_values), 300, 200);
+	            gmui_plot_donut("Pie Plot (Donut) - Proportional Data", pie_values, pie_labels, array_length(pie_values), 300, 200, 0.4);
+	            gmui_plot_pie_exploded("Pie Plot (Exploded) - Proportional Data", pie_values, pie_labels, array_length(pie_values), 300, 200, false);
+				
+				gmui_tab_width(32);
+	            gmui_text("Controls");
+	            for (var i = 0; i < array_length(pie_values); i++) {
+	                gmui_text(pie_labels[i]); gmui_same_line();
+	                gmui_tab(5);
+					pie_values[i] = gmui_input_int(pie_values[i], 1, 0, 100, 80);
+	            }
+				
+				gmui_collapsing_header_end();
+			}
+			
             gmui_collapsing_header_end();
         }
         
@@ -12560,7 +12842,7 @@ function gmui_wins_handle_splitters_recursive(node) {
         
         // Set cursor if hovering
         if (mouse_over_splitter || node.is_dragging) {
-            window_set_cursor(cr_size_we);
+            gmui_window_set_cursor(cr_size_we);
         }
         
     } else if (node.cut_axis == gmui_wins_cut_axis.HORIZONTAL) {
@@ -12614,7 +12896,7 @@ function gmui_wins_handle_splitters_recursive(node) {
         
         // Set cursor if hovering
         if (mouse_over_splitter || node.is_dragging) {
-            window_set_cursor(cr_size_ns);
+            gmui_window_set_cursor(cr_size_ns);
         }
     }
     
