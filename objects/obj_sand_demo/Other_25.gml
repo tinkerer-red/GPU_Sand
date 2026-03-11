@@ -116,6 +116,7 @@ ui_elem = function() {
 		var _window_flags = gmui_window_flags.AUTO_VSCROLL | gmui_window_flags.SCROLL_WITH_MOUSE_WHEEL | gmui_window_flags.NO_BORDER | gmui_window_flags.NO_TITLE_BAR;
 
 		if (gmui_begin(ui_elem_title, ui_elem_x, ui_elem_nub_y, ui_elem_expanded_width, ui_elem_height, _window_flags)) {
+			gmui_set_window_position(ui_elem_title, ui_elem_x, ui_elem_nub_y)
 			gmui_text("Elements");
 			gmui_separator();
 
@@ -294,6 +295,7 @@ ui_dev = function() {
 		var _window_flags = gmui_window_flags.AUTO_VSCROLL | gmui_window_flags.SCROLL_WITH_MOUSE_WHEEL | gmui_window_flags.NO_BORDER | gmui_window_flags.NO_TITLE_BAR;
 
 		if (gmui_begin(ui_dev_title, ui_dev_x, ui_dev_margin, ui_dev_expanded_width, ui_dev_height, _window_flags)) {
+			gmui_set_window_position(ui_dev_title, ui_dev_x, ui_dev_margin)
 			gmui_text("Dev Uniforms");
 			gmui_separator();
 
@@ -591,6 +593,7 @@ ui_pass = function() {
 		var _window_flags = gmui_window_flags.AUTO_VSCROLL | gmui_window_flags.SCROLL_WITH_MOUSE_WHEEL | gmui_window_flags.NO_BORDER | gmui_window_flags.NO_TITLE_BAR;
 
 		if (gmui_begin(ui_pass_title, ui_pass_x, ui_pass_margin, ui_pass_expanded_width, ui_pass_height, _window_flags)) {
+			gmui_set_window_position(ui_pass_title, ui_pass_x, ui_pass_margin)
 			gmui_text("Pass Views");
 			gmui_separator();
 

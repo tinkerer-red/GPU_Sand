@@ -1,4 +1,4 @@
-// Date: 2026-03-10T22:43:37.6981880-05:00
+// Date: 2026-03-11T00:23:05.3378423-05:00
 // begin import shdSandSimCommon.fsh.__shady_macro_Uniforms
 #line 33
 uniform float u_dev_state_of_matter;
@@ -4485,14 +4485,28 @@ uniform vec2 u_texel_size;
 void main() {
 	vec4 _claim_pixel = texture2D(gm_BaseTexture, v_vTexcoord);
 	vec2 _claim_offset = rg_to_vel(_claim_pixel.rg);
-	vec2 _resolved_offset = _claim_offset;
+	vec2 _resolved_offset = vec2(0.0);
 
-	if (_claim_offset.x == 0.0 && _claim_offset.y == 0.0) {
+	if (_claim_offset.x != 0.0 || _claim_offset.y != 0.0) {
+		vec2 _source_texcoord = v_vTexcoord + (_claim_offset * u_texel_size);
+
+		if (uv_in_bounds(_source_texcoord)) {
+			vec2 _source_claim_offset = rg_to_vel(texture2D(gm_BaseTexture, _source_texcoord).rg);
+			vec2 _reverse_offset = -_claim_offset;
+
+			if (
+				(_source_claim_offset.x == 0.0 && _source_claim_offset.y == 0.0) ||
+				(_source_claim_offset.x == _reverse_offset.x && _source_claim_offset.y == _reverse_offset.y)
+			) {
+				_resolved_offset = _claim_offset;
+			}
+		}
+	}
+	else {
 		for (int _offset_y = -SIM_MAX_MOVE_RADIUS; _offset_y <= SIM_MAX_MOVE_RADIUS; ++_offset_y) {
 			for (int _offset_x = -SIM_MAX_MOVE_RADIUS; _offset_x <= SIM_MAX_MOVE_RADIUS; ++_offset_x) {
 				vec2 _neighbor_offset;
 				vec2 _neighbor_texcoord;
-				vec4 _neighbor_claim_pixel;
 				vec2 _neighbor_claim_offset;
 
 				if (_offset_x == 0 && _offset_y == 0) {
@@ -4506,10 +4520,12 @@ void main() {
 					continue;
 				}
 
-				_neighbor_claim_pixel = texture2D(gm_BaseTexture, _neighbor_texcoord);
-				_neighbor_claim_offset = rg_to_vel(_neighbor_claim_pixel.rg);
+				_neighbor_claim_offset = rg_to_vel(texture2D(gm_BaseTexture, _neighbor_texcoord).rg);
 
-				if (_neighbor_claim_offset.x == -_neighbor_offset.x && _neighbor_claim_offset.y == -_neighbor_offset.y) {
+				if (
+					_neighbor_claim_offset.x == -_neighbor_offset.x &&
+					_neighbor_claim_offset.y == -_neighbor_offset.y
+				) {
 					_resolved_offset = _neighbor_offset;
 					break;
 				}

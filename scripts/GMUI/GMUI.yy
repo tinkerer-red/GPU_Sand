@@ -6,7 +6,7 @@
   "name":"GMUI",
   "parent":{
     "name":"GMUI",
-    "path":"folders/_Libraries/GMUI.yy",
+    "path":"folders/GMUI.yy",
   },
   "resourceType":"GMScript",
   "resourceVersion":"2.0",

@@ -859,11 +859,9 @@ function gmui_begin(name, x = 0, y = 0, w = 512, h = 256, flags = 0) {
         window.first_frame = false;
 		
 		if (is_popup) { window.open = false; }; // if its a popup, initiate as closed
-    } else if (!no_move) {
-        if (x != -1) window.x = x;
-        if (y != -1) window.y = y;
-        //if (w != -1) window.width = w;
-        //if (h != -1) window.height = h;
+    } else if (no_move) {
+        if (x != -1) window.x = window.initial_x;
+        if (y != -1) window.y = window.initial_y;
     }
     
 	if (flags != -1) { window.flags = flags };

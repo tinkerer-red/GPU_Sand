@@ -4,7 +4,7 @@
   "name":"gmui_shader_saturation_brightness",
   "parent":{
     "name":"Shaders",
-    "path":"folders/_Libraries/GMUI/Shaders.yy",
+    "path":"folders/GMUI/Shaders.yy",
   },
   "resourceType":"GMShader",
   "resourceVersion":"2.0",

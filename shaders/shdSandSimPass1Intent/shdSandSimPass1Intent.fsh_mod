@@ -1,4 +1,4 @@
-// Date: 2026-03-10T22:43:37.6951766-05:00
+// Date: 2026-03-10T23:50:26.4464802-05:00
 // begin import shdSandSimCommon.fsh.__shady_macro_Uniforms
 #line 33
 uniform float u_dev_state_of_matter;
@@ -4680,15 +4680,6 @@ bool movement_class_uses_velocity_box(ElementStaticData _elem_static_data) {
 	);
 }
 
-bool movement_class_uses_direct_velocity(ElementStaticData _elem_static_data) {
-	return (
-		_elem_static_data.movement_class == MOVE_CLASS_LIQUID ||
-		_elem_static_data.movement_class == MOVE_CLASS_VISCOUS_LIQUID ||
-		_elem_static_data.movement_class == MOVE_CLASS_GAS ||
-		_elem_static_data.movement_class == MOVE_CLASS_DRIFTING_SOLID
-	);
-}
-
 vec2 choose_velocity_box_offset(ElementStaticData _elem_static_data, vec2 _self_texcoord, vec2 _velocity, int _gravity_step, float _seed) {
 	float _reach_x = clamp(ceil(abs_float(_velocity.x)), 0.0, float(SIM_MAX_MOVE_RADIUS));
 	float _reach_y = clamp(ceil(abs_float(_velocity.y)), 0.0, float(SIM_MAX_MOVE_RADIUS));
@@ -4767,7 +4758,7 @@ vec2 choose_velocity_box_offset(ElementStaticData _elem_static_data, vec2 _self_
 				_vertical_score = (abs_float(_candidate_offset.y) / _reach_y) * _vertical_bonus;
 			}
 			if (_candidate_offset.x != 0.0 && (_candidate_offset.x * _side_bias) > 0.0) {
-				_tie_break_score = 0.005;
+				_tie_break_score = 0.02;
 			}
 
 			_score = _alignment_score + _distance_score + _horizontal_score + _vertical_score + _tie_break_score;
@@ -4784,16 +4775,9 @@ vec2 choose_velocity_box_offset(ElementStaticData _elem_static_data, vec2 _self_
 				_score -= 0.35 * (abs_float(_candidate_offset.y) / max(_reach_y, 1.0));
 			}
 
-			if (_score > _best_score + 0.0001) {
+			if (_score > _best_score) {
 				_best_score = _score;
 				_best_offset = _candidate_offset;
-			} else if (abs_float(_score - _best_score) <= 0.0001) {
-				if (_candidate_offset.x != 0.0 && _best_offset.x != 0.0) {
-					float _tie_roll = rand(_self_texcoord + (_candidate_offset * u_texel_size), _seed + 91.0);
-					if (_tie_roll < 0.5) {
-						_best_offset = _candidate_offset;
-					}
-				}
 			}
 		}
 	}
@@ -4939,9 +4923,7 @@ void main() {
 		}
 	}
 
-	if (movement_class_uses_direct_velocity(_elem_static_data)) {
-		_intent_offset = choose_direct_velocity_offset(_elem_static_data, v_vTexcoord, _elem_dynamic_data.vel);
-	}
+	_intent_offset = choose_direct_velocity_offset(_elem_static_data, v_vTexcoord, _elem_dynamic_data.vel);
 
 	if ((_intent_offset.x == 0.0 && _intent_offset.y == 0.0) && movement_class_uses_velocity_box(_elem_static_data)) {
 		if (abs_float(_elem_dynamic_data.vel.x) >= 0.5 || abs_float(_elem_dynamic_data.vel.y) >= 0.5) {
