@@ -1,93 +1,77 @@
-// Date: 2026-03-10T23:50:26.4464802-05:00
+// Date: 2026-03-13T15:18:18.5517442-05:00
 // begin import shdSandSimCommon.fsh.__shady_macro_Uniforms
 #line 33
 uniform float u_dev_state_of_matter;
 #line 33
-uniform float u_dev_movement_class;
+uniform float u_dev_flow_mode;
 #line 33
-uniform float u_dev_feature_flags;
+uniform float u_dev_vertical_drive;
 #line 33
-uniform float u_dev_dynamic_mode;
+uniform float u_dev_max_speed;
 #line 33
-uniform float u_dev_gravity_force;
+uniform float u_dev_lateral_spread;
 #line 33
-uniform float u_dev_max_vel_x;
+uniform float u_dev_momentum_retention;
 #line 33
-uniform float u_dev_max_vel_y;
+uniform float u_dev_support_resistance;
 #line 33
-uniform float u_dev_can_slip;
+uniform float u_dev_clump_factor;
 #line 33
-uniform float u_dev_x_slip_search_range;
-#line 33
-uniform float u_dev_y_slip_search_range;
-#line 33
-uniform float u_dev_wake_chance;
-#line 33
-uniform float u_dev_stickiness_chance;
-#line 33
-uniform float u_dev_bounce_chance;
-#line 33
-uniform float u_dev_bounce_dampening_multiplier;
-#line 33
-uniform float u_dev_airborne_vel_decay_chance;
-#line 33
-uniform float u_dev_friction_vel_decay_chance;
-#line 33
-uniform float u_dev_mass;
+uniform float u_dev_surface_response;
 #line 33
 uniform float u_dev_density;
 #line 33
 uniform float u_dev_immovable;
 #line 33
-uniform float u_dev_replace_mode;
-#line 33
 uniform float u_dev_replace_mask;
 #line 33
-uniform float u_dev_replace_count;
+uniform float u_dev_temp_contribute;
 #line 33
-uniform float u_dev_replace_id_0;
+uniform float u_dev_temp_locked;
 #line 33
-uniform float u_dev_replace_id_1;
+uniform float u_dev_temp_transfer_rate;
 #line 33
-uniform float u_dev_replace_id_2;
+uniform float u_dev_temp_idle_value;
 #line 33
-uniform float u_dev_replace_id_3;
+uniform float u_dev_temp_on_low;
 #line 33
-uniform float u_dev_interaction_group;
+uniform float u_dev_temp_on_high;
 #line 33
-uniform float u_dev_interaction_mask;
+uniform float u_dev_moisture_contribute;
 #line 33
-uniform float u_dev_lifetime_max;
+uniform float u_dev_moisture_locked;
 #line 33
-uniform float u_dev_lifetime_decay_chance;
+uniform float u_dev_moisture_transfer_rate;
 #line 33
-uniform float u_dev_transition_on_life_end;
+uniform float u_dev_moisture_idle_value;
 #line 33
-uniform float u_dev_temperature_decay;
+uniform float u_dev_moisture_on_low;
 #line 33
-uniform float u_dev_temperature_spread_chance;
+uniform float u_dev_moisture_on_high;
 #line 33
-uniform float u_dev_temperature_min;
+uniform float u_dev_corrosion_contribute;
 #line 33
-uniform float u_dev_temperature_max;
+uniform float u_dev_corrosion_locked;
 #line 33
-uniform float u_dev_transition_on_temp_low;
+uniform float u_dev_corrosion_transfer_rate;
 #line 33
-uniform float u_dev_transition_on_temp_high;
+uniform float u_dev_corrosion_idle_value;
 #line 33
-uniform float u_dev_ignition_threshold;
+uniform float u_dev_corrosion_on_low;
 #line 33
-uniform float u_dev_burn_product;
+uniform float u_dev_corrosion_on_high;
 #line 33
-uniform float u_dev_cooling_product;
+uniform float u_dev_magic_contribute;
 #line 33
-uniform float u_dev_corrosion_resistance;
+uniform float u_dev_magic_locked;
 #line 33
-uniform float u_dev_wetness_capacity;
+uniform float u_dev_magic_transfer_rate;
 #line 33
-uniform float u_dev_quench_threshold;
+uniform float u_dev_magic_idle_value;
 #line 33
-uniform float u_dev_viscosity;
+uniform float u_dev_magic_on_low;
+#line 33
+uniform float u_dev_magic_on_high;
 #line 33
 uniform float u_dev_color;
 // end import shdSandSimCommon.fsh.__shady_macro_Uniforms
@@ -130,15 +114,27 @@ int bit_shift_right(int x, int n) {
 #line 34
 }
 #line 34
-int bitwise_and(int x, int mask) {
+int bitwise_and(int _left, int _right) {
 #line 34
-    return x - (x / (mask + 1)) * (mask + 1); // equivalent to x % (mask + 1) if mask is a power-of-two minus 1
+	int _result = 0;
 #line 34
-}
+	for (int i = 0; i < 32; ++i) {
 #line 34
-int bitwise_and_of_pow2(int x, int pow2) {
+		int _bit_value = int(pow(2.0, float(i)));
 #line 34
-    return imod(x, pow2);
+		bool _left_has_bit = mod(float(_left), float(_bit_value * 2)) >= float(_bit_value);
+#line 34
+		bool _right_has_bit = mod(float(_right), float(_bit_value * 2)) >= float(_bit_value);
+#line 34
+		if (_left_has_bit && _right_has_bit) {
+#line 34
+			_result += _bit_value;
+#line 34
+		}
+#line 34
+	}
+#line 34
+	return _result;
 #line 34
 }
 #line 34
@@ -361,59 +357,23 @@ int round(float x) {
 #line 34
 #define MATTER_SOLID 3
 #line 34
-#define MOVE_CLASS_NONE_STATIC 0
+#define FLOW_MODE_STATIC 0
 #line 34
-#define MOVE_CLASS_POWDER 1
+#define FLOW_MODE_POWDER 1
 #line 34
-#define MOVE_CLASS_LIQUID 2
+#define FLOW_MODE_LIQUID 2
 #line 34
-#define MOVE_CLASS_GAS 3
+#define FLOW_MODE_GAS 3
 #line 34
-#define MOVE_CLASS_VISCOUS_LIQUID 4
+#define FLOW_MODE_GOO 4
 #line 34
-#define MOVE_CLASS_DRIFTING_SOLID 5
+#define LANE_TEMPERATURE 0
 #line 34
-#define MOVE_CLASS_HEAVY_POWDER 6
+#define LANE_MOISTURE 1
 #line 34
-#define MOVE_CLASS_STICKY_POWDER 7
+#define LANE_CORROSION 2
 #line 34
-#define FEATURE_USES_LIFETIME 1
-#line 34
-#define FEATURE_USES_TEMPERATURE 2
-#line 34
-#define FEATURE_CAN_IGNITE 4
-#line 34
-#define FEATURE_PHASE_CHANGES 8
-#line 34
-#define FEATURE_CAN_WET 16
-#line 34
-#define FEATURE_CAN_CORRODE 32
-#line 34
-#define FEATURE_EMITS_HEAT 64
-#line 34
-#define FEATURE_REACTS_AS_COOLANT 128
-#line 34
-#define DYNAMIC_MODE_NONE 0
-#line 34
-#define DYNAMIC_MODE_LIFETIME 1
-#line 34
-#define DYNAMIC_MODE_TEMPERATURE 2
-#line 34
-#define DYNAMIC_MODE_MOISTURE 3
-#line 34
-#define DYNAMIC_MODE_CORROSION 4
-#line 34
-#define DYNAMIC_MODE_CHARGE_RESERVED 5
-#line 34
-#define REPLACE_MODE_EMPTY_ONLY 0
-#line 34
-#define REPLACE_MODE_LESS_DENSE 1
-#line 34
-#define REPLACE_MODE_LESS_DENSE_OR_EQUAL 2
-#line 34
-#define REPLACE_MODE_CLASS_MASK 3
-#line 34
-#define REPLACE_MODE_EXPLICIT_IDS_FALLBACK 4
+#define LANE_MAGIC 3
 #line 34
 #define REPLACE_MASK_EMPTY 1
 #line 34
@@ -425,30 +385,6 @@ int round(float x) {
 #line 34
 #define REPLACE_MASK_SAME_ELEMENT 16
 #line 34
-#define REPLACE_MASK_SAME_GROUP 32
-#line 34
-#define INTERACTION_GROUP_INERT 0
-#line 34
-#define INTERACTION_GROUP_WATER_LIKE 1
-#line 34
-#define INTERACTION_GROUP_OIL_LIKE 2
-#line 34
-#define INTERACTION_GROUP_MOLTEN 3
-#line 34
-#define INTERACTION_GROUP_ACID_LIKE 4
-#line 34
-#define INTERACTION_GROUP_COMBUSTIBLE_GAS 5
-#line 34
-#define INTERACTION_GROUP_SMOKE_LIKE 6
-#line 34
-#define INTERACTION_GROUP_CRYOGENIC 7
-#line 34
-#define INTERACTION_GROUP_ORGANIC 8
-#line 34
-#define INTERACTION_GROUP_MINERAL 9
-#line 34
-#define INTERACTION_GROUP_METAL 10
-#line 34
 #endregion
 #line 34
 #region Data Structures
@@ -457,95 +393,79 @@ struct ElementStaticData {
 #line 34
 	int id;
 #line 34
+	float base_color;
+#line 34
 	int state_of_matter;
 #line 34
-	int movement_class;
+	int flow_mode;
 #line 34
-	int feature_flags;
+	float vertical_drive;
 #line 34
-	int dynamic_mode;
+	float max_speed;
 #line 34
-	float gravity_force;
+	float lateral_spread;
 #line 34
-	float max_vel_x;
+	float momentum_retention;
 #line 34
-	float max_vel_y;
+	float support_resistance;
 #line 34
-	bool can_slip;
+	float clump_factor;
 #line 34
-	float x_slip_search_range;
-#line 34
-	float y_slip_search_range;
-#line 34
-	float wake_chance;
-#line 34
-	float stickiness_chance;
-#line 34
-	float bounce_chance;
-#line 34
-	float bounce_dampening_multiplier;
-#line 34
-	float airborne_vel_decay_chance;
-#line 34
-	float friction_vel_decay_chance;
-#line 34
-	float mass;
+	float surface_response;
 #line 34
 	float density;
 #line 34
 	bool immovable;
 #line 34
-	int replace_mode;
-#line 34
 	int replace_mask;
 #line 34
-	int replace_count;
+	bool temp_contribute;
 #line 34
-	int replace_id_0;
+	bool temp_locked;
 #line 34
-	int replace_id_1;
+	float temp_transfer_rate;
 #line 34
-	int replace_id_2;
+	float temp_idle_value;
 #line 34
-	int replace_id_3;
+	int temp_on_low;
 #line 34
-	int interaction_group;
+	int temp_on_high;
 #line 34
-	int interaction_mask;
+	bool moisture_contribute;
 #line 34
-	float lifetime_max;
+	bool moisture_locked;
 #line 34
-	float lifetime_decay_chance;
+	float moisture_transfer_rate;
 #line 34
-	int transition_on_life_end;
+	float moisture_idle_value;
 #line 34
-	float temperature_decay;
+	int moisture_on_low;
 #line 34
-	float temperature_spread_chance;
+	int moisture_on_high;
 #line 34
-	float temperature_min;
+	bool corrosion_contribute;
 #line 34
-	float temperature_max;
+	bool corrosion_locked;
 #line 34
-	int transition_on_temp_low;
+	float corrosion_transfer_rate;
 #line 34
-	int transition_on_temp_high;
+	float corrosion_idle_value;
 #line 34
-	float ignition_threshold;
+	int corrosion_on_low;
 #line 34
-	int burn_product;
+	int corrosion_on_high;
 #line 34
-	int cooling_product;
+	bool magic_contribute;
 #line 34
-	float corrosion_resistance;
+	bool magic_locked;
 #line 34
-	float wetness_capacity;
+	float magic_transfer_rate;
 #line 34
-	float quench_threshold;
+	float magic_idle_value;
 #line 34
-	float viscosity;
+	int magic_on_low;
 #line 34
-	float base_color;
+	int magic_on_high;
 #line 34
 };
 #line 34
@@ -563,7 +483,21 @@ struct ElementDynamicData {
 #line 34
 	int y_speed;
 #line 34
-	int dynamic_byte;
+	int temp_dir;
+#line 34
+	int temp_magnitude;
+#line 34
+	int moisture_dir;
+#line 34
+	int moisture_magnitude;
+#line 34
+	int corrosion_dir;
+#line 34
+	int corrosion_magnitude;
+#line 34
+	int magic_dir;
+#line 34
+	int magic_magnitude;
 #line 34
 };
 #line 34
@@ -580,12 +514,6 @@ bool flag_enabled(int _mask_value, int _flag_value) {
 	}
 #line 34
 	return imod(int(floor(float(_mask_value) / float(_flag_value))), 2) == 1;
-#line 34
-}
-#line 34
-bool feature_enabled(int _feature_flags, int _flag_value) {
-#line 34
-	return flag_enabled(_feature_flags, _flag_value);
 #line 34
 }
 #line 34
@@ -661,95 +589,79 @@ ElementStaticData make_empty_static_data() {
 #line 34
 	_elem_static_data.id = ELEM_ID_EMPTY;
 #line 34
+	_elem_static_data.base_color = 0.0;
+#line 34
 	_elem_static_data.state_of_matter = MATTER_EMPTY;
 #line 34
-	_elem_static_data.movement_class = MOVE_CLASS_NONE_STATIC;
+	_elem_static_data.flow_mode = FLOW_MODE_STATIC;
 #line 34
-	_elem_static_data.feature_flags = 0;
+	_elem_static_data.vertical_drive = 0.0;
 #line 34
-	_elem_static_data.dynamic_mode = DYNAMIC_MODE_NONE;
+	_elem_static_data.max_speed = 0.0;
 #line 34
-	_elem_static_data.gravity_force = 0.0;
+	_elem_static_data.lateral_spread = 0.0;
 #line 34
-	_elem_static_data.max_vel_x = 0.0;
+	_elem_static_data.momentum_retention = 0.0;
 #line 34
-	_elem_static_data.max_vel_y = 0.0;
+	_elem_static_data.support_resistance = 1.0;
 #line 34
-	_elem_static_data.can_slip = false;
+	_elem_static_data.clump_factor = 0.0;
 #line 34
-	_elem_static_data.x_slip_search_range = 0.0;
-#line 34
-	_elem_static_data.y_slip_search_range = 0.0;
-#line 34
-	_elem_static_data.wake_chance = 0.0;
-#line 34
-	_elem_static_data.stickiness_chance = 0.0;
-#line 34
-	_elem_static_data.bounce_chance = 0.0;
-#line 34
-	_elem_static_data.bounce_dampening_multiplier = 0.0;
-#line 34
-	_elem_static_data.airborne_vel_decay_chance = 0.0;
-#line 34
-	_elem_static_data.friction_vel_decay_chance = 0.0;
-#line 34
-	_elem_static_data.mass = 0.0;
+	_elem_static_data.surface_response = 0.0;
 #line 34
 	_elem_static_data.density = 0.0;
 #line 34
 	_elem_static_data.immovable = false;
 #line 34
-	_elem_static_data.replace_mode = REPLACE_MODE_EMPTY_ONLY;
-#line 34
 	_elem_static_data.replace_mask = REPLACE_MASK_EMPTY;
 #line 34
-	_elem_static_data.replace_count = 0;
+	_elem_static_data.temp_contribute = false;
 #line 34
-	_elem_static_data.replace_id_0 = 0;
+	_elem_static_data.temp_locked = true;
 #line 34
-	_elem_static_data.replace_id_1 = 0;
+	_elem_static_data.temp_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.replace_id_2 = 0;
+	_elem_static_data.temp_idle_value = 0.0;
 #line 34
-	_elem_static_data.replace_id_3 = 0;
+	_elem_static_data.temp_on_low = ELEM_ID_EMPTY;
 #line 34
-	_elem_static_data.interaction_group = INTERACTION_GROUP_INERT;
+	_elem_static_data.temp_on_high = ELEM_ID_EMPTY;
 #line 34
-	_elem_static_data.interaction_mask = 0;
+	_elem_static_data.moisture_contribute = false;
 #line 34
-	_elem_static_data.lifetime_max = 0.0;
+	_elem_static_data.moisture_locked = true;
 #line 34
-	_elem_static_data.lifetime_decay_chance = 0.0;
+	_elem_static_data.moisture_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.transition_on_life_end = ELEM_ID_EMPTY;
+	_elem_static_data.moisture_idle_value = 0.0;
 #line 34
-	_elem_static_data.temperature_decay = 0.0;
+	_elem_static_data.moisture_on_low = ELEM_ID_EMPTY;
 #line 34
-	_elem_static_data.temperature_spread_chance = 0.0;
+	_elem_static_data.moisture_on_high = ELEM_ID_EMPTY;
 #line 34
-	_elem_static_data.temperature_min = -128.0;
+	_elem_static_data.corrosion_contribute = false;
 #line 34
-	_elem_static_data.temperature_max = 127.0;
+	_elem_static_data.corrosion_locked = true;
 #line 34
-	_elem_static_data.transition_on_temp_low = ELEM_ID_EMPTY;
+	_elem_static_data.corrosion_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.transition_on_temp_high = ELEM_ID_EMPTY;
+	_elem_static_data.corrosion_idle_value = 0.0;
 #line 34
-	_elem_static_data.ignition_threshold = 0.0;
+	_elem_static_data.corrosion_on_low = ELEM_ID_EMPTY;
 #line 34
-	_elem_static_data.burn_product = ELEM_ID_EMPTY;
+	_elem_static_data.corrosion_on_high = ELEM_ID_EMPTY;
 #line 34
-	_elem_static_data.cooling_product = ELEM_ID_EMPTY;
+	_elem_static_data.magic_contribute = false;
 #line 34
-	_elem_static_data.corrosion_resistance = 1.0;
+	_elem_static_data.magic_locked = true;
 #line 34
-	_elem_static_data.wetness_capacity = 0.0;
+	_elem_static_data.magic_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.quench_threshold = 0.0;
+	_elem_static_data.magic_idle_value = 0.0;
 #line 34
-	_elem_static_data.viscosity = 0.0;
+	_elem_static_data.magic_on_low = ELEM_ID_EMPTY;
 #line 34
-	_elem_static_data.base_color = 0.0;
+	_elem_static_data.magic_on_high = ELEM_ID_EMPTY;
 #line 34
 	return _elem_static_data;
 #line 34
@@ -770,95 +682,79 @@ ElementStaticData get_element_static_data(int _element_id) {
 #line 34
 	_elem_static_data.id = ELEM_ID_DEV;
 #line 34
+	_elem_static_data.base_color = u_dev_color;
+#line 34
 	_elem_static_data.state_of_matter = int(u_dev_state_of_matter);
 #line 34
-	_elem_static_data.movement_class = int(u_dev_movement_class);
+	_elem_static_data.flow_mode = int(u_dev_flow_mode);
 #line 34
-	_elem_static_data.feature_flags = int(u_dev_feature_flags);
+	_elem_static_data.vertical_drive = u_dev_vertical_drive;
 #line 34
-	_elem_static_data.dynamic_mode = int(u_dev_dynamic_mode);
+	_elem_static_data.max_speed = u_dev_max_speed;
 #line 34
-	_elem_static_data.gravity_force = u_dev_gravity_force;
+	_elem_static_data.lateral_spread = u_dev_lateral_spread;
 #line 34
-	_elem_static_data.max_vel_x = u_dev_max_vel_x;
+	_elem_static_data.momentum_retention = u_dev_momentum_retention;
 #line 34
-	_elem_static_data.max_vel_y = u_dev_max_vel_y;
+	_elem_static_data.support_resistance = u_dev_support_resistance;
 #line 34
-	_elem_static_data.can_slip = (u_dev_can_slip > 0.5);
+	_elem_static_data.clump_factor = u_dev_clump_factor;
 #line 34
-	_elem_static_data.x_slip_search_range = u_dev_x_slip_search_range;
-#line 34
-	_elem_static_data.y_slip_search_range = u_dev_y_slip_search_range;
-#line 34
-	_elem_static_data.wake_chance = u_dev_wake_chance;
-#line 34
-	_elem_static_data.stickiness_chance = u_dev_stickiness_chance;
-#line 34
-	_elem_static_data.bounce_chance = u_dev_bounce_chance;
-#line 34
-	_elem_static_data.bounce_dampening_multiplier = u_dev_bounce_dampening_multiplier;
-#line 34
-	_elem_static_data.airborne_vel_decay_chance = u_dev_airborne_vel_decay_chance;
-#line 34
-	_elem_static_data.friction_vel_decay_chance = u_dev_friction_vel_decay_chance;
-#line 34
-	_elem_static_data.mass = u_dev_mass;
+	_elem_static_data.surface_response = u_dev_surface_response;
 #line 34
 	_elem_static_data.density = u_dev_density;
 #line 34
 	_elem_static_data.immovable = (u_dev_immovable > 0.5);
 #line 34
-	_elem_static_data.replace_mode = int(u_dev_replace_mode);
-#line 34
 	_elem_static_data.replace_mask = int(u_dev_replace_mask);
 #line 34
-	_elem_static_data.replace_count = int(u_dev_replace_count);
+	_elem_static_data.temp_contribute = (u_dev_temp_contribute > 0.5);
 #line 34
-	_elem_static_data.replace_id_0 = int(u_dev_replace_id_0);
+	_elem_static_data.temp_locked = (u_dev_temp_locked > 0.5);
 #line 34
-	_elem_static_data.replace_id_1 = int(u_dev_replace_id_1);
+	_elem_static_data.temp_transfer_rate = u_dev_temp_transfer_rate;
 #line 34
-	_elem_static_data.replace_id_2 = int(u_dev_replace_id_2);
+	_elem_static_data.temp_idle_value = u_dev_temp_idle_value;
 #line 34
-	_elem_static_data.replace_id_3 = int(u_dev_replace_id_3);
+	_elem_static_data.temp_on_low = int(u_dev_temp_on_low);
 #line 34
-	_elem_static_data.interaction_group = int(u_dev_interaction_group);
+	_elem_static_data.temp_on_high = int(u_dev_temp_on_high);
 #line 34
-	_elem_static_data.interaction_mask = int(u_dev_interaction_mask);
+	_elem_static_data.moisture_contribute = (u_dev_moisture_contribute > 0.5);
 #line 34
-	_elem_static_data.lifetime_max = u_dev_lifetime_max;
+	_elem_static_data.moisture_locked = (u_dev_moisture_locked > 0.5);
 #line 34
-	_elem_static_data.lifetime_decay_chance = u_dev_lifetime_decay_chance;
+	_elem_static_data.moisture_transfer_rate = u_dev_moisture_transfer_rate;
 #line 34
-	_elem_static_data.transition_on_life_end = int(u_dev_transition_on_life_end);
+	_elem_static_data.moisture_idle_value = u_dev_moisture_idle_value;
 #line 34
-	_elem_static_data.temperature_decay = u_dev_temperature_decay;
+	_elem_static_data.moisture_on_low = int(u_dev_moisture_on_low);
 #line 34
-	_elem_static_data.temperature_spread_chance = u_dev_temperature_spread_chance;
+	_elem_static_data.moisture_on_high = int(u_dev_moisture_on_high);
 #line 34
-	_elem_static_data.temperature_min = u_dev_temperature_min;
+	_elem_static_data.corrosion_contribute = (u_dev_corrosion_contribute > 0.5);
 #line 34
-	_elem_static_data.temperature_max = u_dev_temperature_max;
+	_elem_static_data.corrosion_locked = (u_dev_corrosion_locked > 0.5);
 #line 34
-	_elem_static_data.transition_on_temp_low = int(u_dev_transition_on_temp_low);
+	_elem_static_data.corrosion_transfer_rate = u_dev_corrosion_transfer_rate;
 #line 34
-	_elem_static_data.transition_on_temp_high = int(u_dev_transition_on_temp_high);
+	_elem_static_data.corrosion_idle_value = u_dev_corrosion_idle_value;
 #line 34
-	_elem_static_data.ignition_threshold = u_dev_ignition_threshold;
+	_elem_static_data.corrosion_on_low = int(u_dev_corrosion_on_low);
 #line 34
-	_elem_static_data.burn_product = int(u_dev_burn_product);
+	_elem_static_data.corrosion_on_high = int(u_dev_corrosion_on_high);
 #line 34
-	_elem_static_data.cooling_product = int(u_dev_cooling_product);
+	_elem_static_data.magic_contribute = (u_dev_magic_contribute > 0.5);
 #line 34
-	_elem_static_data.corrosion_resistance = u_dev_corrosion_resistance;
+	_elem_static_data.magic_locked = (u_dev_magic_locked > 0.5);
 #line 34
-	_elem_static_data.wetness_capacity = u_dev_wetness_capacity;
+	_elem_static_data.magic_transfer_rate = u_dev_magic_transfer_rate;
 #line 34
-	_elem_static_data.quench_threshold = u_dev_quench_threshold;
+	_elem_static_data.magic_idle_value = u_dev_magic_idle_value;
 #line 34
-	_elem_static_data.viscosity = u_dev_viscosity;
+	_elem_static_data.magic_on_low = int(u_dev_magic_on_low);
 #line 34
-	_elem_static_data.base_color = u_dev_color;
+	_elem_static_data.magic_on_high = int(u_dev_magic_on_high);
 // end import ElemDev.fsh.__shady_macro_DefineElementStaticData
 #line 34
 		return _elem_static_data;
@@ -872,95 +768,79 @@ ElementStaticData get_element_static_data(int _element_id) {
 #line 34
 	_elem_static_data.id = ELEM_ID_SAND;
 #line 34
+	_elem_static_data.base_color = 15915571.0;
+#line 34
 	_elem_static_data.state_of_matter = MATTER_SOLID;
 #line 34
-	_elem_static_data.movement_class = MOVE_CLASS_POWDER;
+	_elem_static_data.flow_mode = FLOW_MODE_POWDER;
 #line 34
-	_elem_static_data.feature_flags = 0;
+	_elem_static_data.vertical_drive = 1.0;
 #line 34
-	_elem_static_data.dynamic_mode = DYNAMIC_MODE_NONE;
+	_elem_static_data.max_speed = 3.0;
 #line 34
-	_elem_static_data.gravity_force = 1.0;
+	_elem_static_data.lateral_spread = 1.5;
 #line 34
-	_elem_static_data.max_vel_x = 2.0;
+	_elem_static_data.momentum_retention = 0.55;
 #line 34
-	_elem_static_data.max_vel_y = 3.0;
+	_elem_static_data.support_resistance = 0.20;
 #line 34
-	_elem_static_data.can_slip = true;
+	_elem_static_data.clump_factor = 0.10;
 #line 34
-	_elem_static_data.x_slip_search_range = 2.0;
-#line 34
-	_elem_static_data.y_slip_search_range = 2.0;
-#line 34
-	_elem_static_data.wake_chance = 1.0;
-#line 34
-	_elem_static_data.stickiness_chance = 0.0;
-#line 34
-	_elem_static_data.bounce_chance = 0.08;
-#line 34
-	_elem_static_data.bounce_dampening_multiplier = 0.35;
-#line 34
-	_elem_static_data.airborne_vel_decay_chance = 0.3;
-#line 34
-	_elem_static_data.friction_vel_decay_chance = 0.60;
-#line 34
-	_elem_static_data.mass = 150.0;
+	_elem_static_data.surface_response = 0.15;
 #line 34
 	_elem_static_data.density = 1600.0;
 #line 34
 	_elem_static_data.immovable = false;
 #line 34
-	_elem_static_data.replace_mode = REPLACE_MODE_LESS_DENSE;
-#line 34
 	_elem_static_data.replace_mask = REPLACE_MASK_EMPTY + REPLACE_MASK_GAS + REPLACE_MASK_LIQUID;
 #line 34
-	_elem_static_data.replace_count = 1;
+	_elem_static_data.temp_contribute = true;
 #line 34
-	_elem_static_data.replace_id_0 = ELEM_ID_WATER;
+	_elem_static_data.temp_locked = false;
 #line 34
-	_elem_static_data.replace_id_1 = 0;
+	_elem_static_data.temp_transfer_rate = 0.05;
 #line 34
-	_elem_static_data.replace_id_2 = 0;
+	_elem_static_data.temp_idle_value = 10.0;
 #line 34
-	_elem_static_data.replace_id_3 = 0;
+	_elem_static_data.temp_on_low = ELEM_ID_SAND;
 #line 34
-	_elem_static_data.interaction_group = INTERACTION_GROUP_MINERAL;
+	_elem_static_data.temp_on_high = ELEM_ID_GLASS;
 #line 34
-	_elem_static_data.interaction_mask = 0;
+	_elem_static_data.moisture_contribute = true;
 #line 34
-	_elem_static_data.lifetime_max = 0.0;
+	_elem_static_data.moisture_locked = false;
 #line 34
-	_elem_static_data.lifetime_decay_chance = 0.0;
+	_elem_static_data.moisture_transfer_rate = 0.35;
 #line 34
-	_elem_static_data.transition_on_life_end = ELEM_ID_EMPTY;
+	_elem_static_data.moisture_idle_value = 0.0;
 #line 34
-	_elem_static_data.temperature_decay = 0.0;
+	_elem_static_data.moisture_on_low = ELEM_ID_SAND;
 #line 34
-	_elem_static_data.temperature_spread_chance = 0.0;
+	_elem_static_data.moisture_on_high = ELEM_ID_WET_SAND;
 #line 34
-	_elem_static_data.temperature_min = -128.0;
+	_elem_static_data.corrosion_contribute = false;
 #line 34
-	_elem_static_data.temperature_max = 127.0;
+	_elem_static_data.corrosion_locked = true;
 #line 34
-	_elem_static_data.transition_on_temp_low = ELEM_ID_SAND;
+	_elem_static_data.corrosion_transfer_rate = 0.00;
 #line 34
-	_elem_static_data.transition_on_temp_high = ELEM_ID_SAND;
+	_elem_static_data.corrosion_idle_value = 0.0;
 #line 34
-	_elem_static_data.ignition_threshold = 0.0;
+	_elem_static_data.corrosion_on_low = ELEM_ID_SAND;
 #line 34
-	_elem_static_data.burn_product = ELEM_ID_EMPTY;
+	_elem_static_data.corrosion_on_high = ELEM_ID_SAND;
 #line 34
-	_elem_static_data.cooling_product = ELEM_ID_SAND;
+	_elem_static_data.magic_contribute = false;
 #line 34
-	_elem_static_data.corrosion_resistance = 0.85;
+	_elem_static_data.magic_locked = true;
 #line 34
-	_elem_static_data.wetness_capacity = 0.0;
+	_elem_static_data.magic_transfer_rate = 0.00;
 #line 34
-	_elem_static_data.quench_threshold = 0.0;
+	_elem_static_data.magic_idle_value = 0.0;
 #line 34
-	_elem_static_data.viscosity = 0.0;
+	_elem_static_data.magic_on_low = ELEM_ID_SAND;
 #line 34
-	_elem_static_data.base_color = 15915571.0;
+	_elem_static_data.magic_on_high = ELEM_ID_SAND;
 // end import ElemSand.fsh.__shady_macro_DefineElementStaticData
 #line 34
 		return _elem_static_data;
@@ -974,95 +854,79 @@ ElementStaticData get_element_static_data(int _element_id) {
 #line 34
 	_elem_static_data.id = ELEM_ID_WATER;
 #line 34
+	_elem_static_data.base_color = 3375359.0;
+#line 34
 	_elem_static_data.state_of_matter = MATTER_LIQUID;
 #line 34
-	_elem_static_data.movement_class = MOVE_CLASS_LIQUID;
+	_elem_static_data.flow_mode = FLOW_MODE_LIQUID;
 #line 34
-	_elem_static_data.feature_flags = FEATURE_REACTS_AS_COOLANT;
+	_elem_static_data.vertical_drive = 1.0;
 #line 34
-	_elem_static_data.dynamic_mode = DYNAMIC_MODE_NONE;
+	_elem_static_data.max_speed = 5.0;
 #line 34
-	_elem_static_data.gravity_force = 1.0;
+	_elem_static_data.lateral_spread = 5.0;
 #line 34
-	_elem_static_data.max_vel_x = 4.0;
+	_elem_static_data.momentum_retention = 0.82;
 #line 34
-	_elem_static_data.max_vel_y = 5.0;
+	_elem_static_data.support_resistance = 0.05;
 #line 34
-	_elem_static_data.can_slip = true;
+	_elem_static_data.clump_factor = 0.0;
 #line 34
-	_elem_static_data.x_slip_search_range = 5.0;
-#line 34
-	_elem_static_data.y_slip_search_range = 2.0;
-#line 34
-	_elem_static_data.wake_chance = 1.0;
-#line 34
-	_elem_static_data.stickiness_chance = 0.0;
-#line 34
-	_elem_static_data.bounce_chance = 0.0;
-#line 34
-	_elem_static_data.bounce_dampening_multiplier = 0.0;
-#line 34
-	_elem_static_data.airborne_vel_decay_chance = 0.20;
-#line 34
-	_elem_static_data.friction_vel_decay_chance = 0.08;
-#line 34
-	_elem_static_data.mass = 80.0;
+	_elem_static_data.surface_response = 0.10;
 #line 34
 	_elem_static_data.density = 1000.0;
 #line 34
 	_elem_static_data.immovable = false;
 #line 34
-	_elem_static_data.replace_mode = REPLACE_MODE_LESS_DENSE_OR_EQUAL;
-#line 34
 	_elem_static_data.replace_mask = REPLACE_MASK_EMPTY + REPLACE_MASK_GAS;
 #line 34
-	_elem_static_data.replace_count = 0;
+	_elem_static_data.temp_contribute = true;
 #line 34
-	_elem_static_data.replace_id_0 = 0;
+	_elem_static_data.temp_locked = false;
 #line 34
-	_elem_static_data.replace_id_1 = 0;
+	_elem_static_data.temp_transfer_rate = 0.45;
 #line 34
-	_elem_static_data.replace_id_2 = 0;
+	_elem_static_data.temp_idle_value = 0.0;
 #line 34
-	_elem_static_data.replace_id_3 = 0;
+	_elem_static_data.temp_on_low = ELEM_ID_ICE;
 #line 34
-	_elem_static_data.interaction_group = INTERACTION_GROUP_WATER_LIKE;
+	_elem_static_data.temp_on_high = ELEM_ID_STEAM;
 #line 34
-	_elem_static_data.interaction_mask = 0;
+	_elem_static_data.moisture_contribute = true;
 #line 34
-	_elem_static_data.lifetime_max = 0.0;
+	_elem_static_data.moisture_locked = false;
 #line 34
-	_elem_static_data.lifetime_decay_chance = 0.0;
+	_elem_static_data.moisture_transfer_rate = 1.00;
 #line 34
-	_elem_static_data.transition_on_life_end = ELEM_ID_WATER;
+	_elem_static_data.moisture_idle_value = 100.0;
 #line 34
-	_elem_static_data.temperature_decay = 0.03;
+	_elem_static_data.moisture_on_low = ELEM_ID_WATER;
 #line 34
-	_elem_static_data.temperature_spread_chance = 0.45;
+	_elem_static_data.moisture_on_high = ELEM_ID_WATER;
 #line 34
-	_elem_static_data.temperature_min = -12.0;
+	_elem_static_data.corrosion_contribute = false;
 #line 34
-	_elem_static_data.temperature_max = 18.0;
+	_elem_static_data.corrosion_locked = true;
 #line 34
-	_elem_static_data.transition_on_temp_low = ELEM_ID_ICE;
+	_elem_static_data.corrosion_transfer_rate = 0.00;
 #line 34
-	_elem_static_data.transition_on_temp_high = ELEM_ID_STEAM;
+	_elem_static_data.corrosion_idle_value = 0.0;
 #line 34
-	_elem_static_data.ignition_threshold = 0.0;
+	_elem_static_data.corrosion_on_low = ELEM_ID_WATER;
 #line 34
-	_elem_static_data.burn_product = ELEM_ID_EMPTY;
+	_elem_static_data.corrosion_on_high = ELEM_ID_WATER;
 #line 34
-	_elem_static_data.cooling_product = ELEM_ID_WATER;
+	_elem_static_data.magic_contribute = false;
 #line 34
-	_elem_static_data.corrosion_resistance = 0.95;
+	_elem_static_data.magic_locked = true;
 #line 34
-	_elem_static_data.wetness_capacity = 255.0;
+	_elem_static_data.magic_transfer_rate = 0.00;
 #line 34
-	_elem_static_data.quench_threshold = 180.0;
+	_elem_static_data.magic_idle_value = 0.0;
 #line 34
-	_elem_static_data.viscosity = 0.0;
+	_elem_static_data.magic_on_low = ELEM_ID_WATER;
 #line 34
-	_elem_static_data.base_color = 3375359.0;
+	_elem_static_data.magic_on_high = ELEM_ID_WATER;
 // end import ElemWater.fsh.__shady_macro_DefineElementStaticData
 #line 34
 		return _elem_static_data;
@@ -1076,95 +940,79 @@ ElementStaticData get_element_static_data(int _element_id) {
 #line 34
 	_elem_static_data.id = ELEM_ID_STONE;
 #line 34
+	_elem_static_data.base_color = 7829367.0;
+#line 34
 	_elem_static_data.state_of_matter = MATTER_SOLID;
 #line 34
-	_elem_static_data.movement_class = MOVE_CLASS_NONE_STATIC;
+	_elem_static_data.flow_mode = FLOW_MODE_STATIC;
 #line 34
-	_elem_static_data.feature_flags = 0;
+	_elem_static_data.vertical_drive = 0.0;
 #line 34
-	_elem_static_data.dynamic_mode = DYNAMIC_MODE_NONE;
+	_elem_static_data.max_speed = 0.0;
 #line 34
-	_elem_static_data.gravity_force = 0.0;
+	_elem_static_data.lateral_spread = 0.0;
 #line 34
-	_elem_static_data.max_vel_x = 0.0;
+	_elem_static_data.momentum_retention = 1.0;
 #line 34
-	_elem_static_data.max_vel_y = 0.0;
+	_elem_static_data.support_resistance = 1.0;
 #line 34
-	_elem_static_data.can_slip = false;
+	_elem_static_data.clump_factor = 1.0;
 #line 34
-	_elem_static_data.x_slip_search_range = 0.0;
-#line 34
-	_elem_static_data.y_slip_search_range = 0.0;
-#line 34
-	_elem_static_data.wake_chance = 0.0;
-#line 34
-	_elem_static_data.stickiness_chance = 0.0;
-#line 34
-	_elem_static_data.bounce_chance = 0.0;
-#line 34
-	_elem_static_data.bounce_dampening_multiplier = 0.0;
-#line 34
-	_elem_static_data.airborne_vel_decay_chance = 0.0;
-#line 34
-	_elem_static_data.friction_vel_decay_chance = 0.0;
-#line 34
-	_elem_static_data.mass = 900.0;
+	_elem_static_data.surface_response = 0.0;
 #line 34
 	_elem_static_data.density = 2600.0;
 #line 34
 	_elem_static_data.immovable = true;
 #line 34
-	_elem_static_data.replace_mode = REPLACE_MODE_EMPTY_ONLY;
-#line 34
 	_elem_static_data.replace_mask = REPLACE_MASK_EMPTY;
 #line 34
-	_elem_static_data.replace_count = 0;
+	_elem_static_data.temp_contribute = true;
 #line 34
-	_elem_static_data.replace_id_0 = 0;
+	_elem_static_data.temp_locked = false;
 #line 34
-	_elem_static_data.replace_id_1 = 0;
+	_elem_static_data.temp_transfer_rate = 0.05;
 #line 34
-	_elem_static_data.replace_id_2 = 0;
+	_elem_static_data.temp_idle_value = 20.0;
 #line 34
-	_elem_static_data.replace_id_3 = 0;
+	_elem_static_data.temp_on_low = ELEM_ID_STONE;
 #line 34
-	_elem_static_data.interaction_group = INTERACTION_GROUP_MINERAL;
+	_elem_static_data.temp_on_high = ELEM_ID_LAVA;
 #line 34
-	_elem_static_data.interaction_mask = 0;
+	_elem_static_data.moisture_contribute = false;
 #line 34
-	_elem_static_data.lifetime_max = 0.0;
+	_elem_static_data.moisture_locked = true;
 #line 34
-	_elem_static_data.lifetime_decay_chance = 0.0;
+	_elem_static_data.moisture_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.transition_on_life_end = ELEM_ID_STONE;
+	_elem_static_data.moisture_idle_value = 0.0;
 #line 34
-	_elem_static_data.temperature_decay = 0.0;
+	_elem_static_data.moisture_on_low = ELEM_ID_STONE;
 #line 34
-	_elem_static_data.temperature_spread_chance = 0.05;
+	_elem_static_data.moisture_on_high = ELEM_ID_STONE;
 #line 34
-	_elem_static_data.temperature_min = -128.0;
+	_elem_static_data.corrosion_contribute = false;
 #line 34
-	_elem_static_data.temperature_max = 127.0;
+	_elem_static_data.corrosion_locked = false;
 #line 34
-	_elem_static_data.transition_on_temp_low = ELEM_ID_STONE;
+	_elem_static_data.corrosion_transfer_rate = 0.05;
 #line 34
-	_elem_static_data.transition_on_temp_high = ELEM_ID_STONE;
+	_elem_static_data.corrosion_idle_value = 0.0;
 #line 34
-	_elem_static_data.ignition_threshold = 0.0;
+	_elem_static_data.corrosion_on_low = ELEM_ID_STONE;
 #line 34
-	_elem_static_data.burn_product = ELEM_ID_EMPTY;
+	_elem_static_data.corrosion_on_high = ELEM_ID_GRAVEL;
 #line 34
-	_elem_static_data.cooling_product = ELEM_ID_STONE;
+	_elem_static_data.magic_contribute = false;
 #line 34
-	_elem_static_data.corrosion_resistance = 0.95;
+	_elem_static_data.magic_locked = true;
 #line 34
-	_elem_static_data.wetness_capacity = 0.0;
+	_elem_static_data.magic_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.quench_threshold = 0.0;
+	_elem_static_data.magic_idle_value = 0.0;
 #line 34
-	_elem_static_data.viscosity = 1.0;
+	_elem_static_data.magic_on_low = ELEM_ID_STONE;
 #line 34
-	_elem_static_data.base_color = 7829367.0;
+	_elem_static_data.magic_on_high = ELEM_ID_STONE;
 // end import ElemStone.fsh.__shady_macro_DefineElementStaticData
 #line 34
 		return _elem_static_data;
@@ -1178,95 +1026,79 @@ ElementStaticData get_element_static_data(int _element_id) {
 #line 34
 	_elem_static_data.id = ELEM_ID_WALL;
 #line 34
+	_elem_static_data.base_color = 4473924.0;
+#line 34
 	_elem_static_data.state_of_matter = MATTER_SOLID;
 #line 34
-	_elem_static_data.movement_class = MOVE_CLASS_NONE_STATIC;
+	_elem_static_data.flow_mode = FLOW_MODE_STATIC;
 #line 34
-	_elem_static_data.feature_flags = 0;
+	_elem_static_data.vertical_drive = 0.0;
 #line 34
-	_elem_static_data.dynamic_mode = DYNAMIC_MODE_NONE;
+	_elem_static_data.max_speed = 0.0;
 #line 34
-	_elem_static_data.gravity_force = 0.0;
+	_elem_static_data.lateral_spread = 0.0;
 #line 34
-	_elem_static_data.max_vel_x = 0.0;
+	_elem_static_data.momentum_retention = 1.0;
 #line 34
-	_elem_static_data.max_vel_y = 0.0;
+	_elem_static_data.support_resistance = 1.0;
 #line 34
-	_elem_static_data.can_slip = false;
+	_elem_static_data.clump_factor = 1.0;
 #line 34
-	_elem_static_data.x_slip_search_range = 0.0;
-#line 34
-	_elem_static_data.y_slip_search_range = 0.0;
-#line 34
-	_elem_static_data.wake_chance = 0.0;
-#line 34
-	_elem_static_data.stickiness_chance = 0.0;
-#line 34
-	_elem_static_data.bounce_chance = 0.0;
-#line 34
-	_elem_static_data.bounce_dampening_multiplier = 0.0;
-#line 34
-	_elem_static_data.airborne_vel_decay_chance = 0.0;
-#line 34
-	_elem_static_data.friction_vel_decay_chance = 0.0;
-#line 34
-	_elem_static_data.mass = 1000.0;
+	_elem_static_data.surface_response = 0.0;
 #line 34
 	_elem_static_data.density = 5000.0;
 #line 34
 	_elem_static_data.immovable = true;
 #line 34
-	_elem_static_data.replace_mode = REPLACE_MODE_EMPTY_ONLY;
-#line 34
 	_elem_static_data.replace_mask = REPLACE_MASK_EMPTY;
 #line 34
-	_elem_static_data.replace_count = 0;
+	_elem_static_data.temp_contribute = false;
 #line 34
-	_elem_static_data.replace_id_0 = 0;
+	_elem_static_data.temp_locked = true;
 #line 34
-	_elem_static_data.replace_id_1 = 0;
+	_elem_static_data.temp_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.replace_id_2 = 0;
+	_elem_static_data.temp_idle_value = 0.0;
 #line 34
-	_elem_static_data.replace_id_3 = 0;
+	_elem_static_data.temp_on_low = ELEM_ID_WALL;
 #line 34
-	_elem_static_data.interaction_group = INTERACTION_GROUP_INERT;
+	_elem_static_data.temp_on_high = ELEM_ID_WALL;
 #line 34
-	_elem_static_data.interaction_mask = 0;
+	_elem_static_data.moisture_contribute = false;
 #line 34
-	_elem_static_data.lifetime_max = 0.0;
+	_elem_static_data.moisture_locked = true;
 #line 34
-	_elem_static_data.lifetime_decay_chance = 0.0;
+	_elem_static_data.moisture_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.transition_on_life_end = ELEM_ID_WALL;
+	_elem_static_data.moisture_idle_value = 0.0;
 #line 34
-	_elem_static_data.temperature_decay = 0.0;
+	_elem_static_data.moisture_on_low = ELEM_ID_WALL;
 #line 34
-	_elem_static_data.temperature_spread_chance = 0.0;
+	_elem_static_data.moisture_on_high = ELEM_ID_WALL;
 #line 34
-	_elem_static_data.temperature_min = -128.0;
+	_elem_static_data.corrosion_contribute = false;
 #line 34
-	_elem_static_data.temperature_max = 127.0;
+	_elem_static_data.corrosion_locked = true;
 #line 34
-	_elem_static_data.transition_on_temp_low = ELEM_ID_WALL;
+	_elem_static_data.corrosion_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.transition_on_temp_high = ELEM_ID_WALL;
+	_elem_static_data.corrosion_idle_value = 0.0;
 #line 34
-	_elem_static_data.ignition_threshold = 0.0;
+	_elem_static_data.corrosion_on_low = ELEM_ID_WALL;
 #line 34
-	_elem_static_data.burn_product = ELEM_ID_EMPTY;
+	_elem_static_data.corrosion_on_high = ELEM_ID_WALL;
 #line 34
-	_elem_static_data.cooling_product = ELEM_ID_WALL;
+	_elem_static_data.magic_contribute = false;
 #line 34
-	_elem_static_data.corrosion_resistance = 1.0;
+	_elem_static_data.magic_locked = true;
 #line 34
-	_elem_static_data.wetness_capacity = 0.0;
+	_elem_static_data.magic_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.quench_threshold = 0.0;
+	_elem_static_data.magic_idle_value = 0.0;
 #line 34
-	_elem_static_data.viscosity = 1.0;
+	_elem_static_data.magic_on_low = ELEM_ID_WALL;
 #line 34
-	_elem_static_data.base_color = 4473924.0;
+	_elem_static_data.magic_on_high = ELEM_ID_WALL;
 // end import ElemWall.fsh.__shady_macro_DefineElementStaticData
 #line 34
 		return _elem_static_data;
@@ -1280,95 +1112,79 @@ ElementStaticData get_element_static_data(int _element_id) {
 #line 34
 	_elem_static_data.id = ELEM_ID_WOOD;
 #line 34
+	_elem_static_data.base_color = 9132587.0;
+#line 34
 	_elem_static_data.state_of_matter = MATTER_SOLID;
 #line 34
-	_elem_static_data.movement_class = MOVE_CLASS_NONE_STATIC;
+	_elem_static_data.flow_mode = FLOW_MODE_STATIC;
 #line 34
-	_elem_static_data.feature_flags = FEATURE_CAN_IGNITE + FEATURE_USES_TEMPERATURE;
+	_elem_static_data.vertical_drive = 0.0;
 #line 34
-	_elem_static_data.dynamic_mode = DYNAMIC_MODE_TEMPERATURE;
+	_elem_static_data.max_speed = 0.0;
 #line 34
-	_elem_static_data.gravity_force = 0.0;
+	_elem_static_data.lateral_spread = 0.0;
 #line 34
-	_elem_static_data.max_vel_x = 0.0;
+	_elem_static_data.momentum_retention = 1.0;
 #line 34
-	_elem_static_data.max_vel_y = 0.0;
+	_elem_static_data.support_resistance = 1.0;
 #line 34
-	_elem_static_data.can_slip = false;
+	_elem_static_data.clump_factor = 1.0;
 #line 34
-	_elem_static_data.x_slip_search_range = 0.0;
-#line 34
-	_elem_static_data.y_slip_search_range = 0.0;
-#line 34
-	_elem_static_data.wake_chance = 0.0;
-#line 34
-	_elem_static_data.stickiness_chance = 0.0;
-#line 34
-	_elem_static_data.bounce_chance = 0.0;
-#line 34
-	_elem_static_data.bounce_dampening_multiplier = 0.0;
-#line 34
-	_elem_static_data.airborne_vel_decay_chance = 0.0;
-#line 34
-	_elem_static_data.friction_vel_decay_chance = 0.0;
-#line 34
-	_elem_static_data.mass = 500.0;
+	_elem_static_data.surface_response = 0.0;
 #line 34
 	_elem_static_data.density = 700.0;
 #line 34
 	_elem_static_data.immovable = true;
 #line 34
-	_elem_static_data.replace_mode = REPLACE_MODE_EMPTY_ONLY;
-#line 34
 	_elem_static_data.replace_mask = REPLACE_MASK_EMPTY;
 #line 34
-	_elem_static_data.replace_count = 0;
+	_elem_static_data.temp_contribute = true;
 #line 34
-	_elem_static_data.replace_id_0 = 0;
+	_elem_static_data.temp_locked = false;
 #line 34
-	_elem_static_data.replace_id_1 = 0;
+	_elem_static_data.temp_transfer_rate = 0.25;
 #line 34
-	_elem_static_data.replace_id_2 = 0;
+	_elem_static_data.temp_idle_value = 10.0;
 #line 34
-	_elem_static_data.replace_id_3 = 0;
+	_elem_static_data.temp_on_low = ELEM_ID_WOOD;
 #line 34
-	_elem_static_data.interaction_group = INTERACTION_GROUP_ORGANIC;
+	_elem_static_data.temp_on_high = ELEM_ID_EMBER;
 #line 34
-	_elem_static_data.interaction_mask = 0;
+	_elem_static_data.moisture_contribute = true;
 #line 34
-	_elem_static_data.lifetime_max = 0.0;
+	_elem_static_data.moisture_locked = false;
 #line 34
-	_elem_static_data.lifetime_decay_chance = 0.0;
+	_elem_static_data.moisture_transfer_rate = 0.20;
 #line 34
-	_elem_static_data.transition_on_life_end = ELEM_ID_WOOD;
+	_elem_static_data.moisture_idle_value = 10.0;
 #line 34
-	_elem_static_data.temperature_decay = 0.02;
+	_elem_static_data.moisture_on_low = ELEM_ID_WOOD;
 #line 34
-	_elem_static_data.temperature_spread_chance = 0.25;
+	_elem_static_data.moisture_on_high = ELEM_ID_WOOD;
 #line 34
-	_elem_static_data.temperature_min = -128.0;
+	_elem_static_data.corrosion_contribute = false;
 #line 34
-	_elem_static_data.temperature_max = 48.0;
+	_elem_static_data.corrosion_locked = true;
 #line 34
-	_elem_static_data.transition_on_temp_low = ELEM_ID_WOOD;
+	_elem_static_data.corrosion_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.transition_on_temp_high = ELEM_ID_EMBER;
+	_elem_static_data.corrosion_idle_value = 0.0;
 #line 34
-	_elem_static_data.ignition_threshold = 96.0;
+	_elem_static_data.corrosion_on_low = ELEM_ID_WOOD;
 #line 34
-	_elem_static_data.burn_product = ELEM_ID_EMBER;
+	_elem_static_data.corrosion_on_high = ELEM_ID_WOOD;
 #line 34
-	_elem_static_data.cooling_product = ELEM_ID_WOOD;
+	_elem_static_data.magic_contribute = false;
 #line 34
-	_elem_static_data.corrosion_resistance = 0.25;
+	_elem_static_data.magic_locked = true;
 #line 34
-	_elem_static_data.wetness_capacity = 120.0;
+	_elem_static_data.magic_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.quench_threshold = 0.0;
+	_elem_static_data.magic_idle_value = 0.0;
 #line 34
-	_elem_static_data.viscosity = 1.0;
+	_elem_static_data.magic_on_low = ELEM_ID_WOOD;
 #line 34
-	_elem_static_data.base_color = 9132587.0;
+	_elem_static_data.magic_on_high = ELEM_ID_WOOD;
 // end import ElemWood.fsh.__shady_macro_DefineElementStaticData
 #line 34
 		return _elem_static_data;
@@ -1382,95 +1198,79 @@ ElementStaticData get_element_static_data(int _element_id) {
 #line 34
 	_elem_static_data.id = ELEM_ID_FIRE;
 #line 34
+	_elem_static_data.base_color = 16738816.0;
+#line 34
 	_elem_static_data.state_of_matter = MATTER_GAS;
 #line 34
-	_elem_static_data.movement_class = MOVE_CLASS_GAS;
+	_elem_static_data.flow_mode = FLOW_MODE_GAS;
 #line 34
-	_elem_static_data.feature_flags = FEATURE_USES_LIFETIME + FEATURE_USES_TEMPERATURE + FEATURE_EMITS_HEAT + FEATURE_CAN_IGNITE;
+	_elem_static_data.vertical_drive = -0.8;
 #line 34
-	_elem_static_data.dynamic_mode = DYNAMIC_MODE_LIFETIME;
+	_elem_static_data.max_speed = 4.0;
 #line 34
-	_elem_static_data.gravity_force = -0.8;
+	_elem_static_data.lateral_spread = 4.0;
 #line 34
-	_elem_static_data.max_vel_x = 3.0;
+	_elem_static_data.momentum_retention = 0.8;
 #line 34
-	_elem_static_data.max_vel_y = 4.0;
+	_elem_static_data.support_resistance = 0.0;
 #line 34
-	_elem_static_data.can_slip = true;
+	_elem_static_data.clump_factor = 0.0;
 #line 34
-	_elem_static_data.x_slip_search_range = 4.0;
-#line 34
-	_elem_static_data.y_slip_search_range = 3.0;
-#line 34
-	_elem_static_data.wake_chance = 1.0;
-#line 34
-	_elem_static_data.stickiness_chance = 0.0;
-#line 34
-	_elem_static_data.bounce_chance = 0.0;
-#line 34
-	_elem_static_data.bounce_dampening_multiplier = 0.0;
-#line 34
-	_elem_static_data.airborne_vel_decay_chance = 0.25;
-#line 34
-	_elem_static_data.friction_vel_decay_chance = 0.15;
-#line 34
-	_elem_static_data.mass = 8.0;
+	_elem_static_data.surface_response = 0.0;
 #line 34
 	_elem_static_data.density = 8.0;
 #line 34
 	_elem_static_data.immovable = false;
 #line 34
-	_elem_static_data.replace_mode = REPLACE_MODE_LESS_DENSE_OR_EQUAL;
-#line 34
 	_elem_static_data.replace_mask = REPLACE_MASK_EMPTY + REPLACE_MASK_GAS;
 #line 34
-	_elem_static_data.replace_count = 0;
+	_elem_static_data.temp_contribute = true;
 #line 34
-	_elem_static_data.replace_id_0 = 0;
+	_elem_static_data.temp_locked = false;
 #line 34
-	_elem_static_data.replace_id_1 = 0;
+	_elem_static_data.temp_transfer_rate = 0.80;
 #line 34
-	_elem_static_data.replace_id_2 = 0;
+	_elem_static_data.temp_idle_value = 127.0;
 #line 34
-	_elem_static_data.replace_id_3 = 0;
+	_elem_static_data.temp_on_low = ELEM_ID_SMOKE;
 #line 34
-	_elem_static_data.interaction_group = INTERACTION_GROUP_COMBUSTIBLE_GAS;
+	_elem_static_data.temp_on_high = ELEM_ID_FIRE;
 #line 34
-	_elem_static_data.interaction_mask = 0;
+	_elem_static_data.moisture_contribute = false;
 #line 34
-	_elem_static_data.lifetime_max = 90.0;
+	_elem_static_data.moisture_locked = true;
 #line 34
-	_elem_static_data.lifetime_decay_chance = 0.90;
+	_elem_static_data.moisture_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.transition_on_life_end = ELEM_ID_SMOKE;
+	_elem_static_data.moisture_idle_value = 0.0;
 #line 34
-	_elem_static_data.temperature_decay = 0.0;
+	_elem_static_data.moisture_on_low = ELEM_ID_FIRE;
 #line 34
-	_elem_static_data.temperature_spread_chance = 0.8;
+	_elem_static_data.moisture_on_high = ELEM_ID_SMOKE;
 #line 34
-	_elem_static_data.temperature_min = -128.0;
+	_elem_static_data.corrosion_contribute = false;
 #line 34
-	_elem_static_data.temperature_max = 127.0;
+	_elem_static_data.corrosion_locked = true;
 #line 34
-	_elem_static_data.transition_on_temp_low = ELEM_ID_SMOKE;
+	_elem_static_data.corrosion_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.transition_on_temp_high = ELEM_ID_FIRE;
+	_elem_static_data.corrosion_idle_value = 0.0;
 #line 34
-	_elem_static_data.ignition_threshold = 1.0;
+	_elem_static_data.corrosion_on_low = ELEM_ID_FIRE;
 #line 34
-	_elem_static_data.burn_product = ELEM_ID_SMOKE;
+	_elem_static_data.corrosion_on_high = ELEM_ID_FIRE;
 #line 34
-	_elem_static_data.cooling_product = ELEM_ID_SMOKE;
+	_elem_static_data.magic_contribute = false;
 #line 34
-	_elem_static_data.corrosion_resistance = 1.0;
+	_elem_static_data.magic_locked = true;
 #line 34
-	_elem_static_data.wetness_capacity = 0.0;
+	_elem_static_data.magic_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.quench_threshold = 180.0;
+	_elem_static_data.magic_idle_value = 0.0;
 #line 34
-	_elem_static_data.viscosity = 0.0;
+	_elem_static_data.magic_on_low = ELEM_ID_FIRE;
 #line 34
-	_elem_static_data.base_color = 16738816.0;
+	_elem_static_data.magic_on_high = ELEM_ID_FIRE;
 // end import ElemFire.fsh.__shady_macro_DefineElementStaticData
 #line 34
 		return _elem_static_data;
@@ -1484,95 +1284,79 @@ ElementStaticData get_element_static_data(int _element_id) {
 #line 34
 	_elem_static_data.id = ELEM_ID_SMOKE;
 #line 34
+	_elem_static_data.base_color = 6710886.0;
+#line 34
 	_elem_static_data.state_of_matter = MATTER_GAS;
 #line 34
-	_elem_static_data.movement_class = MOVE_CLASS_GAS;
+	_elem_static_data.flow_mode = FLOW_MODE_GAS;
 #line 34
-	_elem_static_data.feature_flags = FEATURE_USES_LIFETIME;
+	_elem_static_data.vertical_drive = -0.35;
 #line 34
-	_elem_static_data.dynamic_mode = DYNAMIC_MODE_LIFETIME;
+	_elem_static_data.max_speed = 3.0;
 #line 34
-	_elem_static_data.gravity_force = -0.35;
+	_elem_static_data.lateral_spread = 4.0;
 #line 34
-	_elem_static_data.max_vel_x = 3.0;
+	_elem_static_data.momentum_retention = 0.72;
 #line 34
-	_elem_static_data.max_vel_y = 3.0;
+	_elem_static_data.support_resistance = 0.0;
 #line 34
-	_elem_static_data.can_slip = true;
+	_elem_static_data.clump_factor = 0.0;
 #line 34
-	_elem_static_data.x_slip_search_range = 4.0;
-#line 34
-	_elem_static_data.y_slip_search_range = 2.0;
-#line 34
-	_elem_static_data.wake_chance = 1.0;
-#line 34
-	_elem_static_data.stickiness_chance = 0.0;
-#line 34
-	_elem_static_data.bounce_chance = 0.0;
-#line 34
-	_elem_static_data.bounce_dampening_multiplier = 0.0;
-#line 34
-	_elem_static_data.airborne_vel_decay_chance = 0.35;
-#line 34
-	_elem_static_data.friction_vel_decay_chance = 0.20;
-#line 34
-	_elem_static_data.mass = 10.0;
+	_elem_static_data.surface_response = 0.0;
 #line 34
 	_elem_static_data.density = 20.0;
 #line 34
 	_elem_static_data.immovable = false;
 #line 34
-	_elem_static_data.replace_mode = REPLACE_MODE_LESS_DENSE_OR_EQUAL;
-#line 34
 	_elem_static_data.replace_mask = REPLACE_MASK_EMPTY + REPLACE_MASK_GAS;
 #line 34
-	_elem_static_data.replace_count = 0;
+	_elem_static_data.temp_contribute = true;
 #line 34
-	_elem_static_data.replace_id_0 = 0;
+	_elem_static_data.temp_locked = false;
 #line 34
-	_elem_static_data.replace_id_1 = 0;
+	_elem_static_data.temp_transfer_rate = 0.15;
 #line 34
-	_elem_static_data.replace_id_2 = 0;
+	_elem_static_data.temp_idle_value = 20.0;
 #line 34
-	_elem_static_data.replace_id_3 = 0;
+	_elem_static_data.temp_on_low = ELEM_ID_SMOKE;
 #line 34
-	_elem_static_data.interaction_group = INTERACTION_GROUP_SMOKE_LIKE;
+	_elem_static_data.temp_on_high = ELEM_ID_SMOKE;
 #line 34
-	_elem_static_data.interaction_mask = 0;
+	_elem_static_data.moisture_contribute = false;
 #line 34
-	_elem_static_data.lifetime_max = 140.0;
+	_elem_static_data.moisture_locked = true;
 #line 34
-	_elem_static_data.lifetime_decay_chance = 0.55;
+	_elem_static_data.moisture_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.transition_on_life_end = ELEM_ID_EMPTY;
+	_elem_static_data.moisture_idle_value = 0.0;
 #line 34
-	_elem_static_data.temperature_decay = 0.04;
+	_elem_static_data.moisture_on_low = ELEM_ID_SMOKE;
 #line 34
-	_elem_static_data.temperature_spread_chance = 0.15;
+	_elem_static_data.moisture_on_high = ELEM_ID_SMOKE;
 #line 34
-	_elem_static_data.temperature_min = -128.0;
+	_elem_static_data.corrosion_contribute = false;
 #line 34
-	_elem_static_data.temperature_max = 127.0;
+	_elem_static_data.corrosion_locked = true;
 #line 34
-	_elem_static_data.transition_on_temp_low = ELEM_ID_SMOKE;
+	_elem_static_data.corrosion_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.transition_on_temp_high = ELEM_ID_SMOKE;
+	_elem_static_data.corrosion_idle_value = 0.0;
 #line 34
-	_elem_static_data.ignition_threshold = 0.0;
+	_elem_static_data.corrosion_on_low = ELEM_ID_SMOKE;
 #line 34
-	_elem_static_data.burn_product = ELEM_ID_EMPTY;
+	_elem_static_data.corrosion_on_high = ELEM_ID_SMOKE;
 #line 34
-	_elem_static_data.cooling_product = ELEM_ID_SMOKE;
+	_elem_static_data.magic_contribute = false;
 #line 34
-	_elem_static_data.corrosion_resistance = 1.0;
+	_elem_static_data.magic_locked = true;
 #line 34
-	_elem_static_data.wetness_capacity = 0.0;
+	_elem_static_data.magic_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.quench_threshold = 0.0;
+	_elem_static_data.magic_idle_value = 0.0;
 #line 34
-	_elem_static_data.viscosity = 0.0;
+	_elem_static_data.magic_on_low = ELEM_ID_SMOKE;
 #line 34
-	_elem_static_data.base_color = 6710886.0;
+	_elem_static_data.magic_on_high = ELEM_ID_SMOKE;
 // end import ElemSmoke.fsh.__shady_macro_DefineElementStaticData
 #line 34
 		return _elem_static_data;
@@ -1586,95 +1370,79 @@ ElementStaticData get_element_static_data(int _element_id) {
 #line 34
 	_elem_static_data.id = ELEM_ID_STEAM;
 #line 34
+	_elem_static_data.base_color = 14544639.0;
+#line 34
 	_elem_static_data.state_of_matter = MATTER_GAS;
 #line 34
-	_elem_static_data.movement_class = MOVE_CLASS_GAS;
+	_elem_static_data.flow_mode = FLOW_MODE_GAS;
 #line 34
-	_elem_static_data.feature_flags = FEATURE_USES_TEMPERATURE + FEATURE_PHASE_CHANGES;
+	_elem_static_data.vertical_drive = -0.45;
 #line 34
-	_elem_static_data.dynamic_mode = DYNAMIC_MODE_TEMPERATURE;
+	_elem_static_data.max_speed = 4.0;
 #line 34
-	_elem_static_data.gravity_force = -0.45;
+	_elem_static_data.lateral_spread = 4.0;
 #line 34
-	_elem_static_data.max_vel_x = 3.0;
+	_elem_static_data.momentum_retention = 0.78;
 #line 34
-	_elem_static_data.max_vel_y = 4.0;
+	_elem_static_data.support_resistance = 0.0;
 #line 34
-	_elem_static_data.can_slip = true;
+	_elem_static_data.clump_factor = 0.0;
 #line 34
-	_elem_static_data.x_slip_search_range = 4.0;
-#line 34
-	_elem_static_data.y_slip_search_range = 2.0;
-#line 34
-	_elem_static_data.wake_chance = 1.0;
-#line 34
-	_elem_static_data.stickiness_chance = 0.0;
-#line 34
-	_elem_static_data.bounce_chance = 0.0;
-#line 34
-	_elem_static_data.bounce_dampening_multiplier = 0.0;
-#line 34
-	_elem_static_data.airborne_vel_decay_chance = 0.25;
-#line 34
-	_elem_static_data.friction_vel_decay_chance = 0.20;
-#line 34
-	_elem_static_data.mass = 12.0;
+	_elem_static_data.surface_response = 0.0;
 #line 34
 	_elem_static_data.density = 30.0;
 #line 34
 	_elem_static_data.immovable = false;
 #line 34
-	_elem_static_data.replace_mode = REPLACE_MODE_LESS_DENSE_OR_EQUAL;
-#line 34
 	_elem_static_data.replace_mask = REPLACE_MASK_EMPTY + REPLACE_MASK_GAS;
 #line 34
-	_elem_static_data.replace_count = 0;
+	_elem_static_data.temp_contribute = true;
 #line 34
-	_elem_static_data.replace_id_0 = 0;
+	_elem_static_data.temp_locked = false;
 #line 34
-	_elem_static_data.replace_id_1 = 0;
+	_elem_static_data.temp_transfer_rate = 0.35;
 #line 34
-	_elem_static_data.replace_id_2 = 0;
+	_elem_static_data.temp_idle_value = 100.0;
 #line 34
-	_elem_static_data.replace_id_3 = 0;
+	_elem_static_data.temp_on_low = ELEM_ID_WATER;
 #line 34
-	_elem_static_data.interaction_group = INTERACTION_GROUP_WATER_LIKE;
+	_elem_static_data.temp_on_high = ELEM_ID_STEAM;
 #line 34
-	_elem_static_data.interaction_mask = 0;
+	_elem_static_data.moisture_contribute = true;
 #line 34
-	_elem_static_data.lifetime_max = 0.0;
+	_elem_static_data.moisture_locked = false;
 #line 34
-	_elem_static_data.lifetime_decay_chance = 0.0;
+	_elem_static_data.moisture_transfer_rate = 0.30;
 #line 34
-	_elem_static_data.transition_on_life_end = ELEM_ID_STEAM;
+	_elem_static_data.moisture_idle_value = 100.0;
 #line 34
-	_elem_static_data.temperature_decay = 0.03;
+	_elem_static_data.moisture_on_low = ELEM_ID_WATER;
 #line 34
-	_elem_static_data.temperature_spread_chance = 0.35;
+	_elem_static_data.moisture_on_high = ELEM_ID_STEAM;
 #line 34
-	_elem_static_data.temperature_min = 4.0;
+	_elem_static_data.corrosion_contribute = false;
 #line 34
-	_elem_static_data.temperature_max = 127.0;
+	_elem_static_data.corrosion_locked = true;
 #line 34
-	_elem_static_data.transition_on_temp_low = ELEM_ID_WATER;
+	_elem_static_data.corrosion_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.transition_on_temp_high = ELEM_ID_STEAM;
+	_elem_static_data.corrosion_idle_value = 0.0;
 #line 34
-	_elem_static_data.ignition_threshold = 0.0;
+	_elem_static_data.corrosion_on_low = ELEM_ID_STEAM;
 #line 34
-	_elem_static_data.burn_product = ELEM_ID_EMPTY;
+	_elem_static_data.corrosion_on_high = ELEM_ID_STEAM;
 #line 34
-	_elem_static_data.cooling_product = ELEM_ID_WATER;
+	_elem_static_data.magic_contribute = false;
 #line 34
-	_elem_static_data.corrosion_resistance = 1.0;
+	_elem_static_data.magic_locked = true;
 #line 34
-	_elem_static_data.wetness_capacity = 255.0;
+	_elem_static_data.magic_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.quench_threshold = 0.0;
+	_elem_static_data.magic_idle_value = 0.0;
 #line 34
-	_elem_static_data.viscosity = 0.0;
+	_elem_static_data.magic_on_low = ELEM_ID_STEAM;
 #line 34
-	_elem_static_data.base_color = 14544639.0;
+	_elem_static_data.magic_on_high = ELEM_ID_STEAM;
 // end import ElemSteam.fsh.__shady_macro_DefineElementStaticData
 #line 34
 		return _elem_static_data;
@@ -1688,95 +1456,79 @@ ElementStaticData get_element_static_data(int _element_id) {
 #line 34
 	_elem_static_data.id = ELEM_ID_ICE;
 #line 34
+	_elem_static_data.base_color = 11462655.0;
+#line 34
 	_elem_static_data.state_of_matter = MATTER_SOLID;
 #line 34
-	_elem_static_data.movement_class = MOVE_CLASS_NONE_STATIC;
+	_elem_static_data.flow_mode = FLOW_MODE_STATIC;
 #line 34
-	_elem_static_data.feature_flags = FEATURE_USES_TEMPERATURE + FEATURE_PHASE_CHANGES + FEATURE_REACTS_AS_COOLANT;
+	_elem_static_data.vertical_drive = 0.0;
 #line 34
-	_elem_static_data.dynamic_mode = DYNAMIC_MODE_TEMPERATURE;
+	_elem_static_data.max_speed = 0.0;
 #line 34
-	_elem_static_data.gravity_force = 0.0;
+	_elem_static_data.lateral_spread = 0.0;
 #line 34
-	_elem_static_data.max_vel_x = 0.0;
+	_elem_static_data.momentum_retention = 1.0;
 #line 34
-	_elem_static_data.max_vel_y = 0.0;
+	_elem_static_data.support_resistance = 1.0;
 #line 34
-	_elem_static_data.can_slip = false;
+	_elem_static_data.clump_factor = 1.0;
 #line 34
-	_elem_static_data.x_slip_search_range = 0.0;
-#line 34
-	_elem_static_data.y_slip_search_range = 0.0;
-#line 34
-	_elem_static_data.wake_chance = 0.0;
-#line 34
-	_elem_static_data.stickiness_chance = 0.0;
-#line 34
-	_elem_static_data.bounce_chance = 0.0;
-#line 34
-	_elem_static_data.bounce_dampening_multiplier = 0.0;
-#line 34
-	_elem_static_data.airborne_vel_decay_chance = 0.0;
-#line 34
-	_elem_static_data.friction_vel_decay_chance = 0.0;
-#line 34
-	_elem_static_data.mass = 600.0;
+	_elem_static_data.surface_response = 0.0;
 #line 34
 	_elem_static_data.density = 920.0;
 #line 34
 	_elem_static_data.immovable = true;
 #line 34
-	_elem_static_data.replace_mode = REPLACE_MODE_EMPTY_ONLY;
-#line 34
 	_elem_static_data.replace_mask = REPLACE_MASK_EMPTY;
 #line 34
-	_elem_static_data.replace_count = 0;
+	_elem_static_data.temp_contribute = true;
 #line 34
-	_elem_static_data.replace_id_0 = 0;
+	_elem_static_data.temp_locked = false;
 #line 34
-	_elem_static_data.replace_id_1 = 0;
+	_elem_static_data.temp_transfer_rate = 0.25;
 #line 34
-	_elem_static_data.replace_id_2 = 0;
+	_elem_static_data.temp_idle_value = -80.0;
 #line 34
-	_elem_static_data.replace_id_3 = 0;
+	_elem_static_data.temp_on_low = ELEM_ID_ICE;
 #line 34
-	_elem_static_data.interaction_group = INTERACTION_GROUP_CRYOGENIC;
+	_elem_static_data.temp_on_high = ELEM_ID_WATER;
 #line 34
-	_elem_static_data.interaction_mask = 0;
+	_elem_static_data.moisture_contribute = true;
 #line 34
-	_elem_static_data.lifetime_max = 0.0;
+	_elem_static_data.moisture_locked = false;
 #line 34
-	_elem_static_data.lifetime_decay_chance = 0.0;
+	_elem_static_data.moisture_transfer_rate = 0.10;
 #line 34
-	_elem_static_data.transition_on_life_end = ELEM_ID_ICE;
+	_elem_static_data.moisture_idle_value = 100.0;
 #line 34
-	_elem_static_data.temperature_decay = 0.02;
+	_elem_static_data.moisture_on_low = ELEM_ID_ICE;
 #line 34
-	_elem_static_data.temperature_spread_chance = 0.25;
+	_elem_static_data.moisture_on_high = ELEM_ID_ICE;
 #line 34
-	_elem_static_data.temperature_min = -128.0;
+	_elem_static_data.corrosion_contribute = false;
 #line 34
-	_elem_static_data.temperature_max = 8.0;
+	_elem_static_data.corrosion_locked = true;
 #line 34
-	_elem_static_data.transition_on_temp_low = ELEM_ID_ICE;
+	_elem_static_data.corrosion_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.transition_on_temp_high = ELEM_ID_WATER;
+	_elem_static_data.corrosion_idle_value = 0.0;
 #line 34
-	_elem_static_data.ignition_threshold = 0.0;
+	_elem_static_data.corrosion_on_low = ELEM_ID_ICE;
 #line 34
-	_elem_static_data.burn_product = ELEM_ID_EMPTY;
+	_elem_static_data.corrosion_on_high = ELEM_ID_ICE;
 #line 34
-	_elem_static_data.cooling_product = ELEM_ID_ICE;
+	_elem_static_data.magic_contribute = false;
 #line 34
-	_elem_static_data.corrosion_resistance = 0.95;
+	_elem_static_data.magic_locked = true;
 #line 34
-	_elem_static_data.wetness_capacity = 255.0;
+	_elem_static_data.magic_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.quench_threshold = 0.0;
+	_elem_static_data.magic_idle_value = 0.0;
 #line 34
-	_elem_static_data.viscosity = 1.0;
+	_elem_static_data.magic_on_low = ELEM_ID_ICE;
 #line 34
-	_elem_static_data.base_color = 11462655.0;
+	_elem_static_data.magic_on_high = ELEM_ID_ICE;
 // end import ElemIce.fsh.__shady_macro_DefineElementStaticData
 #line 34
 		return _elem_static_data;
@@ -1790,95 +1542,79 @@ ElementStaticData get_element_static_data(int _element_id) {
 #line 34
 	_elem_static_data.id = ELEM_ID_SNOW;
 #line 34
+	_elem_static_data.base_color = 16317439.0;
+#line 34
 	_elem_static_data.state_of_matter = MATTER_SOLID;
 #line 34
-	_elem_static_data.movement_class = MOVE_CLASS_STICKY_POWDER;
+	_elem_static_data.flow_mode = FLOW_MODE_POWDER;
 #line 34
-	_elem_static_data.feature_flags = FEATURE_USES_TEMPERATURE + FEATURE_PHASE_CHANGES + FEATURE_CAN_WET;
+	_elem_static_data.vertical_drive = 1.0;
 #line 34
-	_elem_static_data.dynamic_mode = DYNAMIC_MODE_TEMPERATURE;
+	_elem_static_data.max_speed = 2.0;
 #line 34
-	_elem_static_data.gravity_force = 1.0;
+	_elem_static_data.lateral_spread = 2.0;
 #line 34
-	_elem_static_data.max_vel_x = 1.5;
+	_elem_static_data.momentum_retention = 0.32;
 #line 34
-	_elem_static_data.max_vel_y = 2.0;
+	_elem_static_data.support_resistance = 0.20;
 #line 34
-	_elem_static_data.can_slip = true;
+	_elem_static_data.clump_factor = 0.35;
 #line 34
-	_elem_static_data.x_slip_search_range = 2.0;
-#line 34
-	_elem_static_data.y_slip_search_range = 2.0;
-#line 34
-	_elem_static_data.wake_chance = 0.8;
-#line 34
-	_elem_static_data.stickiness_chance = 0.35;
-#line 34
-	_elem_static_data.bounce_chance = 0.0;
-#line 34
-	_elem_static_data.bounce_dampening_multiplier = 0.0;
-#line 34
-	_elem_static_data.airborne_vel_decay_chance = 0.55;
-#line 34
-	_elem_static_data.friction_vel_decay_chance = 0.8;
-#line 34
-	_elem_static_data.mass = 40.0;
+	_elem_static_data.surface_response = 0.0;
 #line 34
 	_elem_static_data.density = 150.0;
 #line 34
 	_elem_static_data.immovable = false;
 #line 34
-	_elem_static_data.replace_mode = REPLACE_MODE_LESS_DENSE_OR_EQUAL;
-#line 34
 	_elem_static_data.replace_mask = REPLACE_MASK_EMPTY + REPLACE_MASK_GAS + REPLACE_MASK_LIQUID;
 #line 34
-	_elem_static_data.replace_count = 0;
+	_elem_static_data.temp_contribute = true;
 #line 34
-	_elem_static_data.replace_id_0 = 0;
+	_elem_static_data.temp_locked = false;
 #line 34
-	_elem_static_data.replace_id_1 = 0;
+	_elem_static_data.temp_transfer_rate = 0.20;
 #line 34
-	_elem_static_data.replace_id_2 = 0;
+	_elem_static_data.temp_idle_value = -60.0;
 #line 34
-	_elem_static_data.replace_id_3 = 0;
+	_elem_static_data.temp_on_low = ELEM_ID_SNOW;
 #line 34
-	_elem_static_data.interaction_group = INTERACTION_GROUP_CRYOGENIC;
+	_elem_static_data.temp_on_high = ELEM_ID_WATER;
 #line 34
-	_elem_static_data.interaction_mask = 0;
+	_elem_static_data.moisture_contribute = true;
 #line 34
-	_elem_static_data.lifetime_max = 0.0;
+	_elem_static_data.moisture_locked = false;
 #line 34
-	_elem_static_data.lifetime_decay_chance = 0.0;
+	_elem_static_data.moisture_transfer_rate = 0.15;
 #line 34
-	_elem_static_data.transition_on_life_end = ELEM_ID_SNOW;
+	_elem_static_data.moisture_idle_value = 70.0;
 #line 34
-	_elem_static_data.temperature_decay = 0.02;
+	_elem_static_data.moisture_on_low = ELEM_ID_SNOW;
 #line 34
-	_elem_static_data.temperature_spread_chance = 0.20;
+	_elem_static_data.moisture_on_high = ELEM_ID_SNOW;
 #line 34
-	_elem_static_data.temperature_min = -128.0;
+	_elem_static_data.corrosion_contribute = false;
 #line 34
-	_elem_static_data.temperature_max = 4.0;
+	_elem_static_data.corrosion_locked = true;
 #line 34
-	_elem_static_data.transition_on_temp_low = ELEM_ID_SNOW;
+	_elem_static_data.corrosion_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.transition_on_temp_high = ELEM_ID_WATER;
+	_elem_static_data.corrosion_idle_value = 0.0;
 #line 34
-	_elem_static_data.ignition_threshold = 0.0;
+	_elem_static_data.corrosion_on_low = ELEM_ID_SNOW;
 #line 34
-	_elem_static_data.burn_product = ELEM_ID_EMPTY;
+	_elem_static_data.corrosion_on_high = ELEM_ID_SNOW;
 #line 34
-	_elem_static_data.cooling_product = ELEM_ID_SNOW;
+	_elem_static_data.magic_contribute = false;
 #line 34
-	_elem_static_data.corrosion_resistance = 0.9;
+	_elem_static_data.magic_locked = true;
 #line 34
-	_elem_static_data.wetness_capacity = 255.0;
+	_elem_static_data.magic_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.quench_threshold = 0.0;
+	_elem_static_data.magic_idle_value = 0.0;
 #line 34
-	_elem_static_data.viscosity = 0.2;
+	_elem_static_data.magic_on_low = ELEM_ID_SNOW;
 #line 34
-	_elem_static_data.base_color = 16317439.0;
+	_elem_static_data.magic_on_high = ELEM_ID_SNOW;
 // end import ElemSnow.fsh.__shady_macro_DefineElementStaticData
 #line 34
 		return _elem_static_data;
@@ -1892,95 +1628,79 @@ ElementStaticData get_element_static_data(int _element_id) {
 #line 34
 	_elem_static_data.id = ELEM_ID_MUD;
 #line 34
+	_elem_static_data.base_color = 7032618.0;
+#line 34
 	_elem_static_data.state_of_matter = MATTER_SOLID;
 #line 34
-	_elem_static_data.movement_class = MOVE_CLASS_STICKY_POWDER;
+	_elem_static_data.flow_mode = FLOW_MODE_GOO;
 #line 34
-	_elem_static_data.feature_flags = FEATURE_CAN_WET;
+	_elem_static_data.vertical_drive = 1.0;
 #line 34
-	_elem_static_data.dynamic_mode = DYNAMIC_MODE_MOISTURE;
+	_elem_static_data.max_speed = 2.0;
 #line 34
-	_elem_static_data.gravity_force = 1.0;
+	_elem_static_data.lateral_spread = 1.0;
 #line 34
-	_elem_static_data.max_vel_x = 1.5;
+	_elem_static_data.momentum_retention = 0.28;
 #line 34
-	_elem_static_data.max_vel_y = 2.0;
+	_elem_static_data.support_resistance = 0.20;
 #line 34
-	_elem_static_data.can_slip = true;
+	_elem_static_data.clump_factor = 0.70;
 #line 34
-	_elem_static_data.x_slip_search_range = 1.0;
-#line 34
-	_elem_static_data.y_slip_search_range = 2.0;
-#line 34
-	_elem_static_data.wake_chance = 0.8;
-#line 34
-	_elem_static_data.stickiness_chance = 0.65;
-#line 34
-	_elem_static_data.bounce_chance = 0.0;
-#line 34
-	_elem_static_data.bounce_dampening_multiplier = 0.0;
-#line 34
-	_elem_static_data.airborne_vel_decay_chance = 0.55;
-#line 34
-	_elem_static_data.friction_vel_decay_chance = 0.9;
-#line 34
-	_elem_static_data.mass = 220.0;
+	_elem_static_data.surface_response = 0.0;
 #line 34
 	_elem_static_data.density = 1750.0;
 #line 34
 	_elem_static_data.immovable = false;
 #line 34
-	_elem_static_data.replace_mode = REPLACE_MODE_LESS_DENSE_OR_EQUAL;
-#line 34
 	_elem_static_data.replace_mask = REPLACE_MASK_EMPTY + REPLACE_MASK_GAS + REPLACE_MASK_LIQUID;
 #line 34
-	_elem_static_data.replace_count = 0;
+	_elem_static_data.temp_contribute = true;
 #line 34
-	_elem_static_data.replace_id_0 = 0;
+	_elem_static_data.temp_locked = false;
 #line 34
-	_elem_static_data.replace_id_1 = 0;
+	_elem_static_data.temp_transfer_rate = 0.10;
 #line 34
-	_elem_static_data.replace_id_2 = 0;
+	_elem_static_data.temp_idle_value = 5.0;
 #line 34
-	_elem_static_data.replace_id_3 = 0;
+	_elem_static_data.temp_on_low = ELEM_ID_MUD;
 #line 34
-	_elem_static_data.interaction_group = INTERACTION_GROUP_MINERAL;
+	_elem_static_data.temp_on_high = ELEM_ID_CLAY;
 #line 34
-	_elem_static_data.interaction_mask = 0;
+	_elem_static_data.moisture_contribute = true;
 #line 34
-	_elem_static_data.lifetime_max = 0.0;
+	_elem_static_data.moisture_locked = false;
 #line 34
-	_elem_static_data.lifetime_decay_chance = 0.0;
+	_elem_static_data.moisture_transfer_rate = 0.80;
 #line 34
-	_elem_static_data.transition_on_life_end = ELEM_ID_MUD;
+	_elem_static_data.moisture_idle_value = 80.0;
 #line 34
-	_elem_static_data.temperature_decay = 0.01;
+	_elem_static_data.moisture_on_low = ELEM_ID_DIRT;
 #line 34
-	_elem_static_data.temperature_spread_chance = 0.10;
+	_elem_static_data.moisture_on_high = ELEM_ID_MUD;
 #line 34
-	_elem_static_data.temperature_min = -128.0;
+	_elem_static_data.corrosion_contribute = false;
 #line 34
-	_elem_static_data.temperature_max = 127.0;
+	_elem_static_data.corrosion_locked = true;
 #line 34
-	_elem_static_data.transition_on_temp_low = ELEM_ID_MUD;
+	_elem_static_data.corrosion_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.transition_on_temp_high = ELEM_ID_CLAY;
+	_elem_static_data.corrosion_idle_value = 0.0;
 #line 34
-	_elem_static_data.ignition_threshold = 0.0;
+	_elem_static_data.corrosion_on_low = ELEM_ID_MUD;
 #line 34
-	_elem_static_data.burn_product = ELEM_ID_EMPTY;
+	_elem_static_data.corrosion_on_high = ELEM_ID_MUD;
 #line 34
-	_elem_static_data.cooling_product = ELEM_ID_MUD;
+	_elem_static_data.magic_contribute = false;
 #line 34
-	_elem_static_data.corrosion_resistance = 0.6;
+	_elem_static_data.magic_locked = true;
 #line 34
-	_elem_static_data.wetness_capacity = 255.0;
+	_elem_static_data.magic_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.quench_threshold = 0.0;
+	_elem_static_data.magic_idle_value = 0.0;
 #line 34
-	_elem_static_data.viscosity = 0.7;
+	_elem_static_data.magic_on_low = ELEM_ID_MUD;
 #line 34
-	_elem_static_data.base_color = 7032618.0;
+	_elem_static_data.magic_on_high = ELEM_ID_MUD;
 // end import ElemMud.fsh.__shady_macro_DefineElementStaticData
 #line 34
 		return _elem_static_data;
@@ -1994,95 +1714,79 @@ ElementStaticData get_element_static_data(int _element_id) {
 #line 34
 	_elem_static_data.id = ELEM_ID_DIRT;
 #line 34
+	_elem_static_data.base_color = 8016432.0;
+#line 34
 	_elem_static_data.state_of_matter = MATTER_SOLID;
 #line 34
-	_elem_static_data.movement_class = MOVE_CLASS_HEAVY_POWDER;
+	_elem_static_data.flow_mode = FLOW_MODE_POWDER;
 #line 34
-	_elem_static_data.feature_flags = FEATURE_CAN_WET;
+	_elem_static_data.vertical_drive = 1.0;
 #line 34
-	_elem_static_data.dynamic_mode = DYNAMIC_MODE_MOISTURE;
+	_elem_static_data.max_speed = 3.0;
 #line 34
-	_elem_static_data.gravity_force = 1.0;
+	_elem_static_data.lateral_spread = 2.0;
 #line 34
-	_elem_static_data.max_vel_x = 2.0;
+	_elem_static_data.momentum_retention = 0.5;
 #line 34
-	_elem_static_data.max_vel_y = 3.0;
+	_elem_static_data.support_resistance = 0.0;
 #line 34
-	_elem_static_data.can_slip = true;
+	_elem_static_data.clump_factor = 0.2;
 #line 34
-	_elem_static_data.x_slip_search_range = 2.0;
-#line 34
-	_elem_static_data.y_slip_search_range = 2.0;
-#line 34
-	_elem_static_data.wake_chance = 1.0;
-#line 34
-	_elem_static_data.stickiness_chance = 0.1;
-#line 34
-	_elem_static_data.bounce_chance = 0.03;
-#line 34
-	_elem_static_data.bounce_dampening_multiplier = 0.15;
-#line 34
-	_elem_static_data.airborne_vel_decay_chance = 0.35;
-#line 34
-	_elem_static_data.friction_vel_decay_chance = 0.65;
-#line 34
-	_elem_static_data.mass = 180.0;
+	_elem_static_data.surface_response = 0.15;
 #line 34
 	_elem_static_data.density = 1450.0;
 #line 34
 	_elem_static_data.immovable = false;
 #line 34
-	_elem_static_data.replace_mode = REPLACE_MODE_LESS_DENSE;
-#line 34
 	_elem_static_data.replace_mask = REPLACE_MASK_EMPTY + REPLACE_MASK_GAS + REPLACE_MASK_LIQUID;
 #line 34
-	_elem_static_data.replace_count = 1;
+	_elem_static_data.temp_contribute = true;
 #line 34
-	_elem_static_data.replace_id_0 = ELEM_ID_WATER;
+	_elem_static_data.temp_locked = false;
 #line 34
-	_elem_static_data.replace_id_1 = 0;
+	_elem_static_data.temp_transfer_rate = 0.10;
 #line 34
-	_elem_static_data.replace_id_2 = 0;
+	_elem_static_data.temp_idle_value = 10.0;
 #line 34
-	_elem_static_data.replace_id_3 = 0;
+	_elem_static_data.temp_on_low = ELEM_ID_DIRT;
 #line 34
-	_elem_static_data.interaction_group = INTERACTION_GROUP_MINERAL;
+	_elem_static_data.temp_on_high = ELEM_ID_DIRT;
 #line 34
-	_elem_static_data.interaction_mask = 0;
+	_elem_static_data.moisture_contribute = true;
 #line 34
-	_elem_static_data.lifetime_max = 0.0;
+	_elem_static_data.moisture_locked = false;
 #line 34
-	_elem_static_data.lifetime_decay_chance = 0.0;
+	_elem_static_data.moisture_transfer_rate = 0.60;
 #line 34
-	_elem_static_data.transition_on_life_end = ELEM_ID_DIRT;
+	_elem_static_data.moisture_idle_value = 20.0;
 #line 34
-	_elem_static_data.temperature_decay = 0.0;
+	_elem_static_data.moisture_on_low = ELEM_ID_DIRT;
 #line 34
-	_elem_static_data.temperature_spread_chance = 0.0;
+	_elem_static_data.moisture_on_high = ELEM_ID_MUD;
 #line 34
-	_elem_static_data.temperature_min = -128.0;
+	_elem_static_data.corrosion_contribute = false;
 #line 34
-	_elem_static_data.temperature_max = 127.0;
+	_elem_static_data.corrosion_locked = true;
 #line 34
-	_elem_static_data.transition_on_temp_low = ELEM_ID_DIRT;
+	_elem_static_data.corrosion_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.transition_on_temp_high = ELEM_ID_DIRT;
+	_elem_static_data.corrosion_idle_value = 0.0;
 #line 34
-	_elem_static_data.ignition_threshold = 0.0;
+	_elem_static_data.corrosion_on_low = ELEM_ID_DIRT;
 #line 34
-	_elem_static_data.burn_product = ELEM_ID_EMPTY;
+	_elem_static_data.corrosion_on_high = ELEM_ID_DIRT;
 #line 34
-	_elem_static_data.cooling_product = ELEM_ID_DIRT;
+	_elem_static_data.magic_contribute = false;
 #line 34
-	_elem_static_data.corrosion_resistance = 0.7;
+	_elem_static_data.magic_locked = true;
 #line 34
-	_elem_static_data.wetness_capacity = 180.0;
+	_elem_static_data.magic_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.quench_threshold = 0.0;
+	_elem_static_data.magic_idle_value = 0.0;
 #line 34
-	_elem_static_data.viscosity = 0.2;
+	_elem_static_data.magic_on_low = ELEM_ID_DIRT;
 #line 34
-	_elem_static_data.base_color = 8016432.0;
+	_elem_static_data.magic_on_high = ELEM_ID_DIRT;
 // end import ElemDirt.fsh.__shady_macro_DefineElementStaticData
 #line 34
 		return _elem_static_data;
@@ -2096,95 +1800,79 @@ ElementStaticData get_element_static_data(int _element_id) {
 #line 34
 	_elem_static_data.id = ELEM_ID_WET_SAND;
 #line 34
+	_elem_static_data.base_color = 12757355.0;
+#line 34
 	_elem_static_data.state_of_matter = MATTER_SOLID;
 #line 34
-	_elem_static_data.movement_class = MOVE_CLASS_STICKY_POWDER;
+	_elem_static_data.flow_mode = FLOW_MODE_POWDER;
 #line 34
-	_elem_static_data.feature_flags = FEATURE_CAN_WET;
+	_elem_static_data.vertical_drive = 1.0;
 #line 34
-	_elem_static_data.dynamic_mode = DYNAMIC_MODE_MOISTURE;
+	_elem_static_data.max_speed = 2.5;
 #line 34
-	_elem_static_data.gravity_force = 1.0;
+	_elem_static_data.lateral_spread = 1.0;
 #line 34
-	_elem_static_data.max_vel_x = 1.5;
+	_elem_static_data.momentum_retention = 0.38;
 #line 34
-	_elem_static_data.max_vel_y = 2.5;
+	_elem_static_data.support_resistance = 0.35;
 #line 34
-	_elem_static_data.can_slip = true;
+	_elem_static_data.clump_factor = 0.55;
 #line 34
-	_elem_static_data.x_slip_search_range = 1.0;
-#line 34
-	_elem_static_data.y_slip_search_range = 2.0;
-#line 34
-	_elem_static_data.wake_chance = 0.9;
-#line 34
-	_elem_static_data.stickiness_chance = 0.55;
-#line 34
-	_elem_static_data.bounce_chance = 0.02;
-#line 34
-	_elem_static_data.bounce_dampening_multiplier = 0.12;
-#line 34
-	_elem_static_data.airborne_vel_decay_chance = 0.45;
-#line 34
-	_elem_static_data.friction_vel_decay_chance = 0.8;
-#line 34
-	_elem_static_data.mass = 170.0;
+	_elem_static_data.surface_response = 0.10;
 #line 34
 	_elem_static_data.density = 1750.0;
 #line 34
 	_elem_static_data.immovable = false;
 #line 34
-	_elem_static_data.replace_mode = REPLACE_MODE_LESS_DENSE;
-#line 34
 	_elem_static_data.replace_mask = REPLACE_MASK_EMPTY + REPLACE_MASK_GAS + REPLACE_MASK_LIQUID;
 #line 34
-	_elem_static_data.replace_count = 1;
+	_elem_static_data.temp_contribute = true;
 #line 34
-	_elem_static_data.replace_id_0 = ELEM_ID_WATER;
+	_elem_static_data.temp_locked = false;
 #line 34
-	_elem_static_data.replace_id_1 = 0;
+	_elem_static_data.temp_transfer_rate = 0.05;
 #line 34
-	_elem_static_data.replace_id_2 = 0;
+	_elem_static_data.temp_idle_value = 0.0;
 #line 34
-	_elem_static_data.replace_id_3 = 0;
+	_elem_static_data.temp_on_low = ELEM_ID_WET_SAND;
 #line 34
-	_elem_static_data.interaction_group = INTERACTION_GROUP_MINERAL;
+	_elem_static_data.temp_on_high = ELEM_ID_SAND;
 #line 34
-	_elem_static_data.interaction_mask = 0;
+	_elem_static_data.moisture_contribute = true;
 #line 34
-	_elem_static_data.lifetime_max = 0.0;
+	_elem_static_data.moisture_locked = false;
 #line 34
-	_elem_static_data.lifetime_decay_chance = 0.0;
+	_elem_static_data.moisture_transfer_rate = 0.75;
 #line 34
-	_elem_static_data.transition_on_life_end = ELEM_ID_WET_SAND;
+	_elem_static_data.moisture_idle_value = 100.0;
 #line 34
-	_elem_static_data.temperature_decay = 0.0;
+	_elem_static_data.moisture_on_low = ELEM_ID_SAND;
 #line 34
-	_elem_static_data.temperature_spread_chance = 0.0;
+	_elem_static_data.moisture_on_high = ELEM_ID_WET_SAND;
 #line 34
-	_elem_static_data.temperature_min = -128.0;
+	_elem_static_data.corrosion_contribute = false;
 #line 34
-	_elem_static_data.temperature_max = 127.0;
+	_elem_static_data.corrosion_locked = true;
 #line 34
-	_elem_static_data.transition_on_temp_low = ELEM_ID_WET_SAND;
+	_elem_static_data.corrosion_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.transition_on_temp_high = ELEM_ID_SAND;
+	_elem_static_data.corrosion_idle_value = 0.0;
 #line 34
-	_elem_static_data.ignition_threshold = 0.0;
+	_elem_static_data.corrosion_on_low = ELEM_ID_WET_SAND;
 #line 34
-	_elem_static_data.burn_product = ELEM_ID_EMPTY;
+	_elem_static_data.corrosion_on_high = ELEM_ID_WET_SAND;
 #line 34
-	_elem_static_data.cooling_product = ELEM_ID_WET_SAND;
+	_elem_static_data.magic_contribute = false;
 #line 34
-	_elem_static_data.corrosion_resistance = 0.85;
+	_elem_static_data.magic_locked = true;
 #line 34
-	_elem_static_data.wetness_capacity = 255.0;
+	_elem_static_data.magic_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.quench_threshold = 0.0;
+	_elem_static_data.magic_idle_value = 0.0;
 #line 34
-	_elem_static_data.viscosity = 0.25;
+	_elem_static_data.magic_on_low = ELEM_ID_WET_SAND;
 #line 34
-	_elem_static_data.base_color = 12757355.0;
+	_elem_static_data.magic_on_high = ELEM_ID_WET_SAND;
 // end import ElemWetSand.fsh.__shady_macro_DefineElementStaticData
 #line 34
 		return _elem_static_data;
@@ -2198,95 +1886,79 @@ ElementStaticData get_element_static_data(int _element_id) {
 #line 34
 	_elem_static_data.id = ELEM_ID_OIL;
 #line 34
+	_elem_static_data.base_color = 3812123.0;
+#line 34
 	_elem_static_data.state_of_matter = MATTER_LIQUID;
 #line 34
-	_elem_static_data.movement_class = MOVE_CLASS_LIQUID;
+	_elem_static_data.flow_mode = FLOW_MODE_LIQUID;
 #line 34
-	_elem_static_data.feature_flags = FEATURE_CAN_IGNITE + FEATURE_USES_TEMPERATURE;
+	_elem_static_data.vertical_drive = 1.0;
 #line 34
-	_elem_static_data.dynamic_mode = DYNAMIC_MODE_TEMPERATURE;
+	_elem_static_data.max_speed = 5.0;
 #line 34
-	_elem_static_data.gravity_force = 1.0;
+	_elem_static_data.lateral_spread = 5.0;
 #line 34
-	_elem_static_data.max_vel_x = 4.0;
+	_elem_static_data.momentum_retention = 0.88;
 #line 34
-	_elem_static_data.max_vel_y = 5.0;
+	_elem_static_data.support_resistance = 0.05;
 #line 34
-	_elem_static_data.can_slip = true;
+	_elem_static_data.clump_factor = 0.08;
 #line 34
-	_elem_static_data.x_slip_search_range = 5.0;
-#line 34
-	_elem_static_data.y_slip_search_range = 2.0;
-#line 34
-	_elem_static_data.wake_chance = 1.0;
-#line 34
-	_elem_static_data.stickiness_chance = 0.0;
-#line 34
-	_elem_static_data.bounce_chance = 0.0;
-#line 34
-	_elem_static_data.bounce_dampening_multiplier = 0.0;
-#line 34
-	_elem_static_data.airborne_vel_decay_chance = 0.18;
-#line 34
-	_elem_static_data.friction_vel_decay_chance = 0.05;
-#line 34
-	_elem_static_data.mass = 70.0;
+	_elem_static_data.surface_response = 0.0;
 #line 34
 	_elem_static_data.density = 850.0;
 #line 34
 	_elem_static_data.immovable = false;
 #line 34
-	_elem_static_data.replace_mode = REPLACE_MODE_LESS_DENSE_OR_EQUAL;
-#line 34
 	_elem_static_data.replace_mask = REPLACE_MASK_EMPTY + REPLACE_MASK_GAS;
 #line 34
-	_elem_static_data.replace_count = 0;
+	_elem_static_data.temp_contribute = true;
 #line 34
-	_elem_static_data.replace_id_0 = 0;
+	_elem_static_data.temp_locked = false;
 #line 34
-	_elem_static_data.replace_id_1 = 0;
+	_elem_static_data.temp_transfer_rate = 0.20;
 #line 34
-	_elem_static_data.replace_id_2 = 0;
+	_elem_static_data.temp_idle_value = 20.0;
 #line 34
-	_elem_static_data.replace_id_3 = 0;
+	_elem_static_data.temp_on_low = ELEM_ID_OIL;
 #line 34
-	_elem_static_data.interaction_group = INTERACTION_GROUP_OIL_LIKE;
+	_elem_static_data.temp_on_high = ELEM_ID_FIRE;
 #line 34
-	_elem_static_data.interaction_mask = 0;
+	_elem_static_data.moisture_contribute = false;
 #line 34
-	_elem_static_data.lifetime_max = 0.0;
+	_elem_static_data.moisture_locked = true;
 #line 34
-	_elem_static_data.lifetime_decay_chance = 0.0;
+	_elem_static_data.moisture_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.transition_on_life_end = ELEM_ID_OIL;
+	_elem_static_data.moisture_idle_value = 0.0;
 #line 34
-	_elem_static_data.temperature_decay = 0.01;
+	_elem_static_data.moisture_on_low = ELEM_ID_OIL;
 #line 34
-	_elem_static_data.temperature_spread_chance = 0.20;
+	_elem_static_data.moisture_on_high = ELEM_ID_OIL;
 #line 34
-	_elem_static_data.temperature_min = -128.0;
+	_elem_static_data.corrosion_contribute = false;
 #line 34
-	_elem_static_data.temperature_max = 56.0;
+	_elem_static_data.corrosion_locked = true;
 #line 34
-	_elem_static_data.transition_on_temp_low = ELEM_ID_OIL;
+	_elem_static_data.corrosion_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.transition_on_temp_high = ELEM_ID_FIRE;
+	_elem_static_data.corrosion_idle_value = 0.0;
 #line 34
-	_elem_static_data.ignition_threshold = 72.0;
+	_elem_static_data.corrosion_on_low = ELEM_ID_OIL;
 #line 34
-	_elem_static_data.burn_product = ELEM_ID_FIRE;
+	_elem_static_data.corrosion_on_high = ELEM_ID_OIL;
 #line 34
-	_elem_static_data.cooling_product = ELEM_ID_OIL;
+	_elem_static_data.magic_contribute = false;
 #line 34
-	_elem_static_data.corrosion_resistance = 0.7;
+	_elem_static_data.magic_locked = true;
 #line 34
-	_elem_static_data.wetness_capacity = 0.0;
+	_elem_static_data.magic_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.quench_threshold = 0.0;
+	_elem_static_data.magic_idle_value = 0.0;
 #line 34
-	_elem_static_data.viscosity = 0.08;
+	_elem_static_data.magic_on_low = ELEM_ID_OIL;
 #line 34
-	_elem_static_data.base_color = 3812123.0;
+	_elem_static_data.magic_on_high = ELEM_ID_OIL;
 // end import ElemOil.fsh.__shady_macro_DefineElementStaticData
 #line 34
 		return _elem_static_data;
@@ -2300,95 +1972,79 @@ ElementStaticData get_element_static_data(int _element_id) {
 #line 34
 	_elem_static_data.id = ELEM_ID_LAVA;
 #line 34
+	_elem_static_data.base_color = 16729344.0;
+#line 34
 	_elem_static_data.state_of_matter = MATTER_LIQUID;
 #line 34
-	_elem_static_data.movement_class = MOVE_CLASS_VISCOUS_LIQUID;
+	_elem_static_data.flow_mode = FLOW_MODE_GOO;
 #line 34
-	_elem_static_data.feature_flags = FEATURE_USES_TEMPERATURE + FEATURE_PHASE_CHANGES + FEATURE_EMITS_HEAT;
+	_elem_static_data.vertical_drive = 1.0;
 #line 34
-	_elem_static_data.dynamic_mode = DYNAMIC_MODE_TEMPERATURE;
+	_elem_static_data.max_speed = 3.0;
 #line 34
-	_elem_static_data.gravity_force = 1.0;
+	_elem_static_data.lateral_spread = 2.0;
 #line 34
-	_elem_static_data.max_vel_x = 2.0;
+	_elem_static_data.momentum_retention = 0.70;
 #line 34
-	_elem_static_data.max_vel_y = 3.0;
+	_elem_static_data.support_resistance = 0.35;
 #line 34
-	_elem_static_data.can_slip = true;
+	_elem_static_data.clump_factor = 0.45;
 #line 34
-	_elem_static_data.x_slip_search_range = 2.0;
-#line 34
-	_elem_static_data.y_slip_search_range = 2.0;
-#line 34
-	_elem_static_data.wake_chance = 1.0;
-#line 34
-	_elem_static_data.stickiness_chance = 0.05;
-#line 34
-	_elem_static_data.bounce_chance = 0.0;
-#line 34
-	_elem_static_data.bounce_dampening_multiplier = 0.0;
-#line 34
-	_elem_static_data.airborne_vel_decay_chance = 0.35;
-#line 34
-	_elem_static_data.friction_vel_decay_chance = 0.25;
-#line 34
-	_elem_static_data.mass = 300.0;
+	_elem_static_data.surface_response = 0.0;
 #line 34
 	_elem_static_data.density = 2700.0;
 #line 34
 	_elem_static_data.immovable = false;
 #line 34
-	_elem_static_data.replace_mode = REPLACE_MODE_LESS_DENSE_OR_EQUAL;
-#line 34
 	_elem_static_data.replace_mask = REPLACE_MASK_EMPTY + REPLACE_MASK_GAS + REPLACE_MASK_LIQUID;
 #line 34
-	_elem_static_data.replace_count = 1;
+	_elem_static_data.temp_contribute = true;
 #line 34
-	_elem_static_data.replace_id_0 = ELEM_ID_WATER;
+	_elem_static_data.temp_locked = false;
 #line 34
-	_elem_static_data.replace_id_1 = 0;
+	_elem_static_data.temp_transfer_rate = 0.65;
 #line 34
-	_elem_static_data.replace_id_2 = 0;
+	_elem_static_data.temp_idle_value = 120.0;
 #line 34
-	_elem_static_data.replace_id_3 = 0;
+	_elem_static_data.temp_on_low = ELEM_ID_OBSIDIAN;
 #line 34
-	_elem_static_data.interaction_group = INTERACTION_GROUP_MOLTEN;
+	_elem_static_data.temp_on_high = ELEM_ID_LAVA;
 #line 34
-	_elem_static_data.interaction_mask = 0;
+	_elem_static_data.moisture_contribute = false;
 #line 34
-	_elem_static_data.lifetime_max = 0.0;
+	_elem_static_data.moisture_locked = true;
 #line 34
-	_elem_static_data.lifetime_decay_chance = 0.0;
+	_elem_static_data.moisture_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.transition_on_life_end = ELEM_ID_LAVA;
+	_elem_static_data.moisture_idle_value = 0.0;
 #line 34
-	_elem_static_data.temperature_decay = 0.01;
+	_elem_static_data.moisture_on_low = ELEM_ID_LAVA;
 #line 34
-	_elem_static_data.temperature_spread_chance = 0.65;
+	_elem_static_data.moisture_on_high = ELEM_ID_LAVA;
 #line 34
-	_elem_static_data.temperature_min = 24.0;
+	_elem_static_data.corrosion_contribute = false;
 #line 34
-	_elem_static_data.temperature_max = 127.0;
+	_elem_static_data.corrosion_locked = true;
 #line 34
-	_elem_static_data.transition_on_temp_low = ELEM_ID_OBSIDIAN;
+	_elem_static_data.corrosion_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.transition_on_temp_high = ELEM_ID_LAVA;
+	_elem_static_data.corrosion_idle_value = 0.0;
 #line 34
-	_elem_static_data.ignition_threshold = 0.0;
+	_elem_static_data.corrosion_on_low = ELEM_ID_LAVA;
 #line 34
-	_elem_static_data.burn_product = ELEM_ID_FIRE;
+	_elem_static_data.corrosion_on_high = ELEM_ID_LAVA;
 #line 34
-	_elem_static_data.cooling_product = ELEM_ID_OBSIDIAN;
+	_elem_static_data.magic_contribute = false;
 #line 34
-	_elem_static_data.corrosion_resistance = 1.0;
+	_elem_static_data.magic_locked = true;
 #line 34
-	_elem_static_data.wetness_capacity = 0.0;
+	_elem_static_data.magic_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.quench_threshold = 160.0;
+	_elem_static_data.magic_idle_value = 0.0;
 #line 34
-	_elem_static_data.viscosity = 0.45;
+	_elem_static_data.magic_on_low = ELEM_ID_LAVA;
 #line 34
-	_elem_static_data.base_color = 16729344.0;
+	_elem_static_data.magic_on_high = ELEM_ID_LAVA;
 // end import ElemLava.fsh.__shady_macro_DefineElementStaticData
 #line 34
 		return _elem_static_data;
@@ -2402,95 +2058,79 @@ ElementStaticData get_element_static_data(int _element_id) {
 #line 34
 	_elem_static_data.id = ELEM_ID_ASH;
 #line 34
+	_elem_static_data.base_color = 9079434.0;
+#line 34
 	_elem_static_data.state_of_matter = MATTER_SOLID;
 #line 34
-	_elem_static_data.movement_class = MOVE_CLASS_POWDER;
+	_elem_static_data.flow_mode = FLOW_MODE_POWDER;
 #line 34
-	_elem_static_data.feature_flags = 0;
+	_elem_static_data.vertical_drive = 0.8;
 #line 34
-	_elem_static_data.dynamic_mode = DYNAMIC_MODE_NONE;
+	_elem_static_data.max_speed = 2.0;
 #line 34
-	_elem_static_data.gravity_force = 0.8;
+	_elem_static_data.lateral_spread = 3.0;
 #line 34
-	_elem_static_data.max_vel_x = 2.0;
+	_elem_static_data.momentum_retention = 0.32;
 #line 34
-	_elem_static_data.max_vel_y = 2.0;
+	_elem_static_data.support_resistance = 0.05;
 #line 34
-	_elem_static_data.can_slip = true;
+	_elem_static_data.clump_factor = 0.0;
 #line 34
-	_elem_static_data.x_slip_search_range = 3.0;
-#line 34
-	_elem_static_data.y_slip_search_range = 2.0;
-#line 34
-	_elem_static_data.wake_chance = 1.0;
-#line 34
-	_elem_static_data.stickiness_chance = 0.0;
-#line 34
-	_elem_static_data.bounce_chance = 0.0;
-#line 34
-	_elem_static_data.bounce_dampening_multiplier = 0.0;
-#line 34
-	_elem_static_data.airborne_vel_decay_chance = 0.5;
-#line 34
-	_elem_static_data.friction_vel_decay_chance = 0.85;
-#line 34
-	_elem_static_data.mass = 30.0;
+	_elem_static_data.surface_response = 0.0;
 #line 34
 	_elem_static_data.density = 300.0;
 #line 34
 	_elem_static_data.immovable = false;
 #line 34
-	_elem_static_data.replace_mode = REPLACE_MODE_LESS_DENSE_OR_EQUAL;
-#line 34
 	_elem_static_data.replace_mask = REPLACE_MASK_EMPTY + REPLACE_MASK_GAS + REPLACE_MASK_LIQUID;
 #line 34
-	_elem_static_data.replace_count = 0;
+	_elem_static_data.temp_contribute = true;
 #line 34
-	_elem_static_data.replace_id_0 = 0;
+	_elem_static_data.temp_locked = false;
 #line 34
-	_elem_static_data.replace_id_1 = 0;
+	_elem_static_data.temp_transfer_rate = 0.05;
 #line 34
-	_elem_static_data.replace_id_2 = 0;
+	_elem_static_data.temp_idle_value = 5.0;
 #line 34
-	_elem_static_data.replace_id_3 = 0;
+	_elem_static_data.temp_on_low = ELEM_ID_ASH;
 #line 34
-	_elem_static_data.interaction_group = INTERACTION_GROUP_MINERAL;
+	_elem_static_data.temp_on_high = ELEM_ID_ASH;
 #line 34
-	_elem_static_data.interaction_mask = 0;
+	_elem_static_data.moisture_contribute = true;
 #line 34
-	_elem_static_data.lifetime_max = 0.0;
+	_elem_static_data.moisture_locked = false;
 #line 34
-	_elem_static_data.lifetime_decay_chance = 0.0;
+	_elem_static_data.moisture_transfer_rate = 0.15;
 #line 34
-	_elem_static_data.transition_on_life_end = ELEM_ID_ASH;
+	_elem_static_data.moisture_idle_value = 5.0;
 #line 34
-	_elem_static_data.temperature_decay = 0.03;
+	_elem_static_data.moisture_on_low = ELEM_ID_ASH;
 #line 34
-	_elem_static_data.temperature_spread_chance = 0.05;
+	_elem_static_data.moisture_on_high = ELEM_ID_ASH;
 #line 34
-	_elem_static_data.temperature_min = -128.0;
+	_elem_static_data.corrosion_contribute = false;
 #line 34
-	_elem_static_data.temperature_max = 127.0;
+	_elem_static_data.corrosion_locked = true;
 #line 34
-	_elem_static_data.transition_on_temp_low = ELEM_ID_ASH;
+	_elem_static_data.corrosion_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.transition_on_temp_high = ELEM_ID_ASH;
+	_elem_static_data.corrosion_idle_value = 0.0;
 #line 34
-	_elem_static_data.ignition_threshold = 0.0;
+	_elem_static_data.corrosion_on_low = ELEM_ID_ASH;
 #line 34
-	_elem_static_data.burn_product = ELEM_ID_EMPTY;
+	_elem_static_data.corrosion_on_high = ELEM_ID_ASH;
 #line 34
-	_elem_static_data.cooling_product = ELEM_ID_ASH;
+	_elem_static_data.magic_contribute = false;
 #line 34
-	_elem_static_data.corrosion_resistance = 0.9;
+	_elem_static_data.magic_locked = true;
 #line 34
-	_elem_static_data.wetness_capacity = 30.0;
+	_elem_static_data.magic_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.quench_threshold = 0.0;
+	_elem_static_data.magic_idle_value = 0.0;
 #line 34
-	_elem_static_data.viscosity = 0.0;
+	_elem_static_data.magic_on_low = ELEM_ID_ASH;
 #line 34
-	_elem_static_data.base_color = 9079434.0;
+	_elem_static_data.magic_on_high = ELEM_ID_ASH;
 // end import ElemAsh.fsh.__shady_macro_DefineElementStaticData
 #line 34
 		return _elem_static_data;
@@ -2504,95 +2144,79 @@ ElementStaticData get_element_static_data(int _element_id) {
 #line 34
 	_elem_static_data.id = ELEM_ID_EMBER;
 #line 34
+	_elem_static_data.base_color = 16747571.0;
+#line 34
 	_elem_static_data.state_of_matter = MATTER_SOLID;
 #line 34
-	_elem_static_data.movement_class = MOVE_CLASS_DRIFTING_SOLID;
+	_elem_static_data.flow_mode = FLOW_MODE_POWDER;
 #line 34
-	_elem_static_data.feature_flags = FEATURE_USES_LIFETIME + FEATURE_USES_TEMPERATURE + FEATURE_CAN_IGNITE + FEATURE_EMITS_HEAT;
+	_elem_static_data.vertical_drive = 0.2;
 #line 34
-	_elem_static_data.dynamic_mode = DYNAMIC_MODE_LIFETIME;
+	_elem_static_data.max_speed = 2.0;
 #line 34
-	_elem_static_data.gravity_force = 0.2;
+	_elem_static_data.lateral_spread = 2.0;
 #line 34
-	_elem_static_data.max_vel_x = 2.0;
+	_elem_static_data.momentum_retention = 0.55;
 #line 34
-	_elem_static_data.max_vel_y = 2.0;
+	_elem_static_data.support_resistance = 0.05;
 #line 34
-	_elem_static_data.can_slip = true;
+	_elem_static_data.clump_factor = 0.0;
 #line 34
-	_elem_static_data.x_slip_search_range = 2.0;
-#line 34
-	_elem_static_data.y_slip_search_range = 1.0;
-#line 34
-	_elem_static_data.wake_chance = 1.0;
-#line 34
-	_elem_static_data.stickiness_chance = 0.0;
-#line 34
-	_elem_static_data.bounce_chance = 0.05;
-#line 34
-	_elem_static_data.bounce_dampening_multiplier = 0.25;
-#line 34
-	_elem_static_data.airborne_vel_decay_chance = 0.35;
-#line 34
-	_elem_static_data.friction_vel_decay_chance = 0.55;
-#line 34
-	_elem_static_data.mass = 25.0;
+	_elem_static_data.surface_response = 0.25;
 #line 34
 	_elem_static_data.density = 120.0;
 #line 34
 	_elem_static_data.immovable = false;
 #line 34
-	_elem_static_data.replace_mode = REPLACE_MODE_LESS_DENSE_OR_EQUAL;
-#line 34
 	_elem_static_data.replace_mask = REPLACE_MASK_EMPTY + REPLACE_MASK_GAS;
 #line 34
-	_elem_static_data.replace_count = 0;
+	_elem_static_data.temp_contribute = true;
 #line 34
-	_elem_static_data.replace_id_0 = 0;
+	_elem_static_data.temp_locked = false;
 #line 34
-	_elem_static_data.replace_id_1 = 0;
+	_elem_static_data.temp_transfer_rate = 0.45;
 #line 34
-	_elem_static_data.replace_id_2 = 0;
+	_elem_static_data.temp_idle_value = 85.0;
 #line 34
-	_elem_static_data.replace_id_3 = 0;
+	_elem_static_data.temp_on_low = ELEM_ID_ASH;
 #line 34
-	_elem_static_data.interaction_group = INTERACTION_GROUP_COMBUSTIBLE_GAS;
+	_elem_static_data.temp_on_high = ELEM_ID_FIRE;
 #line 34
-	_elem_static_data.interaction_mask = 0;
+	_elem_static_data.moisture_contribute = false;
 #line 34
-	_elem_static_data.lifetime_max = 110.0;
+	_elem_static_data.moisture_locked = true;
 #line 34
-	_elem_static_data.lifetime_decay_chance = 0.75;
+	_elem_static_data.moisture_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.transition_on_life_end = ELEM_ID_ASH;
+	_elem_static_data.moisture_idle_value = 0.0;
 #line 34
-	_elem_static_data.temperature_decay = 0.01;
+	_elem_static_data.moisture_on_low = ELEM_ID_EMBER;
 #line 34
-	_elem_static_data.temperature_spread_chance = 0.45;
+	_elem_static_data.moisture_on_high = ELEM_ID_EMBER;
 #line 34
-	_elem_static_data.temperature_min = -128.0;
+	_elem_static_data.corrosion_contribute = false;
 #line 34
-	_elem_static_data.temperature_max = 127.0;
+	_elem_static_data.corrosion_locked = true;
 #line 34
-	_elem_static_data.transition_on_temp_low = ELEM_ID_ASH;
+	_elem_static_data.corrosion_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.transition_on_temp_high = ELEM_ID_FIRE;
+	_elem_static_data.corrosion_idle_value = 0.0;
 #line 34
-	_elem_static_data.ignition_threshold = 32.0;
+	_elem_static_data.corrosion_on_low = ELEM_ID_EMBER;
 #line 34
-	_elem_static_data.burn_product = ELEM_ID_ASH;
+	_elem_static_data.corrosion_on_high = ELEM_ID_EMBER;
 #line 34
-	_elem_static_data.cooling_product = ELEM_ID_ASH;
+	_elem_static_data.magic_contribute = false;
 #line 34
-	_elem_static_data.corrosion_resistance = 0.8;
+	_elem_static_data.magic_locked = true;
 #line 34
-	_elem_static_data.wetness_capacity = 0.0;
+	_elem_static_data.magic_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.quench_threshold = 120.0;
+	_elem_static_data.magic_idle_value = 0.0;
 #line 34
-	_elem_static_data.viscosity = 0.0;
+	_elem_static_data.magic_on_low = ELEM_ID_EMBER;
 #line 34
-	_elem_static_data.base_color = 16747571.0;
+	_elem_static_data.magic_on_high = ELEM_ID_EMBER;
 // end import ElemEmber.fsh.__shady_macro_DefineElementStaticData
 #line 34
 		return _elem_static_data;
@@ -2606,95 +2230,79 @@ ElementStaticData get_element_static_data(int _element_id) {
 #line 34
 	_elem_static_data.id = ELEM_ID_ACID;
 #line 34
+	_elem_static_data.base_color = 6750003.0;
+#line 34
 	_elem_static_data.state_of_matter = MATTER_LIQUID;
 #line 34
-	_elem_static_data.movement_class = MOVE_CLASS_LIQUID;
+	_elem_static_data.flow_mode = FLOW_MODE_LIQUID;
 #line 34
-	_elem_static_data.feature_flags = FEATURE_CAN_CORRODE;
+	_elem_static_data.vertical_drive = 1.0;
 #line 34
-	_elem_static_data.dynamic_mode = DYNAMIC_MODE_CORROSION;
+	_elem_static_data.max_speed = 5.0;
 #line 34
-	_elem_static_data.gravity_force = 1.0;
+	_elem_static_data.lateral_spread = 5.0;
 #line 34
-	_elem_static_data.max_vel_x = 4.0;
+	_elem_static_data.momentum_retention = 0.87;
 #line 34
-	_elem_static_data.max_vel_y = 5.0;
+	_elem_static_data.support_resistance = 0.05;
 #line 34
-	_elem_static_data.can_slip = true;
+	_elem_static_data.clump_factor = 0.04;
 #line 34
-	_elem_static_data.x_slip_search_range = 5.0;
-#line 34
-	_elem_static_data.y_slip_search_range = 2.0;
-#line 34
-	_elem_static_data.wake_chance = 1.0;
-#line 34
-	_elem_static_data.stickiness_chance = 0.0;
-#line 34
-	_elem_static_data.bounce_chance = 0.0;
-#line 34
-	_elem_static_data.bounce_dampening_multiplier = 0.0;
-#line 34
-	_elem_static_data.airborne_vel_decay_chance = 0.20;
-#line 34
-	_elem_static_data.friction_vel_decay_chance = 0.06;
-#line 34
-	_elem_static_data.mass = 85.0;
+	_elem_static_data.surface_response = 0.0;
 #line 34
 	_elem_static_data.density = 1100.0;
 #line 34
 	_elem_static_data.immovable = false;
 #line 34
-	_elem_static_data.replace_mode = REPLACE_MODE_LESS_DENSE_OR_EQUAL;
-#line 34
 	_elem_static_data.replace_mask = REPLACE_MASK_EMPTY + REPLACE_MASK_GAS + REPLACE_MASK_LIQUID;
 #line 34
-	_elem_static_data.replace_count = 0;
+	_elem_static_data.temp_contribute = true;
 #line 34
-	_elem_static_data.replace_id_0 = 0;
+	_elem_static_data.temp_locked = false;
 #line 34
-	_elem_static_data.replace_id_1 = 0;
+	_elem_static_data.temp_transfer_rate = 0.10;
 #line 34
-	_elem_static_data.replace_id_2 = 0;
+	_elem_static_data.temp_idle_value = 10.0;
 #line 34
-	_elem_static_data.replace_id_3 = 0;
+	_elem_static_data.temp_on_low = ELEM_ID_ACID;
 #line 34
-	_elem_static_data.interaction_group = INTERACTION_GROUP_ACID_LIKE;
+	_elem_static_data.temp_on_high = ELEM_ID_ACID;
 #line 34
-	_elem_static_data.interaction_mask = 0;
+	_elem_static_data.moisture_contribute = true;
 #line 34
-	_elem_static_data.lifetime_max = 0.0;
+	_elem_static_data.moisture_locked = false;
 #line 34
-	_elem_static_data.lifetime_decay_chance = 0.0;
+	_elem_static_data.moisture_transfer_rate = 0.70;
 #line 34
-	_elem_static_data.transition_on_life_end = ELEM_ID_ACID;
+	_elem_static_data.moisture_idle_value = 90.0;
 #line 34
-	_elem_static_data.temperature_decay = 0.01;
+	_elem_static_data.moisture_on_low = ELEM_ID_ACID;
 #line 34
-	_elem_static_data.temperature_spread_chance = 0.10;
+	_elem_static_data.moisture_on_high = ELEM_ID_ACID;
 #line 34
-	_elem_static_data.temperature_min = -128.0;
+	_elem_static_data.corrosion_contribute = true;
 #line 34
-	_elem_static_data.temperature_max = 127.0;
+	_elem_static_data.corrosion_locked = false;
 #line 34
-	_elem_static_data.transition_on_temp_low = ELEM_ID_ACID;
+	_elem_static_data.corrosion_transfer_rate = 0.85;
 #line 34
-	_elem_static_data.transition_on_temp_high = ELEM_ID_ACID;
+	_elem_static_data.corrosion_idle_value = 100.0;
 #line 34
-	_elem_static_data.ignition_threshold = 0.0;
+	_elem_static_data.corrosion_on_low = ELEM_ID_ACID;
 #line 34
-	_elem_static_data.burn_product = ELEM_ID_EMPTY;
+	_elem_static_data.corrosion_on_high = ELEM_ID_ACID;
 #line 34
-	_elem_static_data.cooling_product = ELEM_ID_ACID;
+	_elem_static_data.magic_contribute = false;
 #line 34
-	_elem_static_data.corrosion_resistance = 0.2;
+	_elem_static_data.magic_locked = true;
 #line 34
-	_elem_static_data.wetness_capacity = 255.0;
+	_elem_static_data.magic_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.quench_threshold = 0.0;
+	_elem_static_data.magic_idle_value = 0.0;
 #line 34
-	_elem_static_data.viscosity = 0.04;
+	_elem_static_data.magic_on_low = ELEM_ID_ACID;
 #line 34
-	_elem_static_data.base_color = 6750003.0;
+	_elem_static_data.magic_on_high = ELEM_ID_ACID;
 // end import ElemAcid.fsh.__shady_macro_DefineElementStaticData
 #line 34
 		return _elem_static_data;
@@ -2708,95 +2316,79 @@ ElementStaticData get_element_static_data(int _element_id) {
 #line 34
 	_elem_static_data.id = ELEM_ID_METAL;
 #line 34
+	_elem_static_data.base_color = 11581379.0;
+#line 34
 	_elem_static_data.state_of_matter = MATTER_SOLID;
 #line 34
-	_elem_static_data.movement_class = MOVE_CLASS_NONE_STATIC;
+	_elem_static_data.flow_mode = FLOW_MODE_STATIC;
 #line 34
-	_elem_static_data.feature_flags = 0;
+	_elem_static_data.vertical_drive = 0.0;
 #line 34
-	_elem_static_data.dynamic_mode = DYNAMIC_MODE_NONE;
+	_elem_static_data.max_speed = 0.0;
 #line 34
-	_elem_static_data.gravity_force = 0.0;
+	_elem_static_data.lateral_spread = 0.0;
 #line 34
-	_elem_static_data.max_vel_x = 0.0;
+	_elem_static_data.momentum_retention = 1.0;
 #line 34
-	_elem_static_data.max_vel_y = 0.0;
+	_elem_static_data.support_resistance = 1.0;
 #line 34
-	_elem_static_data.can_slip = false;
+	_elem_static_data.clump_factor = 1.0;
 #line 34
-	_elem_static_data.x_slip_search_range = 0.0;
-#line 34
-	_elem_static_data.y_slip_search_range = 0.0;
-#line 34
-	_elem_static_data.wake_chance = 0.0;
-#line 34
-	_elem_static_data.stickiness_chance = 0.0;
-#line 34
-	_elem_static_data.bounce_chance = 0.0;
-#line 34
-	_elem_static_data.bounce_dampening_multiplier = 0.0;
-#line 34
-	_elem_static_data.airborne_vel_decay_chance = 0.0;
-#line 34
-	_elem_static_data.friction_vel_decay_chance = 0.0;
-#line 34
-	_elem_static_data.mass = 800.0;
+	_elem_static_data.surface_response = 0.0;
 #line 34
 	_elem_static_data.density = 3000.0;
 #line 34
 	_elem_static_data.immovable = true;
 #line 34
-	_elem_static_data.replace_mode = REPLACE_MODE_EMPTY_ONLY;
-#line 34
 	_elem_static_data.replace_mask = REPLACE_MASK_EMPTY;
 #line 34
-	_elem_static_data.replace_count = 0;
+	_elem_static_data.temp_contribute = true;
 #line 34
-	_elem_static_data.replace_id_0 = 0;
+	_elem_static_data.temp_locked = false;
 #line 34
-	_elem_static_data.replace_id_1 = 0;
+	_elem_static_data.temp_transfer_rate = 0.15;
 #line 34
-	_elem_static_data.replace_id_2 = 0;
+	_elem_static_data.temp_idle_value = 10.0;
 #line 34
-	_elem_static_data.replace_id_3 = 0;
+	_elem_static_data.temp_on_low = ELEM_ID_METAL;
 #line 34
-	_elem_static_data.interaction_group = INTERACTION_GROUP_METAL;
+	_elem_static_data.temp_on_high = ELEM_ID_METAL;
 #line 34
-	_elem_static_data.interaction_mask = 0;
+	_elem_static_data.moisture_contribute = false;
 #line 34
-	_elem_static_data.lifetime_max = 0.0;
+	_elem_static_data.moisture_locked = true;
 #line 34
-	_elem_static_data.lifetime_decay_chance = 0.0;
+	_elem_static_data.moisture_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.transition_on_life_end = ELEM_ID_METAL;
+	_elem_static_data.moisture_idle_value = 0.0;
 #line 34
-	_elem_static_data.temperature_decay = 0.0;
+	_elem_static_data.moisture_on_low = ELEM_ID_METAL;
 #line 34
-	_elem_static_data.temperature_spread_chance = 0.15;
+	_elem_static_data.moisture_on_high = ELEM_ID_METAL;
 #line 34
-	_elem_static_data.temperature_min = -128.0;
+	_elem_static_data.corrosion_contribute = true;
 #line 34
-	_elem_static_data.temperature_max = 127.0;
+	_elem_static_data.corrosion_locked = false;
 #line 34
-	_elem_static_data.transition_on_temp_low = ELEM_ID_METAL;
+	_elem_static_data.corrosion_transfer_rate = 0.25;
 #line 34
-	_elem_static_data.transition_on_temp_high = ELEM_ID_METAL;
+	_elem_static_data.corrosion_idle_value = 0.0;
 #line 34
-	_elem_static_data.ignition_threshold = 0.0;
+	_elem_static_data.corrosion_on_low = ELEM_ID_METAL;
 #line 34
-	_elem_static_data.burn_product = ELEM_ID_EMPTY;
+	_elem_static_data.corrosion_on_high = ELEM_ID_RUST;
 #line 34
-	_elem_static_data.cooling_product = ELEM_ID_METAL;
+	_elem_static_data.magic_contribute = false;
 #line 34
-	_elem_static_data.corrosion_resistance = 0.95;
+	_elem_static_data.magic_locked = true;
 #line 34
-	_elem_static_data.wetness_capacity = 0.0;
+	_elem_static_data.magic_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.quench_threshold = 0.0;
+	_elem_static_data.magic_idle_value = 0.0;
 #line 34
-	_elem_static_data.viscosity = 1.0;
+	_elem_static_data.magic_on_low = ELEM_ID_METAL;
 #line 34
-	_elem_static_data.base_color = 11581379.0;
+	_elem_static_data.magic_on_high = ELEM_ID_METAL;
 // end import ElemMetal.fsh.__shady_macro_DefineElementStaticData
 #line 34
 		return _elem_static_data;
@@ -2810,95 +2402,79 @@ ElementStaticData get_element_static_data(int _element_id) {
 #line 34
 	_elem_static_data.id = ELEM_ID_RUST;
 #line 34
+	_elem_static_data.base_color = 10571562.0;
+#line 34
 	_elem_static_data.state_of_matter = MATTER_SOLID;
 #line 34
-	_elem_static_data.movement_class = MOVE_CLASS_HEAVY_POWDER;
+	_elem_static_data.flow_mode = FLOW_MODE_POWDER;
 #line 34
-	_elem_static_data.feature_flags = FEATURE_CAN_CORRODE;
+	_elem_static_data.vertical_drive = 1.0;
 #line 34
-	_elem_static_data.dynamic_mode = DYNAMIC_MODE_CORROSION;
+	_elem_static_data.max_speed = 2.0;
 #line 34
-	_elem_static_data.gravity_force = 1.0;
+	_elem_static_data.lateral_spread = 2.0;
 #line 34
-	_elem_static_data.max_vel_x = 1.5;
+	_elem_static_data.momentum_retention = 0.38;
 #line 34
-	_elem_static_data.max_vel_y = 2.0;
+	_elem_static_data.support_resistance = 0.1;
 #line 34
-	_elem_static_data.can_slip = true;
+	_elem_static_data.clump_factor = 0.15;
 #line 34
-	_elem_static_data.x_slip_search_range = 2.0;
-#line 34
-	_elem_static_data.y_slip_search_range = 2.0;
-#line 34
-	_elem_static_data.wake_chance = 0.9;
-#line 34
-	_elem_static_data.stickiness_chance = 0.15;
-#line 34
-	_elem_static_data.bounce_chance = 0.0;
-#line 34
-	_elem_static_data.bounce_dampening_multiplier = 0.0;
-#line 34
-	_elem_static_data.airborne_vel_decay_chance = 0.45;
-#line 34
-	_elem_static_data.friction_vel_decay_chance = 0.8;
-#line 34
-	_elem_static_data.mass = 160.0;
+	_elem_static_data.surface_response = 0.0;
 #line 34
 	_elem_static_data.density = 1700.0;
 #line 34
 	_elem_static_data.immovable = false;
 #line 34
-	_elem_static_data.replace_mode = REPLACE_MODE_LESS_DENSE_OR_EQUAL;
-#line 34
 	_elem_static_data.replace_mask = REPLACE_MASK_EMPTY + REPLACE_MASK_GAS + REPLACE_MASK_LIQUID;
 #line 34
-	_elem_static_data.replace_count = 0;
+	_elem_static_data.temp_contribute = true;
 #line 34
-	_elem_static_data.replace_id_0 = 0;
+	_elem_static_data.temp_locked = false;
 #line 34
-	_elem_static_data.replace_id_1 = 0;
+	_elem_static_data.temp_transfer_rate = 0.05;
 #line 34
-	_elem_static_data.replace_id_2 = 0;
+	_elem_static_data.temp_idle_value = 5.0;
 #line 34
-	_elem_static_data.replace_id_3 = 0;
+	_elem_static_data.temp_on_low = ELEM_ID_RUST;
 #line 34
-	_elem_static_data.interaction_group = INTERACTION_GROUP_METAL;
+	_elem_static_data.temp_on_high = ELEM_ID_RUST;
 #line 34
-	_elem_static_data.interaction_mask = 0;
+	_elem_static_data.moisture_contribute = false;
 #line 34
-	_elem_static_data.lifetime_max = 0.0;
+	_elem_static_data.moisture_locked = true;
 #line 34
-	_elem_static_data.lifetime_decay_chance = 0.0;
+	_elem_static_data.moisture_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.transition_on_life_end = ELEM_ID_RUST;
+	_elem_static_data.moisture_idle_value = 0.0;
 #line 34
-	_elem_static_data.temperature_decay = 0.0;
+	_elem_static_data.moisture_on_low = ELEM_ID_RUST;
 #line 34
-	_elem_static_data.temperature_spread_chance = 0.05;
+	_elem_static_data.moisture_on_high = ELEM_ID_RUST;
 #line 34
-	_elem_static_data.temperature_min = -128.0;
+	_elem_static_data.corrosion_contribute = true;
 #line 34
-	_elem_static_data.temperature_max = 127.0;
+	_elem_static_data.corrosion_locked = false;
 #line 34
-	_elem_static_data.transition_on_temp_low = ELEM_ID_RUST;
+	_elem_static_data.corrosion_transfer_rate = 0.20;
 #line 34
-	_elem_static_data.transition_on_temp_high = ELEM_ID_RUST;
+	_elem_static_data.corrosion_idle_value = 60.0;
 #line 34
-	_elem_static_data.ignition_threshold = 0.0;
+	_elem_static_data.corrosion_on_low = ELEM_ID_RUST;
 #line 34
-	_elem_static_data.burn_product = ELEM_ID_EMPTY;
+	_elem_static_data.corrosion_on_high = ELEM_ID_RUST;
 #line 34
-	_elem_static_data.cooling_product = ELEM_ID_RUST;
+	_elem_static_data.magic_contribute = false;
 #line 34
-	_elem_static_data.corrosion_resistance = 0.1;
+	_elem_static_data.magic_locked = true;
 #line 34
-	_elem_static_data.wetness_capacity = 90.0;
+	_elem_static_data.magic_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.quench_threshold = 0.0;
+	_elem_static_data.magic_idle_value = 0.0;
 #line 34
-	_elem_static_data.viscosity = 0.1;
+	_elem_static_data.magic_on_low = ELEM_ID_RUST;
 #line 34
-	_elem_static_data.base_color = 10571562.0;
+	_elem_static_data.magic_on_high = ELEM_ID_RUST;
 // end import ElemRust.fsh.__shady_macro_DefineElementStaticData
 #line 34
 		return _elem_static_data;
@@ -2912,95 +2488,79 @@ ElementStaticData get_element_static_data(int _element_id) {
 #line 34
 	_elem_static_data.id = ELEM_ID_GLASS;
 #line 34
+	_elem_static_data.base_color = 12578815.0;
+#line 34
 	_elem_static_data.state_of_matter = MATTER_SOLID;
 #line 34
-	_elem_static_data.movement_class = MOVE_CLASS_NONE_STATIC;
+	_elem_static_data.flow_mode = FLOW_MODE_STATIC;
 #line 34
-	_elem_static_data.feature_flags = 0;
+	_elem_static_data.vertical_drive = 0.0;
 #line 34
-	_elem_static_data.dynamic_mode = DYNAMIC_MODE_NONE;
+	_elem_static_data.max_speed = 0.0;
 #line 34
-	_elem_static_data.gravity_force = 0.0;
+	_elem_static_data.lateral_spread = 0.0;
 #line 34
-	_elem_static_data.max_vel_x = 0.0;
+	_elem_static_data.momentum_retention = 1.0;
 #line 34
-	_elem_static_data.max_vel_y = 0.0;
+	_elem_static_data.support_resistance = 1.0;
 #line 34
-	_elem_static_data.can_slip = false;
+	_elem_static_data.clump_factor = 1.0;
 #line 34
-	_elem_static_data.x_slip_search_range = 0.0;
-#line 34
-	_elem_static_data.y_slip_search_range = 0.0;
-#line 34
-	_elem_static_data.wake_chance = 0.0;
-#line 34
-	_elem_static_data.stickiness_chance = 0.0;
-#line 34
-	_elem_static_data.bounce_chance = 0.0;
-#line 34
-	_elem_static_data.bounce_dampening_multiplier = 0.0;
-#line 34
-	_elem_static_data.airborne_vel_decay_chance = 0.0;
-#line 34
-	_elem_static_data.friction_vel_decay_chance = 0.0;
-#line 34
-	_elem_static_data.mass = 700.0;
+	_elem_static_data.surface_response = 0.0;
 #line 34
 	_elem_static_data.density = 2500.0;
 #line 34
 	_elem_static_data.immovable = true;
 #line 34
-	_elem_static_data.replace_mode = REPLACE_MODE_EMPTY_ONLY;
-#line 34
 	_elem_static_data.replace_mask = REPLACE_MASK_EMPTY;
 #line 34
-	_elem_static_data.replace_count = 0;
+	_elem_static_data.temp_contribute = true;
 #line 34
-	_elem_static_data.replace_id_0 = 0;
+	_elem_static_data.temp_locked = false;
 #line 34
-	_elem_static_data.replace_id_1 = 0;
+	_elem_static_data.temp_transfer_rate = 0.05;
 #line 34
-	_elem_static_data.replace_id_2 = 0;
+	_elem_static_data.temp_idle_value = 5.0;
 #line 34
-	_elem_static_data.replace_id_3 = 0;
+	_elem_static_data.temp_on_low = ELEM_ID_GLASS;
 #line 34
-	_elem_static_data.interaction_group = INTERACTION_GROUP_MINERAL;
+	_elem_static_data.temp_on_high = ELEM_ID_GLASS;
 #line 34
-	_elem_static_data.interaction_mask = 0;
+	_elem_static_data.moisture_contribute = false;
 #line 34
-	_elem_static_data.lifetime_max = 0.0;
+	_elem_static_data.moisture_locked = true;
 #line 34
-	_elem_static_data.lifetime_decay_chance = 0.0;
+	_elem_static_data.moisture_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.transition_on_life_end = ELEM_ID_GLASS;
+	_elem_static_data.moisture_idle_value = 0.0;
 #line 34
-	_elem_static_data.temperature_decay = 0.0;
+	_elem_static_data.moisture_on_low = ELEM_ID_GLASS;
 #line 34
-	_elem_static_data.temperature_spread_chance = 0.05;
+	_elem_static_data.moisture_on_high = ELEM_ID_GLASS;
 #line 34
-	_elem_static_data.temperature_min = -128.0;
+	_elem_static_data.corrosion_contribute = false;
 #line 34
-	_elem_static_data.temperature_max = 127.0;
+	_elem_static_data.corrosion_locked = true;
 #line 34
-	_elem_static_data.transition_on_temp_low = ELEM_ID_GLASS;
+	_elem_static_data.corrosion_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.transition_on_temp_high = ELEM_ID_GLASS;
+	_elem_static_data.corrosion_idle_value = 0.0;
 #line 34
-	_elem_static_data.ignition_threshold = 0.0;
+	_elem_static_data.corrosion_on_low = ELEM_ID_GLASS;
 #line 34
-	_elem_static_data.burn_product = ELEM_ID_EMPTY;
+	_elem_static_data.corrosion_on_high = ELEM_ID_GLASS;
 #line 34
-	_elem_static_data.cooling_product = ELEM_ID_GLASS;
+	_elem_static_data.magic_contribute = false;
 #line 34
-	_elem_static_data.corrosion_resistance = 0.9;
+	_elem_static_data.magic_locked = true;
 #line 34
-	_elem_static_data.wetness_capacity = 0.0;
+	_elem_static_data.magic_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.quench_threshold = 0.0;
+	_elem_static_data.magic_idle_value = 0.0;
 #line 34
-	_elem_static_data.viscosity = 1.0;
+	_elem_static_data.magic_on_low = ELEM_ID_GLASS;
 #line 34
-	_elem_static_data.base_color = 12578815.0;
+	_elem_static_data.magic_on_high = ELEM_ID_GLASS;
 // end import ElemGlass.fsh.__shady_macro_DefineElementStaticData
 #line 34
 		return _elem_static_data;
@@ -3014,95 +2574,79 @@ ElementStaticData get_element_static_data(int _element_id) {
 #line 34
 	_elem_static_data.id = ELEM_ID_SALT;
 #line 34
+	_elem_static_data.base_color = 15921906.0;
+#line 34
 	_elem_static_data.state_of_matter = MATTER_SOLID;
 #line 34
-	_elem_static_data.movement_class = MOVE_CLASS_POWDER;
+	_elem_static_data.flow_mode = FLOW_MODE_POWDER;
 #line 34
-	_elem_static_data.feature_flags = FEATURE_CAN_WET;
+	_elem_static_data.vertical_drive = 1.0;
 #line 34
-	_elem_static_data.dynamic_mode = DYNAMIC_MODE_MOISTURE;
+	_elem_static_data.max_speed = 2.0;
 #line 34
-	_elem_static_data.gravity_force = 1.0;
+	_elem_static_data.lateral_spread = 2.0;
 #line 34
-	_elem_static_data.max_vel_x = 2.0;
+	_elem_static_data.momentum_retention = 0.45;
 #line 34
-	_elem_static_data.max_vel_y = 2.0;
+	_elem_static_data.support_resistance = 0.0;
 #line 34
-	_elem_static_data.can_slip = true;
+	_elem_static_data.clump_factor = 0.0;
 #line 34
-	_elem_static_data.x_slip_search_range = 2.0;
-#line 34
-	_elem_static_data.y_slip_search_range = 2.0;
-#line 34
-	_elem_static_data.wake_chance = 1.0;
-#line 34
-	_elem_static_data.stickiness_chance = 0.0;
-#line 34
-	_elem_static_data.bounce_chance = 0.01;
-#line 34
-	_elem_static_data.bounce_dampening_multiplier = 0.08;
-#line 34
-	_elem_static_data.airborne_vel_decay_chance = 0.4;
-#line 34
-	_elem_static_data.friction_vel_decay_chance = 0.7;
-#line 34
-	_elem_static_data.mass = 110.0;
+	_elem_static_data.surface_response = 0.08;
 #line 34
 	_elem_static_data.density = 1200.0;
 #line 34
 	_elem_static_data.immovable = false;
 #line 34
-	_elem_static_data.replace_mode = REPLACE_MODE_LESS_DENSE;
-#line 34
 	_elem_static_data.replace_mask = REPLACE_MASK_EMPTY + REPLACE_MASK_GAS + REPLACE_MASK_LIQUID;
 #line 34
-	_elem_static_data.replace_count = 1;
+	_elem_static_data.temp_contribute = true;
 #line 34
-	_elem_static_data.replace_id_0 = ELEM_ID_WATER;
+	_elem_static_data.temp_locked = false;
 #line 34
-	_elem_static_data.replace_id_1 = 0;
+	_elem_static_data.temp_transfer_rate = 0.05;
 #line 34
-	_elem_static_data.replace_id_2 = 0;
+	_elem_static_data.temp_idle_value = 0.0;
 #line 34
-	_elem_static_data.replace_id_3 = 0;
+	_elem_static_data.temp_on_low = ELEM_ID_SALT;
 #line 34
-	_elem_static_data.interaction_group = INTERACTION_GROUP_MINERAL;
+	_elem_static_data.temp_on_high = ELEM_ID_SALT;
 #line 34
-	_elem_static_data.interaction_mask = 0;
+	_elem_static_data.moisture_contribute = true;
 #line 34
-	_elem_static_data.lifetime_max = 0.0;
+	_elem_static_data.moisture_locked = false;
 #line 34
-	_elem_static_data.lifetime_decay_chance = 0.0;
+	_elem_static_data.moisture_transfer_rate = 0.65;
 #line 34
-	_elem_static_data.transition_on_life_end = ELEM_ID_SALT;
+	_elem_static_data.moisture_idle_value = 0.0;
 #line 34
-	_elem_static_data.temperature_decay = 0.0;
+	_elem_static_data.moisture_on_low = ELEM_ID_SALT;
 #line 34
-	_elem_static_data.temperature_spread_chance = 0.0;
+	_elem_static_data.moisture_on_high = ELEM_ID_SALT_WATER;
 #line 34
-	_elem_static_data.temperature_min = -128.0;
+	_elem_static_data.corrosion_contribute = false;
 #line 34
-	_elem_static_data.temperature_max = 127.0;
+	_elem_static_data.corrosion_locked = true;
 #line 34
-	_elem_static_data.transition_on_temp_low = ELEM_ID_SALT;
+	_elem_static_data.corrosion_transfer_rate = 0.00;
 #line 34
-	_elem_static_data.transition_on_temp_high = ELEM_ID_SALT;
+	_elem_static_data.corrosion_idle_value = 0.0;
 #line 34
-	_elem_static_data.ignition_threshold = 0.0;
+	_elem_static_data.corrosion_on_low = ELEM_ID_SALT;
 #line 34
-	_elem_static_data.burn_product = ELEM_ID_EMPTY;
+	_elem_static_data.corrosion_on_high = ELEM_ID_SALT;
 #line 34
-	_elem_static_data.cooling_product = ELEM_ID_SALT;
+	_elem_static_data.magic_contribute = false;
 #line 34
-	_elem_static_data.corrosion_resistance = 0.8;
+	_elem_static_data.magic_locked = true;
 #line 34
-	_elem_static_data.wetness_capacity = 255.0;
+	_elem_static_data.magic_transfer_rate = 0.00;
 #line 34
-	_elem_static_data.quench_threshold = 0.0;
+	_elem_static_data.magic_idle_value = 0.0;
 #line 34
-	_elem_static_data.viscosity = 0.0;
+	_elem_static_data.magic_on_low = ELEM_ID_SALT;
 #line 34
-	_elem_static_data.base_color = 15921906.0;
+	_elem_static_data.magic_on_high = ELEM_ID_SALT;
 // end import ElemSalt.fsh.__shady_macro_DefineElementStaticData
 #line 34
 		return _elem_static_data;
@@ -3116,95 +2660,79 @@ ElementStaticData get_element_static_data(int _element_id) {
 #line 34
 	_elem_static_data.id = ELEM_ID_SALT_WATER;
 #line 34
+	_elem_static_data.base_color = 6006527.0;
+#line 34
 	_elem_static_data.state_of_matter = MATTER_LIQUID;
 #line 34
-	_elem_static_data.movement_class = MOVE_CLASS_LIQUID;
+	_elem_static_data.flow_mode = FLOW_MODE_LIQUID;
 #line 34
-	_elem_static_data.feature_flags = FEATURE_REACTS_AS_COOLANT;
+	_elem_static_data.vertical_drive = 1.0;
 #line 34
-	_elem_static_data.dynamic_mode = DYNAMIC_MODE_MOISTURE;
+	_elem_static_data.max_speed = 5.0;
 #line 34
-	_elem_static_data.gravity_force = 1.0;
+	_elem_static_data.lateral_spread = 5.0;
 #line 34
-	_elem_static_data.max_vel_x = 4.0;
+	_elem_static_data.momentum_retention = 0.84;
 #line 34
-	_elem_static_data.max_vel_y = 5.0;
+	_elem_static_data.support_resistance = 0.05;
 #line 34
-	_elem_static_data.can_slip = true;
+	_elem_static_data.clump_factor = 0.02;
 #line 34
-	_elem_static_data.x_slip_search_range = 5.0;
-#line 34
-	_elem_static_data.y_slip_search_range = 2.0;
-#line 34
-	_elem_static_data.wake_chance = 1.0;
-#line 34
-	_elem_static_data.stickiness_chance = 0.0;
-#line 34
-	_elem_static_data.bounce_chance = 0.0;
-#line 34
-	_elem_static_data.bounce_dampening_multiplier = 0.0;
-#line 34
-	_elem_static_data.airborne_vel_decay_chance = 0.22;
-#line 34
-	_elem_static_data.friction_vel_decay_chance = 0.10;
-#line 34
-	_elem_static_data.mass = 82.0;
+	_elem_static_data.surface_response = 0.0;
 #line 34
 	_elem_static_data.density = 1030.0;
 #line 34
 	_elem_static_data.immovable = false;
 #line 34
-	_elem_static_data.replace_mode = REPLACE_MODE_LESS_DENSE_OR_EQUAL;
-#line 34
 	_elem_static_data.replace_mask = REPLACE_MASK_EMPTY + REPLACE_MASK_GAS;
 #line 34
-	_elem_static_data.replace_count = 0;
+	_elem_static_data.temp_contribute = true;
 #line 34
-	_elem_static_data.replace_id_0 = 0;
+	_elem_static_data.temp_locked = false;
 #line 34
-	_elem_static_data.replace_id_1 = 0;
+	_elem_static_data.temp_transfer_rate = 0.40;
 #line 34
-	_elem_static_data.replace_id_2 = 0;
+	_elem_static_data.temp_idle_value = -5.0;
 #line 34
-	_elem_static_data.replace_id_3 = 0;
+	_elem_static_data.temp_on_low = ELEM_ID_ICE;
 #line 34
-	_elem_static_data.interaction_group = INTERACTION_GROUP_WATER_LIKE;
+	_elem_static_data.temp_on_high = ELEM_ID_STEAM;
 #line 34
-	_elem_static_data.interaction_mask = 0;
+	_elem_static_data.moisture_contribute = true;
 #line 34
-	_elem_static_data.lifetime_max = 0.0;
+	_elem_static_data.moisture_locked = false;
 #line 34
-	_elem_static_data.lifetime_decay_chance = 0.0;
+	_elem_static_data.moisture_transfer_rate = 1.00;
 #line 34
-	_elem_static_data.transition_on_life_end = ELEM_ID_SALT_WATER;
+	_elem_static_data.moisture_idle_value = 100.0;
 #line 34
-	_elem_static_data.temperature_decay = 0.03;
+	_elem_static_data.moisture_on_low = ELEM_ID_SALT;
 #line 34
-	_elem_static_data.temperature_spread_chance = 0.40;
+	_elem_static_data.moisture_on_high = ELEM_ID_SALT_WATER;
 #line 34
-	_elem_static_data.temperature_min = -10.0;
+	_elem_static_data.corrosion_contribute = true;
 #line 34
-	_elem_static_data.temperature_max = 20.0;
+	_elem_static_data.corrosion_locked = false;
 #line 34
-	_elem_static_data.transition_on_temp_low = ELEM_ID_ICE;
+	_elem_static_data.corrosion_transfer_rate = 0.20;
 #line 34
-	_elem_static_data.transition_on_temp_high = ELEM_ID_STEAM;
+	_elem_static_data.corrosion_idle_value = 30.0;
 #line 34
-	_elem_static_data.ignition_threshold = 0.0;
+	_elem_static_data.corrosion_on_low = ELEM_ID_SALT_WATER;
 #line 34
-	_elem_static_data.burn_product = ELEM_ID_EMPTY;
+	_elem_static_data.corrosion_on_high = ELEM_ID_SALT_WATER;
 #line 34
-	_elem_static_data.cooling_product = ELEM_ID_SALT_WATER;
+	_elem_static_data.magic_contribute = false;
 #line 34
-	_elem_static_data.corrosion_resistance = 0.85;
+	_elem_static_data.magic_locked = true;
 #line 34
-	_elem_static_data.wetness_capacity = 255.0;
+	_elem_static_data.magic_transfer_rate = 0.00;
 #line 34
-	_elem_static_data.quench_threshold = 180.0;
+	_elem_static_data.magic_idle_value = 0.0;
 #line 34
-	_elem_static_data.viscosity = 0.02;
+	_elem_static_data.magic_on_low = ELEM_ID_SALT_WATER;
 #line 34
-	_elem_static_data.base_color = 6006527.0;
+	_elem_static_data.magic_on_high = ELEM_ID_SALT_WATER;
 // end import ElemSaltWater.fsh.__shady_macro_DefineElementStaticData
 #line 34
 		return _elem_static_data;
@@ -3218,95 +2746,79 @@ ElementStaticData get_element_static_data(int _element_id) {
 #line 34
 	_elem_static_data.id = ELEM_ID_PLANT;
 #line 34
+	_elem_static_data.base_color = 4170573.0;
+#line 34
 	_elem_static_data.state_of_matter = MATTER_SOLID;
 #line 34
-	_elem_static_data.movement_class = MOVE_CLASS_NONE_STATIC;
+	_elem_static_data.flow_mode = FLOW_MODE_STATIC;
 #line 34
-	_elem_static_data.feature_flags = FEATURE_CAN_IGNITE + FEATURE_USES_TEMPERATURE + FEATURE_CAN_WET;
+	_elem_static_data.vertical_drive = 0.0;
 #line 34
-	_elem_static_data.dynamic_mode = DYNAMIC_MODE_MOISTURE;
+	_elem_static_data.max_speed = 0.0;
 #line 34
-	_elem_static_data.gravity_force = 0.0;
+	_elem_static_data.lateral_spread = 0.0;
 #line 34
-	_elem_static_data.max_vel_x = 0.0;
+	_elem_static_data.momentum_retention = 1.0;
 #line 34
-	_elem_static_data.max_vel_y = 0.0;
+	_elem_static_data.support_resistance = 1.0;
 #line 34
-	_elem_static_data.can_slip = false;
+	_elem_static_data.clump_factor = 1.0;
 #line 34
-	_elem_static_data.x_slip_search_range = 0.0;
-#line 34
-	_elem_static_data.y_slip_search_range = 0.0;
-#line 34
-	_elem_static_data.wake_chance = 0.0;
-#line 34
-	_elem_static_data.stickiness_chance = 0.0;
-#line 34
-	_elem_static_data.bounce_chance = 0.0;
-#line 34
-	_elem_static_data.bounce_dampening_multiplier = 0.0;
-#line 34
-	_elem_static_data.airborne_vel_decay_chance = 0.0;
-#line 34
-	_elem_static_data.friction_vel_decay_chance = 0.0;
-#line 34
-	_elem_static_data.mass = 300.0;
+	_elem_static_data.surface_response = 0.0;
 #line 34
 	_elem_static_data.density = 650.0;
 #line 34
 	_elem_static_data.immovable = true;
 #line 34
-	_elem_static_data.replace_mode = REPLACE_MODE_EMPTY_ONLY;
-#line 34
 	_elem_static_data.replace_mask = REPLACE_MASK_EMPTY;
 #line 34
-	_elem_static_data.replace_count = 0;
+	_elem_static_data.temp_contribute = true;
 #line 34
-	_elem_static_data.replace_id_0 = 0;
+	_elem_static_data.temp_locked = false;
 #line 34
-	_elem_static_data.replace_id_1 = 0;
+	_elem_static_data.temp_transfer_rate = 0.15;
 #line 34
-	_elem_static_data.replace_id_2 = 0;
+	_elem_static_data.temp_idle_value = 15.0;
 #line 34
-	_elem_static_data.replace_id_3 = 0;
+	_elem_static_data.temp_on_low = ELEM_ID_PLANT;
 #line 34
-	_elem_static_data.interaction_group = INTERACTION_GROUP_ORGANIC;
+	_elem_static_data.temp_on_high = ELEM_ID_FIRE;
 #line 34
-	_elem_static_data.interaction_mask = 0;
+	_elem_static_data.moisture_contribute = true;
 #line 34
-	_elem_static_data.lifetime_max = 0.0;
+	_elem_static_data.moisture_locked = false;
 #line 34
-	_elem_static_data.lifetime_decay_chance = 0.0;
+	_elem_static_data.moisture_transfer_rate = 0.50;
 #line 34
-	_elem_static_data.transition_on_life_end = ELEM_ID_PLANT;
+	_elem_static_data.moisture_idle_value = 35.0;
 #line 34
-	_elem_static_data.temperature_decay = 0.02;
+	_elem_static_data.moisture_on_low = ELEM_ID_PLANT;
 #line 34
-	_elem_static_data.temperature_spread_chance = 0.15;
+	_elem_static_data.moisture_on_high = ELEM_ID_PLANT;
 #line 34
-	_elem_static_data.temperature_min = -128.0;
+	_elem_static_data.corrosion_contribute = false;
 #line 34
-	_elem_static_data.temperature_max = 52.0;
+	_elem_static_data.corrosion_locked = true;
 #line 34
-	_elem_static_data.transition_on_temp_low = ELEM_ID_PLANT;
+	_elem_static_data.corrosion_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.transition_on_temp_high = ELEM_ID_FIRE;
+	_elem_static_data.corrosion_idle_value = 0.0;
 #line 34
-	_elem_static_data.ignition_threshold = 88.0;
+	_elem_static_data.corrosion_on_low = ELEM_ID_PLANT;
 #line 34
-	_elem_static_data.burn_product = ELEM_ID_FIRE;
+	_elem_static_data.corrosion_on_high = ELEM_ID_PLANT;
 #line 34
-	_elem_static_data.cooling_product = ELEM_ID_PLANT;
+	_elem_static_data.magic_contribute = false;
 #line 34
-	_elem_static_data.corrosion_resistance = 0.2;
+	_elem_static_data.magic_locked = true;
 #line 34
-	_elem_static_data.wetness_capacity = 180.0;
+	_elem_static_data.magic_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.quench_threshold = 0.0;
+	_elem_static_data.magic_idle_value = 0.0;
 #line 34
-	_elem_static_data.viscosity = 1.0;
+	_elem_static_data.magic_on_low = ELEM_ID_PLANT;
 #line 34
-	_elem_static_data.base_color = 4170573.0;
+	_elem_static_data.magic_on_high = ELEM_ID_PLANT;
 // end import ElemPlant.fsh.__shady_macro_DefineElementStaticData
 #line 34
 		return _elem_static_data;
@@ -3320,95 +2832,79 @@ ElementStaticData get_element_static_data(int _element_id) {
 #line 34
 	_elem_static_data.id = ELEM_ID_SEED;
 #line 34
+	_elem_static_data.base_color = 9202218.0;
+#line 34
 	_elem_static_data.state_of_matter = MATTER_SOLID;
 #line 34
-	_elem_static_data.movement_class = MOVE_CLASS_DRIFTING_SOLID;
+	_elem_static_data.flow_mode = FLOW_MODE_POWDER;
 #line 34
-	_elem_static_data.feature_flags = FEATURE_CAN_WET;
+	_elem_static_data.vertical_drive = 1.0;
 #line 34
-	_elem_static_data.dynamic_mode = DYNAMIC_MODE_MOISTURE;
+	_elem_static_data.max_speed = 2.0;
 #line 34
-	_elem_static_data.gravity_force = 1.0;
+	_elem_static_data.lateral_spread = 1.0;
 #line 34
-	_elem_static_data.max_vel_x = 1.0;
+	_elem_static_data.momentum_retention = 0.35;
 #line 34
-	_elem_static_data.max_vel_y = 2.0;
+	_elem_static_data.support_resistance = 0.20;
 #line 34
-	_elem_static_data.can_slip = true;
+	_elem_static_data.clump_factor = 0.05;
 #line 34
-	_elem_static_data.x_slip_search_range = 1.0;
-#line 34
-	_elem_static_data.y_slip_search_range = 1.0;
-#line 34
-	_elem_static_data.wake_chance = 0.8;
-#line 34
-	_elem_static_data.stickiness_chance = 0.05;
-#line 34
-	_elem_static_data.bounce_chance = 0.02;
-#line 34
-	_elem_static_data.bounce_dampening_multiplier = 0.1;
-#line 34
-	_elem_static_data.airborne_vel_decay_chance = 0.55;
-#line 34
-	_elem_static_data.friction_vel_decay_chance = 0.75;
-#line 34
-	_elem_static_data.mass = 20.0;
+	_elem_static_data.surface_response = 0.05;
 #line 34
 	_elem_static_data.density = 600.0;
 #line 34
 	_elem_static_data.immovable = false;
 #line 34
-	_elem_static_data.replace_mode = REPLACE_MODE_LESS_DENSE_OR_EQUAL;
-#line 34
 	_elem_static_data.replace_mask = REPLACE_MASK_EMPTY + REPLACE_MASK_GAS + REPLACE_MASK_LIQUID;
 #line 34
-	_elem_static_data.replace_count = 0;
+	_elem_static_data.temp_contribute = false;
 #line 34
-	_elem_static_data.replace_id_0 = 0;
+	_elem_static_data.temp_locked = false;
 #line 34
-	_elem_static_data.replace_id_1 = 0;
+	_elem_static_data.temp_transfer_rate = 0.05;
 #line 34
-	_elem_static_data.replace_id_2 = 0;
+	_elem_static_data.temp_idle_value = 0.0;
 #line 34
-	_elem_static_data.replace_id_3 = 0;
+	_elem_static_data.temp_on_low = ELEM_ID_SEED;
 #line 34
-	_elem_static_data.interaction_group = INTERACTION_GROUP_ORGANIC;
+	_elem_static_data.temp_on_high = ELEM_ID_SEED;
 #line 34
-	_elem_static_data.interaction_mask = 0;
+	_elem_static_data.moisture_contribute = true;
 #line 34
-	_elem_static_data.lifetime_max = 0.0;
+	_elem_static_data.moisture_locked = false;
 #line 34
-	_elem_static_data.lifetime_decay_chance = 0.0;
+	_elem_static_data.moisture_transfer_rate = 0.60;
 #line 34
-	_elem_static_data.transition_on_life_end = ELEM_ID_SEED;
+	_elem_static_data.moisture_idle_value = 20.0;
 #line 34
-	_elem_static_data.temperature_decay = 0.0;
+	_elem_static_data.moisture_on_low = ELEM_ID_SEED;
 #line 34
-	_elem_static_data.temperature_spread_chance = 0.05;
+	_elem_static_data.moisture_on_high = ELEM_ID_PLANT;
 #line 34
-	_elem_static_data.temperature_min = -128.0;
+	_elem_static_data.corrosion_contribute = false;
 #line 34
-	_elem_static_data.temperature_max = 127.0;
+	_elem_static_data.corrosion_locked = true;
 #line 34
-	_elem_static_data.transition_on_temp_low = ELEM_ID_SEED;
+	_elem_static_data.corrosion_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.transition_on_temp_high = ELEM_ID_SEED;
+	_elem_static_data.corrosion_idle_value = 0.0;
 #line 34
-	_elem_static_data.ignition_threshold = 96.0;
+	_elem_static_data.corrosion_on_low = ELEM_ID_SEED;
 #line 34
-	_elem_static_data.burn_product = ELEM_ID_FIRE;
+	_elem_static_data.corrosion_on_high = ELEM_ID_SEED;
 #line 34
-	_elem_static_data.cooling_product = ELEM_ID_SEED;
+	_elem_static_data.magic_contribute = false;
 #line 34
-	_elem_static_data.corrosion_resistance = 0.2;
+	_elem_static_data.magic_locked = true;
 #line 34
-	_elem_static_data.wetness_capacity = 120.0;
+	_elem_static_data.magic_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.quench_threshold = 0.0;
+	_elem_static_data.magic_idle_value = 0.0;
 #line 34
-	_elem_static_data.viscosity = 0.0;
+	_elem_static_data.magic_on_low = ELEM_ID_SEED;
 #line 34
-	_elem_static_data.base_color = 9202218.0;
+	_elem_static_data.magic_on_high = ELEM_ID_SEED;
 // end import ElemSeed.fsh.__shady_macro_DefineElementStaticData
 #line 34
 		return _elem_static_data;
@@ -3422,95 +2918,79 @@ ElementStaticData get_element_static_data(int _element_id) {
 #line 34
 	_elem_static_data.id = ELEM_ID_COAL;
 #line 34
+	_elem_static_data.base_color = 2236962.0;
+#line 34
 	_elem_static_data.state_of_matter = MATTER_SOLID;
 #line 34
-	_elem_static_data.movement_class = MOVE_CLASS_HEAVY_POWDER;
+	_elem_static_data.flow_mode = FLOW_MODE_POWDER;
 #line 34
-	_elem_static_data.feature_flags = FEATURE_CAN_IGNITE + FEATURE_USES_TEMPERATURE;
+	_elem_static_data.vertical_drive = 1.0;
 #line 34
-	_elem_static_data.dynamic_mode = DYNAMIC_MODE_TEMPERATURE;
+	_elem_static_data.max_speed = 2.5;
 #line 34
-	_elem_static_data.gravity_force = 1.0;
+	_elem_static_data.lateral_spread = 2.0;
 #line 34
-	_elem_static_data.max_vel_x = 1.5;
+	_elem_static_data.momentum_retention = 0.4;
 #line 34
-	_elem_static_data.max_vel_y = 2.5;
+	_elem_static_data.support_resistance = 0.2;
 #line 34
-	_elem_static_data.can_slip = true;
+	_elem_static_data.clump_factor = 0.1;
 #line 34
-	_elem_static_data.x_slip_search_range = 2.0;
-#line 34
-	_elem_static_data.y_slip_search_range = 2.0;
-#line 34
-	_elem_static_data.wake_chance = 0.8;
-#line 34
-	_elem_static_data.stickiness_chance = 0.1;
-#line 34
-	_elem_static_data.bounce_chance = 0.03;
-#line 34
-	_elem_static_data.bounce_dampening_multiplier = 0.15;
-#line 34
-	_elem_static_data.airborne_vel_decay_chance = 0.45;
-#line 34
-	_elem_static_data.friction_vel_decay_chance = 0.75;
-#line 34
-	_elem_static_data.mass = 220.0;
+	_elem_static_data.surface_response = 0.15;
 #line 34
 	_elem_static_data.density = 1400.0;
 #line 34
 	_elem_static_data.immovable = false;
 #line 34
-	_elem_static_data.replace_mode = REPLACE_MODE_LESS_DENSE;
-#line 34
 	_elem_static_data.replace_mask = REPLACE_MASK_EMPTY + REPLACE_MASK_GAS + REPLACE_MASK_LIQUID;
 #line 34
-	_elem_static_data.replace_count = 0;
+	_elem_static_data.temp_contribute = true;
 #line 34
-	_elem_static_data.replace_id_0 = 0;
+	_elem_static_data.temp_locked = false;
 #line 34
-	_elem_static_data.replace_id_1 = 0;
+	_elem_static_data.temp_transfer_rate = 0.10;
 #line 34
-	_elem_static_data.replace_id_2 = 0;
+	_elem_static_data.temp_idle_value = 15.0;
 #line 34
-	_elem_static_data.replace_id_3 = 0;
+	_elem_static_data.temp_on_low = ELEM_ID_COAL;
 #line 34
-	_elem_static_data.interaction_group = INTERACTION_GROUP_ORGANIC;
+	_elem_static_data.temp_on_high = ELEM_ID_EMBER;
 #line 34
-	_elem_static_data.interaction_mask = 0;
+	_elem_static_data.moisture_contribute = true;
 #line 34
-	_elem_static_data.lifetime_max = 0.0;
+	_elem_static_data.moisture_locked = false;
 #line 34
-	_elem_static_data.lifetime_decay_chance = 0.0;
+	_elem_static_data.moisture_transfer_rate = 0.15;
 #line 34
-	_elem_static_data.transition_on_life_end = ELEM_ID_COAL;
+	_elem_static_data.moisture_idle_value = 10.0;
 #line 34
-	_elem_static_data.temperature_decay = 0.01;
+	_elem_static_data.moisture_on_low = ELEM_ID_COAL;
 #line 34
-	_elem_static_data.temperature_spread_chance = 0.10;
+	_elem_static_data.moisture_on_high = ELEM_ID_COAL;
 #line 34
-	_elem_static_data.temperature_min = -128.0;
+	_elem_static_data.corrosion_contribute = false;
 #line 34
-	_elem_static_data.temperature_max = 80.0;
+	_elem_static_data.corrosion_locked = true;
 #line 34
-	_elem_static_data.transition_on_temp_low = ELEM_ID_COAL;
+	_elem_static_data.corrosion_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.transition_on_temp_high = ELEM_ID_EMBER;
+	_elem_static_data.corrosion_idle_value = 0.0;
 #line 34
-	_elem_static_data.ignition_threshold = 110.0;
+	_elem_static_data.corrosion_on_low = ELEM_ID_COAL;
 #line 34
-	_elem_static_data.burn_product = ELEM_ID_EMBER;
+	_elem_static_data.corrosion_on_high = ELEM_ID_COAL;
 #line 34
-	_elem_static_data.cooling_product = ELEM_ID_COAL;
+	_elem_static_data.magic_contribute = false;
 #line 34
-	_elem_static_data.corrosion_resistance = 0.7;
+	_elem_static_data.magic_locked = true;
 #line 34
-	_elem_static_data.wetness_capacity = 40.0;
+	_elem_static_data.magic_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.quench_threshold = 0.0;
+	_elem_static_data.magic_idle_value = 0.0;
 #line 34
-	_elem_static_data.viscosity = 0.1;
+	_elem_static_data.magic_on_low = ELEM_ID_COAL;
 #line 34
-	_elem_static_data.base_color = 2236962.0;
+	_elem_static_data.magic_on_high = ELEM_ID_COAL;
 // end import ElemCoal.fsh.__shady_macro_DefineElementStaticData
 #line 34
 		return _elem_static_data;
@@ -3524,95 +3004,79 @@ ElementStaticData get_element_static_data(int _element_id) {
 #line 34
 	_elem_static_data.id = ELEM_ID_GAS_FUEL;
 #line 34
+	_elem_static_data.base_color = 13616762.0;
+#line 34
 	_elem_static_data.state_of_matter = MATTER_GAS;
 #line 34
-	_elem_static_data.movement_class = MOVE_CLASS_GAS;
+	_elem_static_data.flow_mode = FLOW_MODE_GAS;
 #line 34
-	_elem_static_data.feature_flags = FEATURE_CAN_IGNITE + FEATURE_USES_TEMPERATURE;
+	_elem_static_data.vertical_drive = -0.3;
 #line 34
-	_elem_static_data.dynamic_mode = DYNAMIC_MODE_TEMPERATURE;
+	_elem_static_data.max_speed = 4.0;
 #line 34
-	_elem_static_data.gravity_force = -0.3;
+	_elem_static_data.lateral_spread = 5.0;
 #line 34
-	_elem_static_data.max_vel_x = 4.0;
+	_elem_static_data.momentum_retention = 0.86;
 #line 34
-	_elem_static_data.max_vel_y = 3.0;
+	_elem_static_data.support_resistance = 0.0;
 #line 34
-	_elem_static_data.can_slip = true;
+	_elem_static_data.clump_factor = 0.0;
 #line 34
-	_elem_static_data.x_slip_search_range = 5.0;
-#line 34
-	_elem_static_data.y_slip_search_range = 2.0;
-#line 34
-	_elem_static_data.wake_chance = 1.0;
-#line 34
-	_elem_static_data.stickiness_chance = 0.0;
-#line 34
-	_elem_static_data.bounce_chance = 0.0;
-#line 34
-	_elem_static_data.bounce_dampening_multiplier = 0.0;
-#line 34
-	_elem_static_data.airborne_vel_decay_chance = 0.18;
-#line 34
-	_elem_static_data.friction_vel_decay_chance = 0.1;
-#line 34
-	_elem_static_data.mass = 6.0;
+	_elem_static_data.surface_response = 0.0;
 #line 34
 	_elem_static_data.density = 6.0;
 #line 34
 	_elem_static_data.immovable = false;
 #line 34
-	_elem_static_data.replace_mode = REPLACE_MODE_LESS_DENSE_OR_EQUAL;
-#line 34
 	_elem_static_data.replace_mask = REPLACE_MASK_EMPTY + REPLACE_MASK_GAS;
 #line 34
-	_elem_static_data.replace_count = 0;
+	_elem_static_data.temp_contribute = true;
 #line 34
-	_elem_static_data.replace_id_0 = 0;
+	_elem_static_data.temp_locked = false;
 #line 34
-	_elem_static_data.replace_id_1 = 0;
+	_elem_static_data.temp_transfer_rate = 0.20;
 #line 34
-	_elem_static_data.replace_id_2 = 0;
+	_elem_static_data.temp_idle_value = 15.0;
 #line 34
-	_elem_static_data.replace_id_3 = 0;
+	_elem_static_data.temp_on_low = ELEM_ID_GAS_FUEL;
 #line 34
-	_elem_static_data.interaction_group = INTERACTION_GROUP_COMBUSTIBLE_GAS;
+	_elem_static_data.temp_on_high = ELEM_ID_FIRE;
 #line 34
-	_elem_static_data.interaction_mask = 0;
+	_elem_static_data.moisture_contribute = false;
 #line 34
-	_elem_static_data.lifetime_max = 0.0;
+	_elem_static_data.moisture_locked = true;
 #line 34
-	_elem_static_data.lifetime_decay_chance = 0.0;
+	_elem_static_data.moisture_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.transition_on_life_end = ELEM_ID_GAS_FUEL;
+	_elem_static_data.moisture_idle_value = 0.0;
 #line 34
-	_elem_static_data.temperature_decay = 0.02;
+	_elem_static_data.moisture_on_low = ELEM_ID_GAS_FUEL;
 #line 34
-	_elem_static_data.temperature_spread_chance = 0.20;
+	_elem_static_data.moisture_on_high = ELEM_ID_GAS_FUEL;
 #line 34
-	_elem_static_data.temperature_min = -128.0;
+	_elem_static_data.corrosion_contribute = false;
 #line 34
-	_elem_static_data.temperature_max = 36.0;
+	_elem_static_data.corrosion_locked = true;
 #line 34
-	_elem_static_data.transition_on_temp_low = ELEM_ID_GAS_FUEL;
+	_elem_static_data.corrosion_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.transition_on_temp_high = ELEM_ID_FIRE;
+	_elem_static_data.corrosion_idle_value = 0.0;
 #line 34
-	_elem_static_data.ignition_threshold = 48.0;
+	_elem_static_data.corrosion_on_low = ELEM_ID_GAS_FUEL;
 #line 34
-	_elem_static_data.burn_product = ELEM_ID_FIRE;
+	_elem_static_data.corrosion_on_high = ELEM_ID_GAS_FUEL;
 #line 34
-	_elem_static_data.cooling_product = ELEM_ID_GAS_FUEL;
+	_elem_static_data.magic_contribute = false;
 #line 34
-	_elem_static_data.corrosion_resistance = 1.0;
+	_elem_static_data.magic_locked = true;
 #line 34
-	_elem_static_data.wetness_capacity = 0.0;
+	_elem_static_data.magic_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.quench_threshold = 120.0;
+	_elem_static_data.magic_idle_value = 0.0;
 #line 34
-	_elem_static_data.viscosity = 0.0;
+	_elem_static_data.magic_on_low = ELEM_ID_GAS_FUEL;
 #line 34
-	_elem_static_data.base_color = 13616762.0;
+	_elem_static_data.magic_on_high = ELEM_ID_GAS_FUEL;
 // end import ElemGasFuel.fsh.__shady_macro_DefineElementStaticData
 #line 34
 		return _elem_static_data;
@@ -3626,95 +3090,79 @@ ElementStaticData get_element_static_data(int _element_id) {
 #line 34
 	_elem_static_data.id = ELEM_ID_SLIME;
 #line 34
+	_elem_static_data.base_color = 7265111.0;
+#line 34
 	_elem_static_data.state_of_matter = MATTER_LIQUID;
 #line 34
-	_elem_static_data.movement_class = MOVE_CLASS_VISCOUS_LIQUID;
+	_elem_static_data.flow_mode = FLOW_MODE_GOO;
 #line 34
-	_elem_static_data.feature_flags = 0;
+	_elem_static_data.vertical_drive = 1.0;
 #line 34
-	_elem_static_data.dynamic_mode = DYNAMIC_MODE_NONE;
+	_elem_static_data.max_speed = 3.0;
 #line 34
-	_elem_static_data.gravity_force = 1.0;
+	_elem_static_data.lateral_spread = 2.0;
 #line 34
-	_elem_static_data.max_vel_x = 2.0;
+	_elem_static_data.momentum_retention = 0.79;
 #line 34
-	_elem_static_data.max_vel_y = 3.0;
+	_elem_static_data.support_resistance = 0.35;
 #line 34
-	_elem_static_data.can_slip = true;
+	_elem_static_data.clump_factor = 0.85;
 #line 34
-	_elem_static_data.x_slip_search_range = 3.0;
-#line 34
-	_elem_static_data.y_slip_search_range = 2.0;
-#line 34
-	_elem_static_data.wake_chance = 1.0;
-#line 34
-	_elem_static_data.stickiness_chance = 0.65;
-#line 34
-	_elem_static_data.bounce_chance = 0.15;
-#line 34
-	_elem_static_data.bounce_dampening_multiplier = 0.5;
-#line 34
-	_elem_static_data.airborne_vel_decay_chance = 0.30;
-#line 34
-	_elem_static_data.friction_vel_decay_chance = 0.12;
-#line 34
-	_elem_static_data.mass = 95.0;
+	_elem_static_data.surface_response = 0.35;
 #line 34
 	_elem_static_data.density = 1050.0;
 #line 34
 	_elem_static_data.immovable = false;
 #line 34
-	_elem_static_data.replace_mode = REPLACE_MODE_LESS_DENSE_OR_EQUAL;
-#line 34
 	_elem_static_data.replace_mask = REPLACE_MASK_EMPTY + REPLACE_MASK_GAS + REPLACE_MASK_LIQUID;
 #line 34
-	_elem_static_data.replace_count = 0;
+	_elem_static_data.temp_contribute = true;
 #line 34
-	_elem_static_data.replace_id_0 = 0;
+	_elem_static_data.temp_locked = false;
 #line 34
-	_elem_static_data.replace_id_1 = 0;
+	_elem_static_data.temp_transfer_rate = 0.05;
 #line 34
-	_elem_static_data.replace_id_2 = 0;
+	_elem_static_data.temp_idle_value = 0.0;
 #line 34
-	_elem_static_data.replace_id_3 = 0;
+	_elem_static_data.temp_on_low = ELEM_ID_SLIME;
 #line 34
-	_elem_static_data.interaction_group = INTERACTION_GROUP_ORGANIC;
+	_elem_static_data.temp_on_high = ELEM_ID_SLIME;
 #line 34
-	_elem_static_data.interaction_mask = 0;
+	_elem_static_data.moisture_contribute = true;
 #line 34
-	_elem_static_data.lifetime_max = 0.0;
+	_elem_static_data.moisture_locked = false;
 #line 34
-	_elem_static_data.lifetime_decay_chance = 0.0;
+	_elem_static_data.moisture_transfer_rate = 0.40;
 #line 34
-	_elem_static_data.transition_on_life_end = ELEM_ID_SLIME;
+	_elem_static_data.moisture_idle_value = 80.0;
 #line 34
-	_elem_static_data.temperature_decay = 0.01;
+	_elem_static_data.moisture_on_low = ELEM_ID_SLIME;
 #line 34
-	_elem_static_data.temperature_spread_chance = 0.05;
+	_elem_static_data.moisture_on_high = ELEM_ID_SLIME;
 #line 34
-	_elem_static_data.temperature_min = -128.0;
+	_elem_static_data.corrosion_contribute = false;
 #line 34
-	_elem_static_data.temperature_max = 127.0;
+	_elem_static_data.corrosion_locked = true;
 #line 34
-	_elem_static_data.transition_on_temp_low = ELEM_ID_SLIME;
+	_elem_static_data.corrosion_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.transition_on_temp_high = ELEM_ID_SLIME;
+	_elem_static_data.corrosion_idle_value = 0.0;
 #line 34
-	_elem_static_data.ignition_threshold = 0.0;
+	_elem_static_data.corrosion_on_low = ELEM_ID_SLIME;
 #line 34
-	_elem_static_data.burn_product = ELEM_ID_EMPTY;
+	_elem_static_data.corrosion_on_high = ELEM_ID_SLIME;
 #line 34
-	_elem_static_data.cooling_product = ELEM_ID_SLIME;
+	_elem_static_data.magic_contribute = false;
 #line 34
-	_elem_static_data.corrosion_resistance = 0.7;
+	_elem_static_data.magic_locked = true;
 #line 34
-	_elem_static_data.wetness_capacity = 255.0;
+	_elem_static_data.magic_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.quench_threshold = 0.0;
+	_elem_static_data.magic_idle_value = 0.0;
 #line 34
-	_elem_static_data.viscosity = 0.85;
+	_elem_static_data.magic_on_low = ELEM_ID_SLIME;
 #line 34
-	_elem_static_data.base_color = 7265111.0;
+	_elem_static_data.magic_on_high = ELEM_ID_SLIME;
 // end import ElemSlime.fsh.__shady_macro_DefineElementStaticData
 #line 34
 		return _elem_static_data;
@@ -3728,95 +3176,79 @@ ElementStaticData get_element_static_data(int _element_id) {
 #line 34
 	_elem_static_data.id = ELEM_ID_OBSIDIAN;
 #line 34
+	_elem_static_data.base_color = 2955576.0;
+#line 34
 	_elem_static_data.state_of_matter = MATTER_SOLID;
 #line 34
-	_elem_static_data.movement_class = MOVE_CLASS_NONE_STATIC;
+	_elem_static_data.flow_mode = FLOW_MODE_STATIC;
 #line 34
-	_elem_static_data.feature_flags = 0;
+	_elem_static_data.vertical_drive = 0.0;
 #line 34
-	_elem_static_data.dynamic_mode = DYNAMIC_MODE_NONE;
+	_elem_static_data.max_speed = 0.0;
 #line 34
-	_elem_static_data.gravity_force = 0.0;
+	_elem_static_data.lateral_spread = 0.0;
 #line 34
-	_elem_static_data.max_vel_x = 0.0;
+	_elem_static_data.momentum_retention = 1.0;
 #line 34
-	_elem_static_data.max_vel_y = 0.0;
+	_elem_static_data.support_resistance = 1.0;
 #line 34
-	_elem_static_data.can_slip = false;
+	_elem_static_data.clump_factor = 1.0;
 #line 34
-	_elem_static_data.x_slip_search_range = 0.0;
-#line 34
-	_elem_static_data.y_slip_search_range = 0.0;
-#line 34
-	_elem_static_data.wake_chance = 0.0;
-#line 34
-	_elem_static_data.stickiness_chance = 0.0;
-#line 34
-	_elem_static_data.bounce_chance = 0.0;
-#line 34
-	_elem_static_data.bounce_dampening_multiplier = 0.0;
-#line 34
-	_elem_static_data.airborne_vel_decay_chance = 0.0;
-#line 34
-	_elem_static_data.friction_vel_decay_chance = 0.0;
-#line 34
-	_elem_static_data.mass = 850.0;
+	_elem_static_data.surface_response = 0.0;
 #line 34
 	_elem_static_data.density = 2800.0;
 #line 34
 	_elem_static_data.immovable = true;
 #line 34
-	_elem_static_data.replace_mode = REPLACE_MODE_EMPTY_ONLY;
-#line 34
 	_elem_static_data.replace_mask = REPLACE_MASK_EMPTY;
 #line 34
-	_elem_static_data.replace_count = 0;
+	_elem_static_data.temp_contribute = true;
 #line 34
-	_elem_static_data.replace_id_0 = 0;
+	_elem_static_data.temp_locked = false;
 #line 34
-	_elem_static_data.replace_id_1 = 0;
+	_elem_static_data.temp_transfer_rate = 0.05;
 #line 34
-	_elem_static_data.replace_id_2 = 0;
+	_elem_static_data.temp_idle_value = 0.0;
 #line 34
-	_elem_static_data.replace_id_3 = 0;
+	_elem_static_data.temp_on_low = ELEM_ID_OBSIDIAN;
 #line 34
-	_elem_static_data.interaction_group = INTERACTION_GROUP_MINERAL;
+	_elem_static_data.temp_on_high = ELEM_ID_LAVA;
 #line 34
-	_elem_static_data.interaction_mask = 0;
+	_elem_static_data.moisture_contribute = false;
 #line 34
-	_elem_static_data.lifetime_max = 0.0;
+	_elem_static_data.moisture_locked = true;
 #line 34
-	_elem_static_data.lifetime_decay_chance = 0.0;
+	_elem_static_data.moisture_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.transition_on_life_end = ELEM_ID_OBSIDIAN;
+	_elem_static_data.moisture_idle_value = 0.0;
 #line 34
-	_elem_static_data.temperature_decay = 0.0;
+	_elem_static_data.moisture_on_low = ELEM_ID_OBSIDIAN;
 #line 34
-	_elem_static_data.temperature_spread_chance = 0.05;
+	_elem_static_data.moisture_on_high = ELEM_ID_OBSIDIAN;
 #line 34
-	_elem_static_data.temperature_min = -128.0;
+	_elem_static_data.corrosion_contribute = false;
 #line 34
-	_elem_static_data.temperature_max = 127.0;
+	_elem_static_data.corrosion_locked = true;
 #line 34
-	_elem_static_data.transition_on_temp_low = ELEM_ID_OBSIDIAN;
+	_elem_static_data.corrosion_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.transition_on_temp_high = ELEM_ID_OBSIDIAN;
+	_elem_static_data.corrosion_idle_value = 0.0;
 #line 34
-	_elem_static_data.ignition_threshold = 0.0;
+	_elem_static_data.corrosion_on_low = ELEM_ID_OBSIDIAN;
 #line 34
-	_elem_static_data.burn_product = ELEM_ID_EMPTY;
+	_elem_static_data.corrosion_on_high = ELEM_ID_OBSIDIAN;
 #line 34
-	_elem_static_data.cooling_product = ELEM_ID_OBSIDIAN;
+	_elem_static_data.magic_contribute = false;
 #line 34
-	_elem_static_data.corrosion_resistance = 0.98;
+	_elem_static_data.magic_locked = true;
 #line 34
-	_elem_static_data.wetness_capacity = 0.0;
+	_elem_static_data.magic_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.quench_threshold = 0.0;
+	_elem_static_data.magic_idle_value = 0.0;
 #line 34
-	_elem_static_data.viscosity = 1.0;
+	_elem_static_data.magic_on_low = ELEM_ID_OBSIDIAN;
 #line 34
-	_elem_static_data.base_color = 2955576.0;
+	_elem_static_data.magic_on_high = ELEM_ID_OBSIDIAN;
 // end import ElemObsidian.fsh.__shady_macro_DefineElementStaticData
 #line 34
 		return _elem_static_data;
@@ -3830,95 +3262,79 @@ ElementStaticData get_element_static_data(int _element_id) {
 #line 34
 	_elem_static_data.id = ELEM_ID_GRAVEL;
 #line 34
+	_elem_static_data.base_color = 9340282.0;
+#line 34
 	_elem_static_data.state_of_matter = MATTER_SOLID;
 #line 34
-	_elem_static_data.movement_class = MOVE_CLASS_HEAVY_POWDER;
+	_elem_static_data.flow_mode = FLOW_MODE_POWDER;
 #line 34
-	_elem_static_data.feature_flags = 0;
+	_elem_static_data.vertical_drive = 1.0;
 #line 34
-	_elem_static_data.dynamic_mode = DYNAMIC_MODE_NONE;
+	_elem_static_data.max_speed = 4.0;
 #line 34
-	_elem_static_data.gravity_force = 1.0;
+	_elem_static_data.lateral_spread = 1.0;
 #line 34
-	_elem_static_data.max_vel_x = 2.0;
+	_elem_static_data.momentum_retention = 0.51;
 #line 34
-	_elem_static_data.max_vel_y = 4.0;
+	_elem_static_data.support_resistance = 0.0;
 #line 34
-	_elem_static_data.can_slip = true;
+	_elem_static_data.clump_factor = 0.0;
 #line 34
-	_elem_static_data.x_slip_search_range = 1.0;
-#line 34
-	_elem_static_data.y_slip_search_range = 2.0;
-#line 34
-	_elem_static_data.wake_chance = 1.0;
-#line 34
-	_elem_static_data.stickiness_chance = 0.0;
-#line 34
-	_elem_static_data.bounce_chance = 0.06;
-#line 34
-	_elem_static_data.bounce_dampening_multiplier = 0.2;
-#line 34
-	_elem_static_data.airborne_vel_decay_chance = 0.28;
-#line 34
-	_elem_static_data.friction_vel_decay_chance = 0.7;
-#line 34
-	_elem_static_data.mass = 240.0;
+	_elem_static_data.surface_response = 0.2;
 #line 34
 	_elem_static_data.density = 1800.0;
 #line 34
 	_elem_static_data.immovable = false;
 #line 34
-	_elem_static_data.replace_mode = REPLACE_MODE_LESS_DENSE;
-#line 34
 	_elem_static_data.replace_mask = REPLACE_MASK_EMPTY + REPLACE_MASK_GAS + REPLACE_MASK_LIQUID;
 #line 34
-	_elem_static_data.replace_count = 0;
+	_elem_static_data.temp_contribute = true;
 #line 34
-	_elem_static_data.replace_id_0 = 0;
+	_elem_static_data.temp_locked = false;
 #line 34
-	_elem_static_data.replace_id_1 = 0;
+	_elem_static_data.temp_transfer_rate = 0.05;
 #line 34
-	_elem_static_data.replace_id_2 = 0;
+	_elem_static_data.temp_idle_value = 5.0;
 #line 34
-	_elem_static_data.replace_id_3 = 0;
+	_elem_static_data.temp_on_low = ELEM_ID_GRAVEL;
 #line 34
-	_elem_static_data.interaction_group = INTERACTION_GROUP_MINERAL;
+	_elem_static_data.temp_on_high = ELEM_ID_GRAVEL;
 #line 34
-	_elem_static_data.interaction_mask = 0;
+	_elem_static_data.moisture_contribute = false;
 #line 34
-	_elem_static_data.lifetime_max = 0.0;
+	_elem_static_data.moisture_locked = true;
 #line 34
-	_elem_static_data.lifetime_decay_chance = 0.0;
+	_elem_static_data.moisture_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.transition_on_life_end = ELEM_ID_GRAVEL;
+	_elem_static_data.moisture_idle_value = 0.0;
 #line 34
-	_elem_static_data.temperature_decay = 0.0;
+	_elem_static_data.moisture_on_low = ELEM_ID_GRAVEL;
 #line 34
-	_elem_static_data.temperature_spread_chance = 0.0;
+	_elem_static_data.moisture_on_high = ELEM_ID_GRAVEL;
 #line 34
-	_elem_static_data.temperature_min = -128.0;
+	_elem_static_data.corrosion_contribute = false;
 #line 34
-	_elem_static_data.temperature_max = 127.0;
+	_elem_static_data.corrosion_locked = true;
 #line 34
-	_elem_static_data.transition_on_temp_low = ELEM_ID_GRAVEL;
+	_elem_static_data.corrosion_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.transition_on_temp_high = ELEM_ID_GRAVEL;
+	_elem_static_data.corrosion_idle_value = 0.0;
 #line 34
-	_elem_static_data.ignition_threshold = 0.0;
+	_elem_static_data.corrosion_on_low = ELEM_ID_GRAVEL;
 #line 34
-	_elem_static_data.burn_product = ELEM_ID_EMPTY;
+	_elem_static_data.corrosion_on_high = ELEM_ID_GRAVEL;
 #line 34
-	_elem_static_data.cooling_product = ELEM_ID_GRAVEL;
+	_elem_static_data.magic_contribute = false;
 #line 34
-	_elem_static_data.corrosion_resistance = 0.9;
+	_elem_static_data.magic_locked = true;
 #line 34
-	_elem_static_data.wetness_capacity = 0.0;
+	_elem_static_data.magic_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.quench_threshold = 0.0;
+	_elem_static_data.magic_idle_value = 0.0;
 #line 34
-	_elem_static_data.viscosity = 0.0;
+	_elem_static_data.magic_on_low = ELEM_ID_GRAVEL;
 #line 34
-	_elem_static_data.base_color = 9340282.0;
+	_elem_static_data.magic_on_high = ELEM_ID_GRAVEL;
 // end import ElemGravel.fsh.__shady_macro_DefineElementStaticData
 #line 34
 		return _elem_static_data;
@@ -3932,95 +3348,79 @@ ElementStaticData get_element_static_data(int _element_id) {
 #line 34
 	_elem_static_data.id = ELEM_ID_CLAY;
 #line 34
+	_elem_static_data.base_color = 11887946.0;
+#line 34
 	_elem_static_data.state_of_matter = MATTER_SOLID;
 #line 34
-	_elem_static_data.movement_class = MOVE_CLASS_STICKY_POWDER;
+	_elem_static_data.flow_mode = FLOW_MODE_GOO;
 #line 34
-	_elem_static_data.feature_flags = FEATURE_CAN_WET;
+	_elem_static_data.vertical_drive = 1.0;
 #line 34
-	_elem_static_data.dynamic_mode = DYNAMIC_MODE_MOISTURE;
+	_elem_static_data.max_speed = 2.0;
 #line 34
-	_elem_static_data.gravity_force = 1.0;
+	_elem_static_data.lateral_spread = 1.5;
 #line 34
-	_elem_static_data.max_vel_x = 1.0;
+	_elem_static_data.momentum_retention = 0.25;
 #line 34
-	_elem_static_data.max_vel_y = 2.0;
+	_elem_static_data.support_resistance = 0.30;
 #line 34
-	_elem_static_data.can_slip = true;
+	_elem_static_data.clump_factor = 0.75;
 #line 34
-	_elem_static_data.x_slip_search_range = 1.0;
-#line 34
-	_elem_static_data.y_slip_search_range = 2.0;
-#line 34
-	_elem_static_data.wake_chance = 0.75;
-#line 34
-	_elem_static_data.stickiness_chance = 0.75;
-#line 34
-	_elem_static_data.bounce_chance = 0.0;
-#line 34
-	_elem_static_data.bounce_dampening_multiplier = 0.0;
-#line 34
-	_elem_static_data.airborne_vel_decay_chance = 0.55;
-#line 34
-	_elem_static_data.friction_vel_decay_chance = 0.95;
-#line 34
-	_elem_static_data.mass = 260.0;
+	_elem_static_data.surface_response = 0.0;
 #line 34
 	_elem_static_data.density = 1900.0;
 #line 34
 	_elem_static_data.immovable = false;
 #line 34
-	_elem_static_data.replace_mode = REPLACE_MODE_LESS_DENSE_OR_EQUAL;
-#line 34
 	_elem_static_data.replace_mask = REPLACE_MASK_EMPTY + REPLACE_MASK_GAS + REPLACE_MASK_LIQUID;
 #line 34
-	_elem_static_data.replace_count = 0;
+	_elem_static_data.temp_contribute = true;
 #line 34
-	_elem_static_data.replace_id_0 = 0;
+	_elem_static_data.temp_locked = false;
 #line 34
-	_elem_static_data.replace_id_1 = 0;
+	_elem_static_data.temp_transfer_rate = 0.05;
 #line 34
-	_elem_static_data.replace_id_2 = 0;
+	_elem_static_data.temp_idle_value = 5.0;
 #line 34
-	_elem_static_data.replace_id_3 = 0;
+	_elem_static_data.temp_on_low = ELEM_ID_CLAY;
 #line 34
-	_elem_static_data.interaction_group = INTERACTION_GROUP_MINERAL;
+	_elem_static_data.temp_on_high = ELEM_ID_STONE;
 #line 34
-	_elem_static_data.interaction_mask = 0;
+	_elem_static_data.moisture_contribute = true;
 #line 34
-	_elem_static_data.lifetime_max = 0.0;
+	_elem_static_data.moisture_locked = false;
 #line 34
-	_elem_static_data.lifetime_decay_chance = 0.0;
+	_elem_static_data.moisture_transfer_rate = 0.55;
 #line 34
-	_elem_static_data.transition_on_life_end = ELEM_ID_CLAY;
+	_elem_static_data.moisture_idle_value = 45.0;
 #line 34
-	_elem_static_data.temperature_decay = 0.0;
+	_elem_static_data.moisture_on_low = ELEM_ID_CLAY;
 #line 34
-	_elem_static_data.temperature_spread_chance = 0.0;
+	_elem_static_data.moisture_on_high = ELEM_ID_CLAY;
 #line 34
-	_elem_static_data.temperature_min = -128.0;
+	_elem_static_data.corrosion_contribute = false;
 #line 34
-	_elem_static_data.temperature_max = 127.0;
+	_elem_static_data.corrosion_locked = true;
 #line 34
-	_elem_static_data.transition_on_temp_low = ELEM_ID_CLAY;
+	_elem_static_data.corrosion_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.transition_on_temp_high = ELEM_ID_STONE;
+	_elem_static_data.corrosion_idle_value = 0.0;
 #line 34
-	_elem_static_data.ignition_threshold = 0.0;
+	_elem_static_data.corrosion_on_low = ELEM_ID_CLAY;
 #line 34
-	_elem_static_data.burn_product = ELEM_ID_EMPTY;
+	_elem_static_data.corrosion_on_high = ELEM_ID_CLAY;
 #line 34
-	_elem_static_data.cooling_product = ELEM_ID_CLAY;
+	_elem_static_data.magic_contribute = false;
 #line 34
-	_elem_static_data.corrosion_resistance = 0.9;
+	_elem_static_data.magic_locked = true;
 #line 34
-	_elem_static_data.wetness_capacity = 220.0;
+	_elem_static_data.magic_transfer_rate = 0.0;
 #line 34
-	_elem_static_data.quench_threshold = 0.0;
+	_elem_static_data.magic_idle_value = 0.0;
 #line 34
-	_elem_static_data.viscosity = 0.55;
+	_elem_static_data.magic_on_low = ELEM_ID_CLAY;
 #line 34
-	_elem_static_data.base_color = 11887946.0;
+	_elem_static_data.magic_on_high = ELEM_ID_CLAY;
 // end import ElemClay.fsh.__shady_macro_DefineElementStaticData
 #line 34
 		return _elem_static_data;
@@ -4041,6 +3441,298 @@ bool dynamic_has_motion(ElementDynamicData _elem_dynamic_data) {
 #line 34
 }
 #line 34
+int lane_pack_nibble(int _lane_value) {
+#line 34
+	int _lane_sign = (_lane_value < 0) ? 1 : 0;
+#line 34
+	int _lane_magnitude = clamp(abs_int(_lane_value), 0, 7);
+#line 34
+	if (_lane_magnitude == 0) {
+#line 34
+		return 0;
+#line 34
+	}
+#line 34
+	return bitwise_or(bit_shift_left(_lane_sign, 3), _lane_magnitude);
+#line 34
+}
+#line 34
+int lane_unpack_nibble(int _lane_nibble) {
+#line 34
+	int _lane_sign = imod(bit_shift_right(_lane_nibble, 3), 2);
+#line 34
+	int _lane_magnitude = imod(_lane_nibble, 8);
+#line 34
+	if (_lane_magnitude == 0) {
+#line 34
+		return 0;
+#line 34
+	}
+#line 34
+	return (_lane_sign == 1) ? -_lane_magnitude : _lane_magnitude;
+#line 34
+}
+#line 34
+int lane_value_from_parts(int _lane_dir, int _lane_magnitude) {
+#line 34
+	if (_lane_magnitude <= 0) {
+#line 34
+		return 0;
+#line 34
+	}
+#line 34
+	return (_lane_dir == 1) ? -_lane_magnitude : _lane_magnitude;
+#line 34
+}
+#line 34
+int dynamic_temperature_get(ElementDynamicData _elem_dynamic_data) {
+#line 34
+	return lane_value_from_parts(_elem_dynamic_data.temp_dir, _elem_dynamic_data.temp_magnitude);
+#line 34
+}
+#line 34
+ElementDynamicData dynamic_temperature_set(ElementDynamicData _elem_dynamic_data, int _lane_value) {
+#line 34
+	int _lane_dir = (_lane_value < 0) ? 1 : 0;
+#line 34
+	int _lane_magnitude = clamp(abs_int(_lane_value), 0, 7);
+#line 34
+	if (_lane_magnitude == 0) {
+#line 34
+		_lane_dir = 0;
+#line 34
+	}
+#line 34
+	_elem_dynamic_data.temp_dir = _lane_dir;
+#line 34
+	_elem_dynamic_data.temp_magnitude = _lane_magnitude;
+#line 34
+	return _elem_dynamic_data;
+#line 34
+}
+#line 34
+int dynamic_moisture_get(ElementDynamicData _elem_dynamic_data) {
+#line 34
+	return lane_value_from_parts(_elem_dynamic_data.moisture_dir, _elem_dynamic_data.moisture_magnitude);
+#line 34
+}
+#line 34
+ElementDynamicData dynamic_moisture_set(ElementDynamicData _elem_dynamic_data, int _lane_value) {
+#line 34
+	int _lane_dir = (_lane_value < 0) ? 1 : 0;
+#line 34
+	int _lane_magnitude = clamp(abs_int(_lane_value), 0, 7);
+#line 34
+	if (_lane_magnitude == 0) {
+#line 34
+		_lane_dir = 0;
+#line 34
+	}
+#line 34
+	_elem_dynamic_data.moisture_dir = _lane_dir;
+#line 34
+	_elem_dynamic_data.moisture_magnitude = _lane_magnitude;
+#line 34
+	return _elem_dynamic_data;
+#line 34
+}
+#line 34
+int dynamic_corrosion_get(ElementDynamicData _elem_dynamic_data) {
+#line 34
+	return lane_value_from_parts(_elem_dynamic_data.corrosion_dir, _elem_dynamic_data.corrosion_magnitude);
+#line 34
+}
+#line 34
+ElementDynamicData dynamic_corrosion_set(ElementDynamicData _elem_dynamic_data, int _lane_value) {
+#line 34
+	int _lane_dir = (_lane_value < 0) ? 1 : 0;
+#line 34
+	int _lane_magnitude = clamp(abs_int(_lane_value), 0, 7);
+#line 34
+	if (_lane_magnitude == 0) {
+#line 34
+		_lane_dir = 0;
+#line 34
+	}
+#line 34
+	_elem_dynamic_data.corrosion_dir = _lane_dir;
+#line 34
+	_elem_dynamic_data.corrosion_magnitude = _lane_magnitude;
+#line 34
+	return _elem_dynamic_data;
+#line 34
+}
+#line 34
+int dynamic_magic_get(ElementDynamicData _elem_dynamic_data) {
+#line 34
+	return lane_value_from_parts(_elem_dynamic_data.magic_dir, _elem_dynamic_data.magic_magnitude);
+#line 34
+}
+#line 34
+ElementDynamicData dynamic_magic_set(ElementDynamicData _elem_dynamic_data, int _lane_value) {
+#line 34
+	int _lane_dir = (_lane_value < 0) ? 1 : 0;
+#line 34
+	int _lane_magnitude = clamp(abs_int(_lane_value), 0, 7);
+#line 34
+	if (_lane_magnitude == 0) {
+#line 34
+		_lane_dir = 0;
+#line 34
+	}
+#line 34
+	_elem_dynamic_data.magic_dir = _lane_dir;
+#line 34
+	_elem_dynamic_data.magic_magnitude = _lane_magnitude;
+#line 34
+	return _elem_dynamic_data;
+#line 34
+}
+#line 34
+bool static_lane_contribute(ElementStaticData _elem_static_data, int _lane_index) {
+#line 34
+	if (_lane_index == LANE_TEMPERATURE) return _elem_static_data.temp_contribute;
+#line 34
+	if (_lane_index == LANE_MOISTURE) return _elem_static_data.moisture_contribute;
+#line 34
+	if (_lane_index == LANE_CORROSION) return _elem_static_data.corrosion_contribute;
+#line 34
+	return _elem_static_data.magic_contribute;
+#line 34
+}
+#line 34
+bool static_lane_locked(ElementStaticData _elem_static_data, int _lane_index) {
+#line 34
+	if (_lane_index == LANE_TEMPERATURE) return _elem_static_data.temp_locked;
+#line 34
+	if (_lane_index == LANE_MOISTURE) return _elem_static_data.moisture_locked;
+#line 34
+	if (_lane_index == LANE_CORROSION) return _elem_static_data.corrosion_locked;
+#line 34
+	return _elem_static_data.magic_locked;
+#line 34
+}
+#line 34
+float static_lane_transfer_rate(ElementStaticData _elem_static_data, int _lane_index) {
+#line 34
+	if (_lane_index == LANE_TEMPERATURE) return _elem_static_data.temp_transfer_rate;
+#line 34
+	if (_lane_index == LANE_MOISTURE) return _elem_static_data.moisture_transfer_rate;
+#line 34
+	if (_lane_index == LANE_CORROSION) return _elem_static_data.corrosion_transfer_rate;
+#line 34
+	return _elem_static_data.magic_transfer_rate;
+#line 34
+}
+#line 34
+bool static_lane_ignored(ElementStaticData _elem_static_data, int _lane_index) {
+#line 34
+	if (static_lane_locked(_elem_static_data, _lane_index)) {
+#line 34
+		return true;
+#line 34
+	}
+#line 34
+	if (!static_lane_contribute(_elem_static_data, _lane_index) && static_lane_transfer_rate(_elem_static_data, _lane_index) <= 0.0) {
+#line 34
+		return true;
+#line 34
+	}
+#line 34
+	return false;
+#line 34
+}
+#line 34
+float static_lane_idle_value(ElementStaticData _elem_static_data, int _lane_index) {
+#line 34
+	if (_lane_index == LANE_TEMPERATURE) return _elem_static_data.temp_idle_value;
+#line 34
+	if (_lane_index == LANE_MOISTURE) return _elem_static_data.moisture_idle_value;
+#line 34
+	if (_lane_index == LANE_CORROSION) return _elem_static_data.corrosion_idle_value;
+#line 34
+	return _elem_static_data.magic_idle_value;
+#line 34
+}
+#line 34
+int static_lane_on_low(ElementStaticData _elem_static_data, int _lane_index) {
+#line 34
+	if (_lane_index == LANE_TEMPERATURE) return _elem_static_data.temp_on_low;
+#line 34
+	if (_lane_index == LANE_MOISTURE) return _elem_static_data.moisture_on_low;
+#line 34
+	if (_lane_index == LANE_CORROSION) return _elem_static_data.corrosion_on_low;
+#line 34
+	return _elem_static_data.magic_on_low;
+#line 34
+}
+#line 34
+int static_lane_on_high(ElementStaticData _elem_static_data, int _lane_index) {
+#line 34
+	if (_lane_index == LANE_TEMPERATURE) return _elem_static_data.temp_on_high;
+#line 34
+	if (_lane_index == LANE_MOISTURE) return _elem_static_data.moisture_on_high;
+#line 34
+	if (_lane_index == LANE_CORROSION) return _elem_static_data.corrosion_on_high;
+#line 34
+	return _elem_static_data.magic_on_high;
+#line 34
+}
+#line 34
+float lane_saturated_effective_value(ElementStaticData _elem_static_data, int _lane_index, bool _toward_high) {
+#line 34
+	int _target_id = _toward_high ? static_lane_on_high(_elem_static_data, _lane_index) : static_lane_on_low(_elem_static_data, _lane_index);
+#line 34
+	ElementStaticData _target_static_data = get_element_static_data(_target_id);
+#line 34
+	float _current_idle_value = static_lane_idle_value(_elem_static_data, _lane_index);
+#line 34
+	float _target_idle_value = static_lane_idle_value(_target_static_data, _lane_index);
+#line 34
+	return _current_idle_value + ((_target_idle_value - _current_idle_value) * 0.5);
+#line 34
+}
+#line 34
+float lane_effective_value(ElementStaticData _elem_static_data, int _lane_index, int _lane_value) {
+#line 34
+	float _current_idle_value;
+#line 34
+	float _high_saturated_value;
+#line 34
+	float _low_saturated_value;
+#line 34
+	if (static_lane_ignored(_elem_static_data, _lane_index)) {
+#line 34
+		return 0.0;
+#line 34
+	}
+#line 34
+	_current_idle_value = static_lane_idle_value(_elem_static_data, _lane_index);
+#line 34
+	if (_lane_value == 0) {
+#line 34
+		return _current_idle_value;
+#line 34
+	}
+#line 34
+	if (_lane_value > 0) {
+#line 34
+		_high_saturated_value = lane_saturated_effective_value(_elem_static_data, _lane_index, true);
+#line 34
+		return _current_idle_value + ((_high_saturated_value - _current_idle_value) * (float(_lane_value) / 7.0));
+#line 34
+	}
+#line 34
+	_low_saturated_value = lane_saturated_effective_value(_elem_static_data, _lane_index, false);
+#line 34
+	return _current_idle_value + ((_low_saturated_value - _current_idle_value) * (float(abs_int(_lane_value)) / 7.0));
+#line 34
+}
+#line 34
+#endregion
+#line 34
+#region Pack / Unpack
+#line 34
 ElementDynamicData unpack_elem_dynamic_data(vec4 _pixel) {
 #line 34
 	ElementDynamicData _elem_dynamic_data;
@@ -4049,23 +3741,57 @@ ElementDynamicData unpack_elem_dynamic_data(vec4 _pixel) {
 #line 34
 	int _green_byte = float_to_byte(_pixel.g);
 #line 34
+	int _lane_byte_b = float_to_byte(_pixel.b);
+#line 34
+	int _lane_byte_a = float_to_byte(_pixel.a);
+#line 34
+	int _temp_nibble = imod(bit_shift_right(_lane_byte_b, 4), 16);
+#line 34
+	int _moisture_nibble = imod(_lane_byte_b, 16);
+#line 34
+	int _corrosion_nibble = imod(bit_shift_right(_lane_byte_a, 4), 16);
+#line 34
+	int _magic_nibble = imod(_lane_byte_a, 16);
+#line 34
+	int _temp_value = lane_unpack_nibble(_temp_nibble);
+#line 34
+	int _moisture_value = lane_unpack_nibble(_moisture_nibble);
+#line 34
+	int _corrosion_value = lane_unpack_nibble(_corrosion_nibble);
+#line 34
+	int _magic_value = lane_unpack_nibble(_magic_nibble);
+#line 34
 	_elem_dynamic_data.id = element_id_from_pixel(_pixel);
 #line 34
-	_elem_dynamic_data.dynamic_byte = dynamic_byte_from_pixel(_pixel);
+	_elem_dynamic_data.y_dir = imod(bit_shift_right(_green_byte, 7), 2);
 #line 34
-	_elem_dynamic_data.y_dir = bitwise_and(bit_shift_right(_green_byte, 7), 1);
+	_elem_dynamic_data.y_speed = imod(bit_shift_right(_green_byte, 4), 8);
 #line 34
-	_elem_dynamic_data.y_speed = bitwise_and(bit_shift_right(_green_byte, 4), 7);
+	_elem_dynamic_data.x_dir = imod(bit_shift_right(_green_byte, 3), 2);
 #line 34
-	_elem_dynamic_data.x_dir = bitwise_and(bit_shift_right(_green_byte, 3), 1);
+	_elem_dynamic_data.x_speed = imod(_green_byte, 8);
 #line 34
-	_elem_dynamic_data.x_speed = bitwise_and(_green_byte, 7);
+	_elem_dynamic_data.temp_dir = (_temp_value < 0) ? 1 : 0;
+#line 34
+	_elem_dynamic_data.temp_magnitude = clamp(abs_int(_temp_value), 0, 7);
+#line 34
+	_elem_dynamic_data.moisture_dir = (_moisture_value < 0) ? 1 : 0;
+#line 34
+	_elem_dynamic_data.moisture_magnitude = clamp(abs_int(_moisture_value), 0, 7);
+#line 34
+	_elem_dynamic_data.corrosion_dir = (_corrosion_value < 0) ? 1 : 0;
+#line 34
+	_elem_dynamic_data.corrosion_magnitude = clamp(abs_int(_corrosion_value), 0, 7);
+#line 34
+	_elem_dynamic_data.magic_dir = (_magic_value < 0) ? 1 : 0;
+#line 34
+	_elem_dynamic_data.magic_magnitude = clamp(abs_int(_magic_value), 0, 7);
 #line 34
 	_elem_dynamic_data.vel = vec2(0.0);
 #line 34
-	if (_elem_static_data.max_vel_x > 0.0) {
+	if (_elem_static_data.max_speed > 0.0) {
 #line 34
-		_elem_dynamic_data.vel.x = (float(_elem_dynamic_data.x_speed) / 7.0) * _elem_static_data.max_vel_x;
+		_elem_dynamic_data.vel.x = (float(_elem_dynamic_data.x_speed) / 7.0) * _elem_static_data.max_speed;
 #line 34
 		if (_elem_dynamic_data.x_dir == 1) {
 #line 34
@@ -4075,9 +3801,9 @@ ElementDynamicData unpack_elem_dynamic_data(vec4 _pixel) {
 #line 34
 	}
 #line 34
-	if (_elem_static_data.max_vel_y > 0.0) {
+	if (_elem_static_data.max_speed > 0.0) {
 #line 34
-		_elem_dynamic_data.vel.y = (float(_elem_dynamic_data.y_speed) / 7.0) * _elem_static_data.max_vel_y;
+		_elem_dynamic_data.vel.y = (float(_elem_dynamic_data.y_speed) / 7.0) * _elem_static_data.max_speed;
 #line 34
 		if (_elem_dynamic_data.y_dir == 1) {
 #line 34
@@ -4103,15 +3829,27 @@ vec4 pack_elem_dynamic_data(ElementDynamicData _elem_dynamic_data, ElementStatic
 #line 34
 	int _y_dir = 0;
 #line 34
-	if (_elem_static_data.max_vel_x > 0.0) {
+	int _temp_nibble = lane_pack_nibble(dynamic_temperature_get(_elem_dynamic_data));
 #line 34
-		_x_speed = int(round(clamp(abs(_elem_dynamic_data.vel.x) / _elem_static_data.max_vel_x, 0.0, 1.0) * 7.0));
+	int _moisture_nibble = lane_pack_nibble(dynamic_moisture_get(_elem_dynamic_data));
+#line 34
+	int _corrosion_nibble = lane_pack_nibble(dynamic_corrosion_get(_elem_dynamic_data));
+#line 34
+	int _magic_nibble = lane_pack_nibble(dynamic_magic_get(_elem_dynamic_data));
+#line 34
+	int _lane_byte_b = (_temp_nibble * 16) + _moisture_nibble;
+#line 34
+	int _lane_byte_a = (_corrosion_nibble * 16) + _magic_nibble;
+#line 34
+	if (_elem_static_data.max_speed > 0.0) {
+#line 34
+		_x_speed = int(round(clamp(abs_float(_elem_dynamic_data.vel.x) / _elem_static_data.max_speed, 0.0, 1.0) * 7.0));
 #line 34
 	}
 #line 34
-	if (_elem_static_data.max_vel_y > 0.0) {
+	if (_elem_static_data.max_speed > 0.0) {
 #line 34
-		_y_speed = int(round(clamp(abs(_elem_dynamic_data.vel.y) / _elem_static_data.max_vel_y, 0.0, 1.0) * 7.0));
+		_y_speed = int(round(clamp(abs_float(_elem_dynamic_data.vel.y) / _elem_static_data.max_speed, 0.0, 1.0) * 7.0));
 #line 34
 	}
 #line 34
@@ -4133,9 +3871,9 @@ vec4 pack_elem_dynamic_data(ElementDynamicData _elem_dynamic_data, ElementStatic
 #line 34
 		byte_to_float(_green_byte),
 #line 34
-		byte_to_float(clamp(_elem_dynamic_data.dynamic_byte, 0, 255)),
+		byte_to_float(clamp(_lane_byte_b, 0, 255)),
 #line 34
-		1.0
+		byte_to_float(clamp(_lane_byte_a, 0, 255))
 #line 34
 	);
 #line 34
@@ -4211,12 +3949,6 @@ bool replace_mask_allows(ElementStaticData _source_static_data, ElementStaticDat
 #line 34
 	}
 #line 34
-	if (_source_static_data.interaction_group != INTERACTION_GROUP_INERT && _source_static_data.interaction_group == _target_static_data.interaction_group) {
-#line 34
-		return flag_enabled(_source_static_data.replace_mask, REPLACE_MASK_SAME_GROUP);
-#line 34
-	}
-#line 34
 	if (elem_is_gas(_target_static_data)) {
 #line 34
 		return flag_enabled(_source_static_data.replace_mask, REPLACE_MASK_GAS);
@@ -4239,53 +3971,11 @@ bool replace_mask_allows(ElementStaticData _source_static_data, ElementStaticDat
 #line 34
 }
 #line 34
-bool replace_ids_match(ElementStaticData _source_static_data, int _target_id) {
-#line 34
-	if (_source_static_data.replace_count <= 0) {
-#line 34
-		return false;
-#line 34
-	}
-#line 34
-	if (_source_static_data.replace_id_0 == _target_id) {
-#line 34
-		return true;
-#line 34
-	}
-#line 34
-	if (_source_static_data.replace_count > 1 && _source_static_data.replace_id_1 == _target_id) {
-#line 34
-		return true;
-#line 34
-	}
-#line 34
-	if (_source_static_data.replace_count > 2 && _source_static_data.replace_id_2 == _target_id) {
-#line 34
-		return true;
-#line 34
-	}
-#line 34
-	if (_source_static_data.replace_count > 3 && _source_static_data.replace_id_3 == _target_id) {
-#line 34
-		return true;
-#line 34
-	}
-#line 34
-	return false;
-#line 34
-}
-#line 34
 bool element_can_enter(ElementStaticData _source_static_data, ElementStaticData _target_static_data, int _target_id) {
 #line 34
 	if (_source_static_data.id == ELEM_ID_EMPTY) {
 #line 34
 		return false;
-#line 34
-	}
-#line 34
-	if (elem_is_empty(_target_static_data)) {
-#line 34
-		return true;
 #line 34
 	}
 #line 34
@@ -4297,53 +3987,23 @@ bool element_can_enter(ElementStaticData _source_static_data, ElementStaticData 
 #line 34
 	if (!replace_mask_allows(_source_static_data, _target_static_data)) {
 #line 34
-		if (_source_static_data.replace_mode != REPLACE_MODE_EXPLICIT_IDS_FALLBACK) {
-#line 34
-			return false;
-#line 34
-		}
-#line 34
-		return replace_ids_match(_source_static_data, _target_id);
-#line 34
-	}
-#line 34
-	if (_source_static_data.replace_mode == REPLACE_MODE_EMPTY_ONLY) {
-#line 34
 		return false;
 #line 34
 	}
 #line 34
-	if (_source_static_data.replace_mode == REPLACE_MODE_LESS_DENSE) {
-#line 34
-		return _source_static_data.density > _target_static_data.density;
-#line 34
-	}
-#line 34
-	if (_source_static_data.replace_mode == REPLACE_MODE_LESS_DENSE_OR_EQUAL) {
-#line 34
-		return _source_static_data.density >= _target_static_data.density;
-#line 34
-	}
-#line 34
-	if (_source_static_data.replace_mode == REPLACE_MODE_CLASS_MASK) {
+	if (elem_is_empty(_target_static_data)) {
 #line 34
 		return true;
 #line 34
 	}
 #line 34
-	if (_source_static_data.replace_mode == REPLACE_MODE_EXPLICIT_IDS_FALLBACK) {
+	if (_source_static_data.id == _target_static_data.id) {
 #line 34
-		if (_source_static_data.density >= _target_static_data.density) {
-#line 34
-			return true;
-#line 34
-		}
-#line 34
-		return replace_ids_match(_source_static_data, _target_id);
+		return flag_enabled(_source_static_data.replace_mask, REPLACE_MASK_SAME_ELEMENT);
 #line 34
 	}
 #line 34
-	return false;
+	return _source_static_data.density > _target_static_data.density;
 #line 34
 }
 #line 34
@@ -4413,9 +4073,9 @@ vec2 rand_round_vel(vec2 _velocity, vec2 _texcoord, float _seed) {
 #line 34
 vec2 clamp_velocity_to_static(vec2 _velocity, ElementStaticData _elem_static_data) {
 #line 34
-	_velocity.x = clamp(_velocity.x, -_elem_static_data.max_vel_x, _elem_static_data.max_vel_x);
+	_velocity.x = clamp(_velocity.x, -_elem_static_data.max_speed, _elem_static_data.max_speed);
 #line 34
-	_velocity.y = clamp(_velocity.y, -_elem_static_data.max_vel_y, _elem_static_data.max_vel_y);
+	_velocity.y = clamp(_velocity.y, -_elem_static_data.max_speed, _elem_static_data.max_speed);
 #line 34
 	return _velocity;
 #line 34
@@ -4427,11 +4087,11 @@ vec2 snap_velocity_to_storage(vec2 _velocity, ElementStaticData _elem_static_dat
 #line 34
 	float _step_y = 0.0;
 #line 34
-	if (_elem_static_data.max_vel_x > 0.0) {
+	if (_elem_static_data.max_speed > 0.0) {
 #line 34
-		_step_x = _elem_static_data.max_vel_x / 7.0;
+		_step_x = _elem_static_data.max_speed / 7.0;
 #line 34
-		if (abs(_velocity.x) < (_step_x * 0.5)) {
+		if (abs_float(_velocity.x) < (_step_x * 0.5)) {
 #line 34
 			_velocity.x = 0.0;
 #line 34
@@ -4443,11 +4103,11 @@ vec2 snap_velocity_to_storage(vec2 _velocity, ElementStaticData _elem_static_dat
 #line 34
 	}
 #line 34
-	if (_elem_static_data.max_vel_y > 0.0) {
+	if (_elem_static_data.max_speed > 0.0) {
 #line 34
-		_step_y = _elem_static_data.max_vel_y / 7.0;
+		_step_y = _elem_static_data.max_speed / 7.0;
 #line 34
-		if (abs(_velocity.y) < (_step_y * 0.5)) {
+		if (abs_float(_velocity.y) < (_step_y * 0.5)) {
 #line 34
 			_velocity.y = 0.0;
 #line 34
@@ -4498,132 +4158,6 @@ bool target_offset_is_open(ElementStaticData _source_static_data, vec2 _source_t
 	return element_can_enter(_source_static_data, _target_static_data, element_id_from_pixel(_target_pixel));
 }
 
-bool pixel_is_grounded(ElementStaticData _elem_static_data, vec2 _self_texcoord, ElementDynamicData _elem_dynamic_data) {
-	int _step_x = sign_int(int(sign(_elem_dynamic_data.vel.x)));
-	int _step_y = sign_int(int(sign(_elem_dynamic_data.vel.y)));
-	vec2 _check_offset_0 = vec2(0.0, float(_step_y));
-	vec2 _check_offset_1 = vec2(float(_step_x), 0.0);
-	vec2 _check_offset_2 = vec2(float(_step_x), float(_step_y));
-	vec2 _check_texcoord_0 = _self_texcoord + (_check_offset_0 * u_texel_size);
-	vec2 _check_texcoord_1 = _self_texcoord + (_check_offset_1 * u_texel_size);
-	vec2 _check_texcoord_2 = _self_texcoord + (_check_offset_2 * u_texel_size);
-	vec4 _check_pixel;
-	ElementDynamicData _check_dynamic_data;
-
-	if (_step_y == 0 && _elem_static_data.gravity_force != 0.0) {
-		_step_y = sign_int(int(sign(_elem_static_data.gravity_force)));
-		_check_offset_0 = vec2(0.0, float(_step_y));
-		_check_texcoord_0 = _self_texcoord + (_check_offset_0 * u_texel_size);
-	}
-
-	if (uv_in_bounds(_check_texcoord_0)) {
-		_check_pixel = texture2D(gm_BaseTexture, _check_texcoord_0);
-		if (cell_is_solid(_check_pixel)) {
-			_check_dynamic_data = unpack_elem_dynamic_data(_check_pixel);
-			if (!dynamic_has_motion(_check_dynamic_data)) {
-				return true;
-			}
-		}
-	}
-
-	if (uv_in_bounds(_check_texcoord_1)) {
-		_check_pixel = texture2D(gm_BaseTexture, _check_texcoord_1);
-		if (cell_is_solid(_check_pixel)) {
-			_check_dynamic_data = unpack_elem_dynamic_data(_check_pixel);
-			if (!dynamic_has_motion(_check_dynamic_data)) {
-				return true;
-			}
-		}
-	}
-
-	if (uv_in_bounds(_check_texcoord_2)) {
-		_check_pixel = texture2D(gm_BaseTexture, _check_texcoord_2);
-		if (cell_is_solid(_check_pixel)) {
-			_check_dynamic_data = unpack_elem_dynamic_data(_check_pixel);
-			if (!dynamic_has_motion(_check_dynamic_data)) {
-				return true;
-			}
-		}
-	}
-
-	return false;
-}
-
-vec2 compute_bounce_velocity(ElementStaticData _elem_static_data, vec2 _self_texcoord, vec2 _current_velocity) {
-	vec2 _impact_offset = rand_round_vel(_current_velocity, _self_texcoord, u_frame + 30.0);
-	vec2 _impact_texcoord;
-	vec2 _normal_sum = vec2(0.0, 0.0);
-	float _normal_length;
-	vec2 _surface_normal;
-	vec2 _incoming_direction;
-	vec2 _reflected_direction;
-	float _reflected_speed;
-	vec2 _reflected_velocity;
-
-	_impact_offset.x = clamp(_impact_offset.x, -float(SIM_MAX_MOVE_RADIUS), float(SIM_MAX_MOVE_RADIUS));
-	_impact_offset.y = clamp(_impact_offset.y, -float(SIM_MAX_MOVE_RADIUS), float(SIM_MAX_MOVE_RADIUS));
-
-	if (_impact_offset.x == 0.0 && _impact_offset.y == 0.0) {
-		return vec2(0.0);
-	}
-
-	if (target_offset_is_open(_elem_static_data, _self_texcoord, _impact_offset)) {
-		return vec2(0.0);
-	}
-
-	_impact_texcoord = _self_texcoord + (_impact_offset * u_texel_size);
-
-	for (int _sample_y = -1; _sample_y <= 1; ++_sample_y) {
-		for (int _sample_x = -1; _sample_x <= 1; ++_sample_x) {
-			vec2 _sample_offset;
-			vec2 _sample_texcoord;
-			vec4 _sample_pixel;
-
-			if (_sample_x == 0 && _sample_y == 0) {
-				continue;
-			}
-
-			_sample_offset = vec2(float(_sample_x), float(_sample_y));
-			_sample_texcoord = _impact_texcoord + (_sample_offset * u_texel_size);
-
-			if (!uv_in_bounds(_sample_texcoord)) {
-				continue;
-			}
-
-			_sample_pixel = texture2D(gm_BaseTexture, _sample_texcoord);
-			if (cell_is_solid(_sample_pixel)) {
-				_normal_sum -= _sample_offset;
-			}
-		}
-	}
-
-	_normal_length = length(_normal_sum);
-	if (_normal_length <= 0.0) {
-		return vec2(0.0);
-	}
-
-	_surface_normal = _normal_sum / _normal_length;
-	_incoming_direction = normalize(_current_velocity);
-	_reflected_direction = reflect(_incoming_direction, _surface_normal);
-
-	if (_reflected_direction.y * sign(_elem_static_data.gravity_force) < 0.0) {
-		_reflected_direction.y = 0.0;
-	}
-
-	if (_reflected_direction.x == 0.0 && _reflected_direction.y == 0.0) {
-		return vec2(0.0);
-	}
-
-	_reflected_direction = normalize(_reflected_direction);
-	_reflected_speed = length(_current_velocity) * _elem_static_data.bounce_dampening_multiplier;
-	_reflected_velocity = _reflected_direction * _reflected_speed;
-
-	_reflected_velocity.x = clamp(_reflected_velocity.x, -_elem_static_data.max_vel_x, _elem_static_data.max_vel_x);
-	_reflected_velocity.y = clamp(_reflected_velocity.y, -_elem_static_data.max_vel_y, _elem_static_data.max_vel_y);
-
-	return _reflected_velocity;
-}
-
 float round_signed_float(float _value) {
 	if (_value >= 0.0) {
 		return floor(_value + 0.5);
@@ -4671,109 +4205,246 @@ bool target_path_is_open(ElementStaticData _source_static_data, vec2 _source_tex
 	return true;
 }
 
-bool movement_class_uses_velocity_box(ElementStaticData _elem_static_data) {
-	return (
-		_elem_static_data.movement_class == MOVE_CLASS_LIQUID ||
-		_elem_static_data.movement_class == MOVE_CLASS_VISCOUS_LIQUID ||
-		_elem_static_data.movement_class == MOVE_CLASS_GAS ||
-		_elem_static_data.movement_class == MOVE_CLASS_DRIFTING_SOLID
-	);
+int vertical_step_from_drive(float _vertical_drive) {
+	if (_vertical_drive > 0.0) {
+		return 1;
+	}
+	if (_vertical_drive < 0.0) {
+		return -1;
+	}
+	return 0;
 }
 
-vec2 choose_velocity_box_offset(ElementStaticData _elem_static_data, vec2 _self_texcoord, vec2 _velocity, int _gravity_step, float _seed) {
-	float _reach_x = clamp(ceil(abs_float(_velocity.x)), 0.0, float(SIM_MAX_MOVE_RADIUS));
-	float _reach_y = clamp(ceil(abs_float(_velocity.y)), 0.0, float(SIM_MAX_MOVE_RADIUS));
-	float _side_bias = (rand(_self_texcoord, _seed) < 0.5) ? -1.0 : 1.0;
-	float _best_score = -100000.0;
-	float _horizontal_bonus = 0.0;
-	float _vertical_bonus = 0.0;
-	vec2 _best_offset = vec2(0.0);
+float flow_mode_vertical_weight(int _flow_mode) {
+	if (_flow_mode == FLOW_MODE_POWDER) {
+		return 3.5;
+	}
+	if (_flow_mode == FLOW_MODE_LIQUID) {
+		return 2.9;
+	}
+	if (_flow_mode == FLOW_MODE_GAS) {
+		return 2.6;
+	}
+	if (_flow_mode == FLOW_MODE_GOO) {
+		return 2.3;
+	}
+	return 0.0;
+}
+
+float flow_mode_lateral_weight(int _flow_mode) {
+	if (_flow_mode == FLOW_MODE_POWDER) {
+		return 0.35;
+	}
+	if (_flow_mode == FLOW_MODE_LIQUID) {
+		return 1.45;
+	}
+	if (_flow_mode == FLOW_MODE_GAS) {
+		return 1.10;
+	}
+	if (_flow_mode == FLOW_MODE_GOO) {
+		return 0.70;
+	}
+	return 0.0;
+}
+
+bool candidate_allowed_for_flow(ElementStaticData _elem_static_data, vec2 _candidate_offset, int _vertical_step) {
+	if (_candidate_offset.x == 0.0 && _candidate_offset.y == 0.0) {
+		return false;
+	}
+
+	if (_elem_static_data.flow_mode == FLOW_MODE_STATIC) {
+		return false;
+	}
+
+	if (_elem_static_data.flow_mode == FLOW_MODE_POWDER) {
+		if (_vertical_step == 0) {
+			return false;
+		}
+		if ((_candidate_offset.y * float(_vertical_step)) < 0.0) {
+			return false;
+		}
+		if (_candidate_offset.y == 0.0 && abs_float(_candidate_offset.x) > 1.0) {
+			return false;
+		}
+		if (_candidate_offset.y != 0.0 && abs_float(_candidate_offset.x) > max(1.0, ceil(_elem_static_data.lateral_spread))) {
+			return false;
+		}
+		return true;
+	}
+
+	if (_elem_static_data.flow_mode == FLOW_MODE_LIQUID) {
+		if (_vertical_step != 0 && (_candidate_offset.y * float(_vertical_step)) < 0.0) {
+			return false;
+		}
+		return true;
+	}
+
+	if (_elem_static_data.flow_mode == FLOW_MODE_GAS) {
+		if (_vertical_step != 0 && (_candidate_offset.y * float(_vertical_step)) < 0.0) {
+			return false;
+		}
+		return true;
+	}
+
+	if (_elem_static_data.flow_mode == FLOW_MODE_GOO) {
+		if (_vertical_step != 0 && (_candidate_offset.y * float(_vertical_step)) < 0.0) {
+			return false;
+		}
+		if (abs_float(_candidate_offset.x) > max(1.0, ceil(_elem_static_data.lateral_spread))) {
+			return false;
+		}
+		return true;
+	}
+
+	return false;
+}
+
+float count_same_neighbors(ElementStaticData _elem_static_data, vec2 _center_texcoord) {
+	float _neighbor_count = 0.0;
+
+	for (int _offset_y = -1; _offset_y <= 1; ++_offset_y) {
+		for (int _offset_x = -1; _offset_x <= 1; ++_offset_x) {
+			vec2 _neighbor_texcoord;
+			vec4 _neighbor_pixel;
+			ElementStaticData _neighbor_static_data;
+
+			if (_offset_x == 0 && _offset_y == 0) {
+				continue;
+			}
+
+			_neighbor_texcoord = _center_texcoord + vec2(float(_offset_x) * u_texel_size.x, float(_offset_y) * u_texel_size.y);
+			if (!uv_in_bounds(_neighbor_texcoord)) {
+				continue;
+			}
+
+			_neighbor_pixel = texture2D(gm_BaseTexture, _neighbor_texcoord);
+			_neighbor_static_data = get_element_static_data(element_id_from_pixel(_neighbor_pixel));
+			if (_neighbor_static_data.id == _elem_static_data.id) {
+				_neighbor_count += 1.0;
+			}
+		}
+	}
+
+	return _neighbor_count;
+}
+
+float candidate_score(
+	ElementStaticData _elem_static_data,
+	vec2 _self_texcoord,
+	vec2 _candidate_offset,
+	vec2 _velocity,
+	int _vertical_step,
+	float _same_neighbor_count_here,
+	float _side_bias
+) {
+	vec2 _candidate_direction = normalize(_candidate_offset);
 	vec2 _preferred_velocity = _velocity;
-	vec2 _preferred_direction;
-
-	if (_reach_x <= 0.0 && _reach_y <= 0.0) {
-		return vec2(0.0);
-	}
-
-	if (_elem_static_data.movement_class == MOVE_CLASS_LIQUID) {
-		_horizontal_bonus = 0.40;
-		_vertical_bonus = 0.15;
-	} else if (_elem_static_data.movement_class == MOVE_CLASS_VISCOUS_LIQUID) {
-		_horizontal_bonus = 0.20;
-		_vertical_bonus = 0.15;
-	} else if (_elem_static_data.movement_class == MOVE_CLASS_GAS) {
-		_horizontal_bonus = 0.55;
-		_vertical_bonus = 0.25;
-	} else if (_elem_static_data.movement_class == MOVE_CLASS_DRIFTING_SOLID) {
-		_horizontal_bonus = 0.45;
-		_vertical_bonus = 0.20;
-	}
-
-	if (_preferred_velocity.y == 0.0 && _gravity_step != 0) {
-		_preferred_velocity.y = float(_gravity_step);
-	}
+	float _score = 0.0;
+	float _distance = length(_candidate_offset);
+	float _same_neighbor_count_there;
+	float _neighbor_delta;
 
 	if (_preferred_velocity.x == 0.0 && _preferred_velocity.y == 0.0) {
+		_preferred_velocity.y = _elem_static_data.vertical_drive;
+	}
+	if (_preferred_velocity.x != 0.0 || _preferred_velocity.y != 0.0) {
+		_score += dot(_candidate_direction, normalize(_preferred_velocity)) * (1.5 + (_elem_static_data.momentum_retention * 3.0));
+	}
+
+	if (_vertical_step != 0) {
+		_score += ((_candidate_offset.y * float(_vertical_step)) / float(SIM_MAX_MOVE_RADIUS)) * flow_mode_vertical_weight(_elem_static_data.flow_mode);
+	}
+
+	_score += (abs_float(_candidate_offset.x) / float(SIM_MAX_MOVE_RADIUS)) * _elem_static_data.lateral_spread * flow_mode_lateral_weight(_elem_static_data.flow_mode);
+	_score -= _distance * (0.22 + (_elem_static_data.support_resistance * 0.18));
+
+	if (_candidate_offset.x != 0.0 && (_candidate_offset.x * _side_bias) > 0.0) {
+		_score += 0.10;
+	}
+
+	_same_neighbor_count_there = count_same_neighbors(_elem_static_data, _self_texcoord + (_candidate_offset * u_texel_size));
+	_neighbor_delta = _same_neighbor_count_there - _same_neighbor_count_here;
+	_score += _neighbor_delta * _elem_static_data.clump_factor * 0.60;
+
+	if (_elem_static_data.flow_mode == FLOW_MODE_POWDER) {
+		if (_candidate_offset.y == 0.0) {
+			_score -= 0.90;
+		}
+		if (abs_float(_candidate_offset.x) > 1.0) {
+			_score -= 0.35 * abs_float(_candidate_offset.x);
+		}
+		_score -= _elem_static_data.support_resistance * 0.75;
+	}
+
+	if (_elem_static_data.flow_mode == FLOW_MODE_LIQUID) {
+		if (_candidate_offset.y == 0.0) {
+			_score += 0.25;
+		}
+	}
+
+	if (_elem_static_data.flow_mode == FLOW_MODE_GAS) {
+		if (_candidate_offset.y == 0.0) {
+			_score += 0.20;
+		}
+		_score += _elem_static_data.surface_response * 0.20;
+	}
+
+	if (_elem_static_data.flow_mode == FLOW_MODE_GOO) {
+		_score += _elem_static_data.surface_response * 0.35;
+		_score += _elem_static_data.clump_factor * 0.55;
+	}
+
+	return _score;
+}
+
+vec2 choose_profile_offset(ElementStaticData _elem_static_data, vec2 _self_texcoord, vec2 _velocity) {
+	int _vertical_step = vertical_step_from_drive(_elem_static_data.vertical_drive);
+	float _reach_x = clamp(ceil(max(abs_float(_velocity.x), _elem_static_data.lateral_spread)), 0.0, float(SIM_MAX_MOVE_RADIUS));
+	float _reach_y = clamp(ceil(max(abs_float(_velocity.y), abs_float(_elem_static_data.vertical_drive))), 0.0, float(SIM_MAX_MOVE_RADIUS));
+	float _best_score = -99999.0;
+	float _same_neighbor_count_here = count_same_neighbors(_elem_static_data, _self_texcoord);
+	float _side_bias = (rand(_self_texcoord, 91.0) < 0.5) ? -1.0 : 1.0;
+	vec2 _best_offset = vec2(0.0);
+
+	if (_elem_static_data.flow_mode == FLOW_MODE_STATIC) {
 		return vec2(0.0);
 	}
 
-	_preferred_direction = normalize(_preferred_velocity);
+	if (_reach_x <= 0.0 && _reach_y <= 0.0) {
+		if (_vertical_step != 0) {
+			_reach_y = 1.0;
+		}
+		if (_elem_static_data.lateral_spread > 0.0) {
+			_reach_x = 1.0;
+		}
+	}
 
-	for (int _search_y = -SIM_MAX_MOVE_RADIUS; _search_y <= SIM_MAX_MOVE_RADIUS; ++_search_y) {
-		for (int _search_x = -SIM_MAX_MOVE_RADIUS; _search_x <= SIM_MAX_MOVE_RADIUS; ++_search_x) {
-			vec2 _candidate_offset;
-			vec2 _candidate_direction;
-			float _alignment_score;
-			float _distance_score;
-			float _horizontal_score = 0.0;
-			float _vertical_score = 0.0;
-			float _tie_break_score = 0.0;
+	for (int _offset_y = -SIM_MAX_MOVE_RADIUS; _offset_y <= SIM_MAX_MOVE_RADIUS; ++_offset_y) {
+		for (int _offset_x = -SIM_MAX_MOVE_RADIUS; _offset_x <= SIM_MAX_MOVE_RADIUS; ++_offset_x) {
+			vec2 _candidate_offset = vec2(float(_offset_x), float(_offset_y));
 			float _score;
 
-			if (_search_x == 0 && _search_y == 0) {
+			if (abs_float(_candidate_offset.x) > _reach_x || abs_float(_candidate_offset.y) > _reach_y) {
 				continue;
 			}
 
-			if (float(abs_int(_search_x)) > _reach_x || float(abs_int(_search_y)) > _reach_y) {
+			if (!candidate_allowed_for_flow(_elem_static_data, _candidate_offset, _vertical_step)) {
 				continue;
 			}
 
-			if (_gravity_step != 0 && _search_y != 0 && sign_int(_search_y) != _gravity_step) {
-				continue;
-			}
-
-			_candidate_offset = vec2(float(_search_x), float(_search_y));
 			if (!target_path_is_open(_elem_static_data, _self_texcoord, _candidate_offset)) {
 				continue;
 			}
 
-			_candidate_direction = normalize(_candidate_offset);
-			_alignment_score = dot(_candidate_direction, _preferred_direction) * 8.0;
-			_distance_score = (length(_candidate_offset) / float(SIM_MAX_MOVE_RADIUS)) * 1.5;
-
-			if (_reach_x > 0.0) {
-				_horizontal_score = (abs_float(_candidate_offset.x) / _reach_x) * _horizontal_bonus;
-			}
-			if (_reach_y > 0.0) {
-				_vertical_score = (abs_float(_candidate_offset.y) / _reach_y) * _vertical_bonus;
-			}
-			if (_candidate_offset.x != 0.0 && (_candidate_offset.x * _side_bias) > 0.0) {
-				_tie_break_score = 0.02;
-			}
-
-			_score = _alignment_score + _distance_score + _horizontal_score + _vertical_score + _tie_break_score;
-
-			if (_gravity_step != 0 && _candidate_offset.y == 0.0 && abs_float(_velocity.y) >= 1.0) {
-				_score -= 0.75;
-			}
-
-			if (abs_float(_velocity.x) < 0.5 && _candidate_offset.x != 0.0) {
-				_score -= 1.25 * (abs_float(_candidate_offset.x) / max(_reach_x, 1.0));
-			}
-
-			if (abs_float(_velocity.y) < 0.5 && _candidate_offset.y != 0.0 && _gravity_step != 0) {
-				_score -= 0.35 * (abs_float(_candidate_offset.y) / max(_reach_y, 1.0));
-			}
+			_score = candidate_score(
+				_elem_static_data,
+				_self_texcoord,
+				_candidate_offset,
+				_velocity,
+				_vertical_step,
+				_same_neighbor_count_here,
+				_side_bias
+			);
 
 			if (_score > _best_score) {
 				_best_score = _score;
@@ -4785,229 +4456,27 @@ vec2 choose_velocity_box_offset(ElementStaticData _elem_static_data, vec2 _self_
 	return _best_offset;
 }
 
-vec2 choose_direct_velocity_offset(ElementStaticData _elem_static_data, vec2 _self_texcoord, vec2 _velocity) {
-	vec2 _direct_offset = vec2(
-		round_signed_float(_velocity.x),
-		round_signed_float(_velocity.y)
-	);
-
-	_direct_offset.x = clamp(_direct_offset.x, -float(SIM_MAX_MOVE_RADIUS), float(SIM_MAX_MOVE_RADIUS));
-	_direct_offset.y = clamp(_direct_offset.y, -float(SIM_MAX_MOVE_RADIUS), float(SIM_MAX_MOVE_RADIUS));
-
-	if (_direct_offset.x == 0.0 && _direct_offset.y == 0.0) {
-		return vec2(0.0);
-	}
-
-	if (target_path_is_open(_elem_static_data, _self_texcoord, _direct_offset)) {
-		return _direct_offset;
-	}
-
-	return vec2(0.0);
-}
-
-vec2 choose_diagonal_offset(ElementStaticData _elem_static_data, vec2 _self_texcoord, int _gravity_step, float _seed) {
-	int _first_direction = (rand(_self_texcoord, _seed) < 0.5) ? -1 : 1;
-	int _second_direction = -_first_direction;
-	float _sticky_roll = rand(_self_texcoord, _seed + 11.0);
-
-	if (_sticky_roll < _elem_static_data.stickiness_chance) {
-		return vec2(0.0);
-	}
-
-	for (int _search_step = 1; _search_step <= SIM_MAX_MOVE_RADIUS; ++_search_step) {
-		vec2 _first_offset;
-		vec2 _second_offset;
-
-		if (float(_search_step) > _elem_static_data.x_slip_search_range) {
-			continue;
-		}
-
-		_first_offset = vec2(float(_search_step * _first_direction), float(_gravity_step));
-		if (target_path_is_open(_elem_static_data, _self_texcoord, _first_offset)) {
-			return _first_offset;
-		}
-
-		_second_offset = vec2(float(_search_step * _second_direction), float(_gravity_step));
-		if (target_path_is_open(_elem_static_data, _self_texcoord, _second_offset)) {
-			return _second_offset;
-		}
-	}
-
-	return vec2(0.0);
-}
-
-vec2 choose_immediate_diagonal_offset(ElementStaticData _elem_static_data, vec2 _self_texcoord, int _gravity_step, float _seed) {
-	int _first_direction = (rand(_self_texcoord, _seed) < 0.5) ? -1 : 1;
-	int _second_direction = -_first_direction;
-	vec2 _first_offset = vec2(float(_first_direction), float(_gravity_step));
-	vec2 _second_offset = vec2(float(_second_direction), float(_gravity_step));
-
-	if (_elem_static_data.x_slip_search_range < 1.0) {
-		return vec2(0.0);
-	}
-
-	if (target_path_is_open(_elem_static_data, _self_texcoord, _first_offset)) {
-		return _first_offset;
-	}
-
-	if (target_path_is_open(_elem_static_data, _self_texcoord, _second_offset)) {
-		return _second_offset;
-	}
-
-	return vec2(0.0);
-}
-
-vec2 choose_lateral_offset(ElementStaticData _elem_static_data, vec2 _self_texcoord, float _seed) {
-	int _first_direction = (rand(_self_texcoord, _seed) < 0.5) ? -1 : 1;
-	int _second_direction = -_first_direction;
-	float _viscosity_roll = rand(_self_texcoord, _seed + 21.0);
-
-	if (_viscosity_roll < _elem_static_data.viscosity) {
-		return vec2(0.0);
-	}
-
-	for (int _search_step = 1; _search_step <= SIM_MAX_MOVE_RADIUS; ++_search_step) {
-		vec2 _first_offset;
-		vec2 _second_offset;
-
-		if (float(_search_step) > _elem_static_data.x_slip_search_range) {
-			continue;
-		}
-
-		_first_offset = vec2(float(_search_step * _first_direction), 0.0);
-		if (target_path_is_open(_elem_static_data, _self_texcoord, _first_offset)) {
-			return _first_offset;
-		}
-
-		_second_offset = vec2(float(_search_step * _second_direction), 0.0);
-		if (target_path_is_open(_elem_static_data, _self_texcoord, _second_offset)) {
-			return _second_offset;
-		}
-	}
-
-	return vec2(0.0);
-}
-
 void main() {
 	vec4 _self_pixel = texture2D(gm_BaseTexture, v_vTexcoord);
 	ElementDynamicData _elem_dynamic_data = unpack_elem_dynamic_data(_self_pixel);
 	ElementStaticData _elem_static_data = get_element_static_data(_elem_dynamic_data.id);
 	vec2 _intent_offset = vec2(0.0);
-	bool _is_grounded = false;
-	float _decay_chance = 0.0;
-	int _gravity_step = sign_int(int(sign(_elem_static_data.gravity_force)));
 
 	if (_elem_dynamic_data.id == ELEM_ID_EMPTY) {
 		gl_FragColor = vec4(vel_to_rg(vec2(0.0)), 0.0, 1.0);
 		return;
 	}
 
-	if (_elem_static_data.immovable || _elem_static_data.movement_class == MOVE_CLASS_NONE_STATIC) {
+	if (_elem_static_data.immovable || _elem_static_data.flow_mode == FLOW_MODE_STATIC) {
 		gl_FragColor = vec4(vel_to_rg(vec2(0.0)), 0.0, 1.0);
 		return;
 	}
 
-	_elem_dynamic_data.vel.y += _elem_static_data.gravity_force;
-	_elem_dynamic_data.vel.x = clamp(_elem_dynamic_data.vel.x, -_elem_static_data.max_vel_x, _elem_static_data.max_vel_x);
-	_elem_dynamic_data.vel.y = clamp(_elem_dynamic_data.vel.y, -_elem_static_data.max_vel_y, _elem_static_data.max_vel_y);
+	_elem_dynamic_data.vel *= clamp(_elem_static_data.momentum_retention, 0.0, 1.0);
+	_elem_dynamic_data.vel.y += _elem_static_data.vertical_drive;
+	_elem_dynamic_data.vel = sanitize_velocity_to_static(_elem_dynamic_data.vel, _elem_static_data);
 
-	if (_elem_dynamic_data.vel.x != 0.0 || _elem_dynamic_data.vel.y != 0.0) {
-		_is_grounded = pixel_is_grounded(_elem_static_data, v_vTexcoord, _elem_dynamic_data);
-		_decay_chance = _is_grounded ? _elem_static_data.friction_vel_decay_chance : _elem_static_data.airborne_vel_decay_chance;
-
-		if (abs_float(_elem_dynamic_data.vel.x) >= 1.0 && chance(_decay_chance, v_vTexcoord, u_frame + 17.0)) {
-			_elem_dynamic_data.vel.x -= sign(_elem_dynamic_data.vel.x);
-		}
-		if (abs_float(_elem_dynamic_data.vel.y) >= 1.0 && chance(_decay_chance, v_vTexcoord, u_frame + 18.0)) {
-			_elem_dynamic_data.vel.y -= sign(_elem_dynamic_data.vel.y);
-		}
-	}
-
-	_intent_offset = choose_direct_velocity_offset(_elem_static_data, v_vTexcoord, _elem_dynamic_data.vel);
-
-	if ((_intent_offset.x == 0.0 && _intent_offset.y == 0.0) && movement_class_uses_velocity_box(_elem_static_data)) {
-		if (abs_float(_elem_dynamic_data.vel.x) >= 0.5 || abs_float(_elem_dynamic_data.vel.y) >= 0.5) {
-			_intent_offset = choose_velocity_box_offset(_elem_static_data, v_vTexcoord, _elem_dynamic_data.vel, _gravity_step, u_frame + 7.0);
-		}
-	}
-
-	if (_intent_offset.x == 0.0 && _intent_offset.y == 0.0 && _elem_static_data.bounce_chance > 0.0 && chance(_elem_static_data.bounce_chance, v_vTexcoord, u_frame + 31.0)) {
-		vec2 _bounce_velocity = compute_bounce_velocity(_elem_static_data, v_vTexcoord, _elem_dynamic_data.vel);
-		vec2 _bounce_offset = choose_direct_velocity_offset(_elem_static_data, v_vTexcoord, _bounce_velocity);
-		if (_bounce_offset.x == 0.0 && _bounce_offset.y == 0.0 && movement_class_uses_velocity_box(_elem_static_data)) {
-			_bounce_offset = choose_velocity_box_offset(_elem_static_data, v_vTexcoord, _bounce_velocity, _gravity_step, u_frame + 32.0);
-		}
-
-		if (_bounce_offset.x != 0.0 || _bounce_offset.y != 0.0) {
-			_elem_dynamic_data.vel = _bounce_velocity;
-			_intent_offset = _bounce_offset;
-		}
-	}
-
-	if (_intent_offset.x == 0.0 && _intent_offset.y == 0.0 && _gravity_step != 0) {
-		for (int _search_step = 1; _search_step <= SIM_MAX_MOVE_RADIUS; ++_search_step) {
-			vec2 _vertical_offset;
-
-			if (float(_search_step) > _elem_static_data.y_slip_search_range) {
-				continue;
-			}
-
-			_vertical_offset = vec2(0.0, float(_search_step * _gravity_step));
-			if (target_path_is_open(_elem_static_data, v_vTexcoord, _vertical_offset)) {
-				_intent_offset = _vertical_offset;
-				break;
-			}
-		}
-	}
-
-	if (_intent_offset.x == 0.0 && _intent_offset.y != 0.0 && _elem_static_data.can_slip) {
-		if (
-			_elem_static_data.movement_class == MOVE_CLASS_LIQUID ||
-			_elem_static_data.movement_class == MOVE_CLASS_VISCOUS_LIQUID ||
-			_elem_static_data.movement_class == MOVE_CLASS_GAS ||
-			_elem_static_data.movement_class == MOVE_CLASS_DRIFTING_SOLID
-		) {
-			vec2 _diagonal_offset = choose_immediate_diagonal_offset(_elem_static_data, v_vTexcoord, sign_int(int(sign(_intent_offset.y))), u_frame + 45.0);
-			if (_diagonal_offset.x != 0.0 || _diagonal_offset.y != 0.0) {
-				_intent_offset = _diagonal_offset;
-			}
-		}
-	}
-
-	if (_intent_offset.x == 0.0 && _intent_offset.y == 0.0 && _elem_static_data.can_slip) {
-		if (
-			_elem_static_data.movement_class == MOVE_CLASS_POWDER ||
-			_elem_static_data.movement_class == MOVE_CLASS_HEAVY_POWDER ||
-			_elem_static_data.movement_class == MOVE_CLASS_STICKY_POWDER
-		) {
-			_intent_offset = choose_diagonal_offset(_elem_static_data, v_vTexcoord, _gravity_step, u_frame + 40.0);
-		}
-	}
-
-	if (_intent_offset.x == 0.0 && _intent_offset.y == 0.0) {
-		if (
-			_elem_static_data.movement_class == MOVE_CLASS_LIQUID ||
-			_elem_static_data.movement_class == MOVE_CLASS_VISCOUS_LIQUID
-		) {
-			if (_gravity_step != 0) {
-				_intent_offset = choose_diagonal_offset(_elem_static_data, v_vTexcoord, _gravity_step, u_frame + 50.0);
-			}
-			if (_intent_offset.x == 0.0 && _intent_offset.y == 0.0) {
-				_intent_offset = choose_lateral_offset(_elem_static_data, v_vTexcoord, u_frame + 60.0);
-			}
-		} else if (
-			_elem_static_data.movement_class == MOVE_CLASS_GAS ||
-			_elem_static_data.movement_class == MOVE_CLASS_DRIFTING_SOLID
-		) {
-			if (_gravity_step != 0) {
-				_intent_offset = choose_diagonal_offset(_elem_static_data, v_vTexcoord, _gravity_step, u_frame + 70.0);
-			}
-			if (_intent_offset.x == 0.0 && _intent_offset.y == 0.0) {
-				_intent_offset = choose_lateral_offset(_elem_static_data, v_vTexcoord, u_frame + 80.0);
-			}
-		}
-	}
-
+	_intent_offset = choose_profile_offset(_elem_static_data, v_vTexcoord, _elem_dynamic_data.vel);
 	if (_intent_offset.x == 0.0 && _intent_offset.y == 0.0) {
 		_elem_dynamic_data.vel = vec2(0.0);
 	}

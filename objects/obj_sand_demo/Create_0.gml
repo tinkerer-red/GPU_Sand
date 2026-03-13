@@ -12,7 +12,6 @@ dev_settings = {
 	state_of_matter: StateOfMatter.SOLID,
 	movement_class: MovementClass.POWDER,
 	feature_flags: 0,
-	dynamic_mode: DynamicMode.NONE,
 	gravity_force: 1.0,
 	max_vel_x: 2.0,
 	max_vel_y: 2.0,
@@ -30,29 +29,33 @@ dev_settings = {
 	immovable: false,
 	replace_mode: ReplaceMode.LESS_DENSE_OR_EQUAL,
 	replace_mask: ReplaceMask.EMPTY | ReplaceMask.LIQUID | ReplaceMask.GAS,
-	replace_count: 0,
-	replace_id_0: ElementId.EMPTY,
-	replace_id_1: ElementId.EMPTY,
-	replace_id_2: ElementId.EMPTY,
-	replace_id_3: ElementId.EMPTY,
 	interaction_group: InteractionGroup.MINERAL,
 	interaction_mask: 0,
-	lifetime_max: 0.0,
-	lifetime_decay_chance: 0.0,
-	transition_on_life_end: ElementId.EMPTY,
-	temperature_decay: 0.0,
-	temperature_spread_chance: 0.0,
-	temperature_min: -128.0,
-	temperature_max: 128.0,
-	transition_on_temp_low: ElementId.EMPTY,
-	transition_on_temp_high: ElementId.EMPTY,
-	ignition_threshold: 0.0,
-	burn_product: ElementId.EMPTY,
-	cooling_product: ElementId.EMPTY,
-	corrosion_resistance: 1.0,
-	wetness_capacity: 0.0,
-	quench_threshold: 0.0,
-	viscosity: 0.0
+	viscosity: 0.0,
+	temp_contribute: true,
+	temp_locked: false,
+	temp_transfer_rate: 0.25,
+	temp_idle_value: 0.0,
+	temp_on_low: ElementId.DEV,
+	temp_on_high: ElementId.DEV,
+	moisture_contribute: false,
+	moisture_locked: true,
+	moisture_transfer_rate: 0.0,
+	moisture_idle_value: 0.0,
+	moisture_on_low: ElementId.DEV,
+	moisture_on_high: ElementId.DEV,
+	corrosion_contribute: false,
+	corrosion_locked: true,
+	corrosion_transfer_rate: 0.0,
+	corrosion_idle_value: 0.0,
+	corrosion_on_low: ElementId.DEV,
+	corrosion_on_high: ElementId.DEV,
+	magic_contribute: false,
+	magic_locked: true,
+	magic_transfer_rate: 0.0,
+	magic_idle_value: 0.0,
+	magic_on_low: ElementId.DEV,
+	magic_on_high: ElementId.DEV
 };
 simulation.dev_settings = dev_settings;
 
@@ -143,8 +146,10 @@ ui_dev_section_motion_open = false;
 ui_dev_section_decay_open = false;
 ui_dev_section_physical_open = false;
 ui_dev_section_interaction_open = false;
-ui_dev_section_lifecycle_open = false;
 ui_dev_section_temperature_open = false;
+ui_dev_section_moisture_open = false;
+ui_dev_section_corrosion_open = false;
+ui_dev_section_magic_open = false;
 
 ui_pass_title = "Pass Views";
 ui_pass_wants_open = false;
@@ -166,12 +171,86 @@ ui_pass_last_gui_width = -1;
 selected_pass_index = 0;
 
 ui_passes = [
-	{ name: "Render", mode: DisplayMode.RENDER, surf_name: "render", shader_id: -1 },
-	{ name: "Element", mode: DisplayMode.ELEMENT, surf_name: "surf_element", shader_id: -1 },
-	{ name: "Velocity", mode: DisplayMode.VELOCITY, surf_name: "surf_velocity", shader_id: shdSandSimVelocityDebug },
-	{ name: "Valid Pre", mode: DisplayMode.ACCEPT, surf_name: "surf_valid_pre", shader_id: shdSandSimVelocityDebug },
-	{ name: "Valid Post", mode: DisplayMode.CONFIRM, surf_name: "surf_valid_post", shader_id: shdSandSimVelocityDebug },
-	{ name: "Resolve", mode: DisplayMode.RESOLVE, surf_name: "surf_temp", shader_id: -1 }
+	{
+		name: "Render",
+		view_type: "display_mode",
+		display_mode: DisplayMode.RENDER,
+		surface_name: "",
+		shader_id: -1,
+		use_simulation_draw: true
+	},
+	{
+		name: "Element",
+		view_type: "display_mode",
+		display_mode: DisplayMode.ELEMENT,
+		surface_name: "surf_element",
+		shader_id: -1,
+		use_simulation_draw: false
+	},
+	{
+		name: "Velocity",
+		view_type: "display_mode",
+		display_mode: DisplayMode.VELOCITY,
+		surface_name: "surf_velocity",
+		shader_id: shdSandSimDebugVelocity,
+		use_simulation_draw: false
+	},
+	{
+		name: "Valid Pre",
+		view_type: "display_mode",
+		display_mode: DisplayMode.ACCEPT,
+		surface_name: "surf_valid_pre",
+		shader_id: shdSandSimDebugVelocity,
+		use_simulation_draw: false
+	},
+	{
+		name: "Valid Post",
+		view_type: "display_mode",
+		display_mode: DisplayMode.CONFIRM,
+		surface_name: "surf_valid_post",
+		shader_id: shdSandSimDebugVelocity,
+		use_simulation_draw: false
+	},
+	{
+		name: "Resolve",
+		view_type: "display_mode",
+		display_mode: DisplayMode.RESOLVE,
+		surface_name: "surf_element",
+		shader_id: -1,
+		use_simulation_draw: false
+	},
+	{
+		name: "Temperature",
+		view_type: "display_mode",
+		display_mode: DisplayMode.ELEMENT,
+		surface_name: "surf_element",
+		shader_id: shdSandSimDebugTemperature,
+		use_simulation_draw: false
+	},
+	{
+		name: "Moisture",
+		view_type: "display_mode",
+		display_mode: DisplayMode.ELEMENT,
+		surface_name: "surf_element",
+		shader_id: shdSandSimDebugMoisture,
+		use_simulation_draw: false
+	},
+	{
+		name: "Corrosion",
+		view_type: "display_mode",
+		display_mode: DisplayMode.ELEMENT,
+		surface_name: "surf_element",
+		shader_id: shdSandSimDebugCorrosion,
+		use_simulation_draw: false
+	},
+	{
+		name: "Magic",
+		view_type: "display_mode",
+		display_mode: DisplayMode.ELEMENT,
+		surface_name: "surf_element",
+		shader_id: shdSandSimDebugMagic,
+		use_simulation_draw: false
+	}
 ];
 
 ui_pass_preview_width = 180;

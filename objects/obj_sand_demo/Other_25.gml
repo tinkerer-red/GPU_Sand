@@ -56,15 +56,25 @@ ui_get_viewport_right = function() {
 };
 
 ui_get_pass_surface = function(_pass_index) {
-	switch (_pass_index) {
-		case 1: return simulation.surf_element;
-		case 2: return simulation.surf_velocity;
-		case 3: return simulation.surf_valid_pre;
-		case 4: return simulation.surf_valid_post;
-		case 5: return simulation.surf_temp;
+	if (_pass_index < 0 || _pass_index >= array_length(ui_passes)) {
+		return -1;
 	}
 
-	return -1;
+	var _pass_data = ui_passes[_pass_index];
+
+	if (variable_struct_exists(_pass_data, "use_simulation_draw") && _pass_data.use_simulation_draw) {
+		return -1;
+	}
+
+	if (!variable_struct_exists(_pass_data, "surface_name") || _pass_data.surface_name == "") {
+		return -1;
+	}
+
+	if (!variable_instance_exists(simulation, _pass_data.surface_name)) {
+		return -1;
+	}
+
+	return variable_instance_get(simulation, _pass_data.surface_name);
 };
 
 ui_bitmask_has_flag = function(_mask, _flag) {
@@ -197,14 +207,6 @@ ui_dev = function() {
 		"Sticky Powder"
 	];
 	
-	var _dynamic_mode_labels = [
-		"None",
-		"Lifetime",
-		"Temperature",
-		"Moisture",
-		"Corrosion",
-		"Charge Reserved"
-	];
 	
 	var _replace_mode_labels = [
 		"Empty Only",
@@ -308,10 +310,6 @@ ui_dev = function() {
 				);
 				
 				gmui_text("Dynamic Mode"); gmui_separator();
-				dev_settings.dynamic_mode = gmui_selectable_radio_group_vertical(
-					_dynamic_mode_labels,
-					dev_settings.dynamic_mode
-				);
 				
 				gmui_text("Movement Class"); gmui_separator();
 				dev_settings.movement_class = gmui_selectable_radio_group_vertical(
@@ -319,16 +317,7 @@ ui_dev = function() {
 					dev_settings.movement_class
 				);
 				
-				gmui_text("Feature Flags"); gmui_separator();
-				for (var i = 0; i < array_length(_feature_flag_labels); i++) {
-					var _feature_flag_data = _feature_flag_labels[i];
-					var _feature_flag_enabled = ui_bitmask_has_flag(dev_settings.feature_flags, _feature_flag_data.value);
-					var _feature_flag_next = gmui_checkbox(_feature_flag_data.name, _feature_flag_enabled);
-					dev_settings.feature_flags = ui_bitmask_set_flag(dev_settings.feature_flags, _feature_flag_data.value, _feature_flag_next);
-				}
-
 				gmui_text("Feature Value"); gmui_same_line(); gmui_tab(6);
-				gmui_text(string(dev_settings.feature_flags));
 				
 				var _col = gmui_color_button_4("Color", dev_settings.color)
 				
@@ -424,21 +413,6 @@ ui_dev = function() {
 
 				gmui_text("Replace Mask Value"); gmui_same_line(); gmui_tab(6);
 				gmui_text(string(dev_settings.replace_mask));
-				
-				gmui_text("Replace Count"); gmui_same_line(); gmui_tab(6);
-				dev_settings.replace_count = gmui_input_int(round(dev_settings.replace_count), 1, 0, 4, 96, "");
-				
-				gmui_text("Replace Id 0"); gmui_same_line(); gmui_tab(6);
-				dev_settings.replace_id_0 = gmui_input_int(round(dev_settings.replace_id_0), 1, 0, _max_element_id, 96, "");
-				
-				gmui_text("Replace Id 1"); gmui_same_line(); gmui_tab(6);
-				dev_settings.replace_id_1 = gmui_input_int(round(dev_settings.replace_id_1), 1, 0, _max_element_id, 96, "");
-				
-				gmui_text("Replace Id 2"); gmui_same_line(); gmui_tab(6);
-				dev_settings.replace_id_2 = gmui_input_int(round(dev_settings.replace_id_2), 1, 0, _max_element_id, 96, "");
-				
-				gmui_text("Replace Id 3"); gmui_same_line(); gmui_tab(6);
-				dev_settings.replace_id_3 = gmui_input_int(round(dev_settings.replace_id_3), 1, 0, _max_element_id, 96, "");
 				gmui_collapsing_header_end();
 			}
 
@@ -460,59 +434,73 @@ ui_dev = function() {
 
 				gmui_text("Interaction Mask Value"); gmui_same_line(); gmui_tab(6);
 				gmui_text(string(dev_settings.interaction_mask));
-				
-				gmui_text("Corrosion Resist"); gmui_same_line(); gmui_tab(6);
-				dev_settings.corrosion_resistance = gmui_input_float(dev_settings.corrosion_resistance, 0.05, 0.0, 4.0, 96, "");
-				
-				gmui_text("Wetness Capacity"); gmui_same_line(); gmui_tab(6);
-				dev_settings.wetness_capacity = gmui_input_float(dev_settings.wetness_capacity, 0.05, 0.0, 4.0, 96, "");
-				
-				gmui_text("Quench Threshold"); gmui_same_line(); gmui_tab(6);
-				dev_settings.quench_threshold = gmui_input_float(dev_settings.quench_threshold, 1.0, 0.0, 255.0, 96, "");
 				gmui_collapsing_header_end();
 			}
-
-			ui_dev_section_lifecycle_open = gmui_collapsing_header("Lifecycle", ui_dev_section_lifecycle_open)[0];
-			if (ui_dev_section_lifecycle_open) {
-				gmui_text("Lifetime Max"); gmui_same_line(); gmui_tab(6);
-				dev_settings.lifetime_max = gmui_input_float(dev_settings.lifetime_max, 1.0, 0.0, 255.0, 96, "");
-				
-				gmui_text("Lifetime Decay"); gmui_same_line(); gmui_tab(6);
-				dev_settings.lifetime_decay_chance = gmui_input_float(dev_settings.lifetime_decay_chance, 0.01, 0.0, 1.0, 96, "");
-				
-				gmui_text("Life End Id"); gmui_same_line(); gmui_tab(6);
-				dev_settings.transition_on_life_end = gmui_input_int(round(dev_settings.transition_on_life_end), 1, 0, _max_element_id, 96, "");
-				gmui_collapsing_header_end();
-			}
-
 			ui_dev_section_temperature_open = gmui_collapsing_header("Temperature", ui_dev_section_temperature_open)[0];
 			if (ui_dev_section_temperature_open) {
-				gmui_text("Temp Decay"); gmui_same_line(); gmui_tab(6);
-				dev_settings.temperature_decay = gmui_input_float(dev_settings.temperature_decay, 0.01, 0.0, 1.0, 96, "");
-				
-				gmui_text("Temp Spread"); gmui_same_line(); gmui_tab(6);
-				dev_settings.temperature_spread_chance = gmui_input_float(dev_settings.temperature_spread_chance, 0.01, 0.0, 1.0, 96, "");
-				
-				gmui_text("Temp Min"); gmui_same_line(); gmui_tab(6);
-				dev_settings.temperature_min = gmui_input_float(dev_settings.temperature_min, 1.0, -128.0, 127.0, 96, "");
-				
-				gmui_text("Temp Max"); gmui_same_line(); gmui_tab(6);
-				dev_settings.temperature_max = gmui_input_float(dev_settings.temperature_max, 1.0, -128.0, 127.0, 96, "");
-				
-				gmui_text("Temp Low Id"); gmui_same_line(); gmui_tab(6);
-				dev_settings.transition_on_temp_low = gmui_input_int(round(dev_settings.transition_on_temp_low), 1, 0, _max_element_id, 96, "");
-				
-				gmui_text("Temp High Id"); gmui_same_line(); gmui_tab(6);
-				dev_settings.transition_on_temp_high = gmui_input_int(round(dev_settings.transition_on_temp_high), 1, 0, _max_element_id, 96, "");
-				
-				gmui_text("Ignition Thresh"); gmui_same_line(); gmui_tab(6);
-				dev_settings.ignition_threshold = gmui_input_float(dev_settings.ignition_threshold, 1.0, 0.0, 255.0, 96, "");
-				
-				gmui_text("Burn Product"); gmui_same_line(); gmui_tab(6);
-				dev_settings.burn_product = gmui_input_int(round(dev_settings.burn_product), 1, 0, _max_element_id, 96, "");
-				
-				gmui_text("Cooling Product"); gmui_same_line(); gmui_tab(6);
-				dev_settings.cooling_product = gmui_input_int(round(dev_settings.cooling_product), 1, 0, _max_element_id, 96, "");
+				gmui_text("Contribute"); gmui_same_line(); gmui_tab(6);
+				dev_settings.temp_contribute = gmui_checkbox("##temp_contribute", dev_settings.temp_contribute);
+				gmui_text("Locked"); gmui_same_line(); gmui_tab(6);
+				dev_settings.temp_locked = gmui_checkbox("##temp_locked", dev_settings.temp_locked);
+				gmui_text("Transfer Rate"); gmui_same_line(); gmui_tab(6);
+				dev_settings.temp_transfer_rate = gmui_input_float(dev_settings.temp_transfer_rate, 0.01, 0.0, 1.0, 96, "");
+				gmui_text("Idle Value"); gmui_same_line(); gmui_tab(6);
+				dev_settings.temp_idle_value = gmui_input_float(dev_settings.temp_idle_value, 1.0, -127.0, 127.0, 96, "");
+				gmui_text("On Low"); gmui_same_line(); gmui_tab(6);
+				dev_settings.temp_on_low = gmui_input_int(round(dev_settings.temp_on_low), 1, 0, _max_element_id, 96, "");
+				gmui_text("On High"); gmui_same_line(); gmui_tab(6);
+				dev_settings.temp_on_high = gmui_input_int(round(dev_settings.temp_on_high), 1, 0, _max_element_id, 96, "");
+				gmui_collapsing_header_end();
+			}
+
+			ui_dev_section_moisture_open = gmui_collapsing_header("Moisture", ui_dev_section_moisture_open)[0];
+			if (ui_dev_section_moisture_open) {
+				gmui_text("Contribute"); gmui_same_line(); gmui_tab(6);
+				dev_settings.moisture_contribute = gmui_checkbox("##moisture_contribute", dev_settings.moisture_contribute);
+				gmui_text("Locked"); gmui_same_line(); gmui_tab(6);
+				dev_settings.moisture_locked = gmui_checkbox("##moisture_locked", dev_settings.moisture_locked);
+				gmui_text("Transfer Rate"); gmui_same_line(); gmui_tab(6);
+				dev_settings.moisture_transfer_rate = gmui_input_float(dev_settings.moisture_transfer_rate, 0.01, 0.0, 1.0, 96, "");
+				gmui_text("Idle Value"); gmui_same_line(); gmui_tab(6);
+				dev_settings.moisture_idle_value = gmui_input_float(dev_settings.moisture_idle_value, 1.0, -127.0, 127.0, 96, "");
+				gmui_text("On Low"); gmui_same_line(); gmui_tab(6);
+				dev_settings.moisture_on_low = gmui_input_int(round(dev_settings.moisture_on_low), 1, 0, _max_element_id, 96, "");
+				gmui_text("On High"); gmui_same_line(); gmui_tab(6);
+				dev_settings.moisture_on_high = gmui_input_int(round(dev_settings.moisture_on_high), 1, 0, _max_element_id, 96, "");
+				gmui_collapsing_header_end();
+			}
+
+			ui_dev_section_corrosion_open = gmui_collapsing_header("Corrosion", ui_dev_section_corrosion_open)[0];
+			if (ui_dev_section_corrosion_open) {
+				gmui_text("Contribute"); gmui_same_line(); gmui_tab(6);
+				dev_settings.corrosion_contribute = gmui_checkbox("##corrosion_contribute", dev_settings.corrosion_contribute);
+				gmui_text("Locked"); gmui_same_line(); gmui_tab(6);
+				dev_settings.corrosion_locked = gmui_checkbox("##corrosion_locked", dev_settings.corrosion_locked);
+				gmui_text("Transfer Rate"); gmui_same_line(); gmui_tab(6);
+				dev_settings.corrosion_transfer_rate = gmui_input_float(dev_settings.corrosion_transfer_rate, 0.01, 0.0, 1.0, 96, "");
+				gmui_text("Idle Value"); gmui_same_line(); gmui_tab(6);
+				dev_settings.corrosion_idle_value = gmui_input_float(dev_settings.corrosion_idle_value, 1.0, -127.0, 127.0, 96, "");
+				gmui_text("On Low"); gmui_same_line(); gmui_tab(6);
+				dev_settings.corrosion_on_low = gmui_input_int(round(dev_settings.corrosion_on_low), 1, 0, _max_element_id, 96, "");
+				gmui_text("On High"); gmui_same_line(); gmui_tab(6);
+				dev_settings.corrosion_on_high = gmui_input_int(round(dev_settings.corrosion_on_high), 1, 0, _max_element_id, 96, "");
+				gmui_collapsing_header_end();
+			}
+
+			ui_dev_section_magic_open = gmui_collapsing_header("Magic", ui_dev_section_magic_open)[0];
+			if (ui_dev_section_magic_open) {
+				gmui_text("Contribute"); gmui_same_line(); gmui_tab(6);
+				dev_settings.magic_contribute = gmui_checkbox("##magic_contribute", dev_settings.magic_contribute);
+				gmui_text("Locked"); gmui_same_line(); gmui_tab(6);
+				dev_settings.magic_locked = gmui_checkbox("##magic_locked", dev_settings.magic_locked);
+				gmui_text("Transfer Rate"); gmui_same_line(); gmui_tab(6);
+				dev_settings.magic_transfer_rate = gmui_input_float(dev_settings.magic_transfer_rate, 0.01, 0.0, 1.0, 96, "");
+				gmui_text("Idle Value"); gmui_same_line(); gmui_tab(6);
+				dev_settings.magic_idle_value = gmui_input_float(dev_settings.magic_idle_value, 1.0, -127.0, 127.0, 96, "");
+				gmui_text("On Low"); gmui_same_line(); gmui_tab(6);
+				dev_settings.magic_on_low = gmui_input_int(round(dev_settings.magic_on_low), 1, 0, _max_element_id, 96, "");
+				gmui_text("On High"); gmui_same_line(); gmui_tab(6);
+				dev_settings.magic_on_high = gmui_input_int(round(dev_settings.magic_on_high), 1, 0, _max_element_id, 96, "");
 				gmui_collapsing_header_end();
 			}
 

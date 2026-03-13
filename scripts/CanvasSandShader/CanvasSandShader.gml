@@ -54,14 +54,6 @@ function CanvasSandShader() constructor {
 		STICKY_POWDER = 7
 	}
 
-	enum DynamicMode {
-		NONE = 0,
-		LIFETIME = 1,
-		TEMPERATURE = 2,
-		MOISTURE = 3,
-		CORROSION = 4,
-		CHARGE_RESERVED = 5
-	}
 
 	enum ReplaceMode {
 		EMPTY_ONLY = 0,
@@ -148,9 +140,7 @@ function CanvasSandShader() constructor {
 	
 		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_state_of_matter"), dev_settings.state_of_matter);
 		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_movement_class"), dev_settings.movement_class);
-		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_feature_flags"), dev_settings.feature_flags);
-		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_dynamic_mode"), dev_settings.dynamic_mode);
-	
+		
 		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_gravity_force"), dev_settings.gravity_force);
 		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_max_vel_x"), dev_settings.max_vel_x);
 		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_max_vel_y"), dev_settings.max_vel_y);
@@ -174,33 +164,36 @@ function CanvasSandShader() constructor {
 	
 		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_replace_mode"), dev_settings.replace_mode);
 		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_replace_mask"), dev_settings.replace_mask);
-		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_replace_count"), dev_settings.replace_count);
-		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_replace_id_0"), dev_settings.replace_id_0);
-		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_replace_id_1"), dev_settings.replace_id_1);
-		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_replace_id_2"), dev_settings.replace_id_2);
-		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_replace_id_3"), dev_settings.replace_id_3);
 	
 		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_interaction_group"), dev_settings.interaction_group);
 		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_interaction_mask"), dev_settings.interaction_mask);
 	
-		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_lifetime_max"), dev_settings.lifetime_max);
-		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_lifetime_decay_chance"), dev_settings.lifetime_decay_chance);
-		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_transition_on_life_end"), dev_settings.transition_on_life_end);
 	
-		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_temperature_decay"), dev_settings.temperature_decay);
-		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_temperature_spread_chance"), dev_settings.temperature_spread_chance);
-		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_temperature_min"), dev_settings.temperature_min);
-		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_temperature_max"), dev_settings.temperature_max);
-		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_transition_on_temp_low"), dev_settings.transition_on_temp_low);
-		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_transition_on_temp_high"), dev_settings.transition_on_temp_high);
-		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_ignition_threshold"), dev_settings.ignition_threshold);
-		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_burn_product"), dev_settings.burn_product);
-		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_cooling_product"), dev_settings.cooling_product);
-	
-		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_corrosion_resistance"), dev_settings.corrosion_resistance);
-		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_wetness_capacity"), dev_settings.wetness_capacity);
-		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_quench_threshold"), dev_settings.quench_threshold);
 		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_viscosity"), dev_settings.viscosity);
+		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_temp_contribute"), dev_settings.temp_contribute);
+		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_temp_locked"), dev_settings.temp_locked);
+		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_temp_transfer_rate"), dev_settings.temp_transfer_rate);
+		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_temp_idle_value"), dev_settings.temp_idle_value);
+		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_temp_on_low"), dev_settings.temp_on_low);
+		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_temp_on_high"), dev_settings.temp_on_high);
+		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_moisture_contribute"), dev_settings.moisture_contribute);
+		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_moisture_locked"), dev_settings.moisture_locked);
+		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_moisture_transfer_rate"), dev_settings.moisture_transfer_rate);
+		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_moisture_idle_value"), dev_settings.moisture_idle_value);
+		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_moisture_on_low"), dev_settings.moisture_on_low);
+		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_moisture_on_high"), dev_settings.moisture_on_high);
+		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_corrosion_contribute"), dev_settings.corrosion_contribute);
+		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_corrosion_locked"), dev_settings.corrosion_locked);
+		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_corrosion_transfer_rate"), dev_settings.corrosion_transfer_rate);
+		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_corrosion_idle_value"), dev_settings.corrosion_idle_value);
+		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_corrosion_on_low"), dev_settings.corrosion_on_low);
+		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_corrosion_on_high"), dev_settings.corrosion_on_high);
+		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_magic_contribute"), dev_settings.magic_contribute);
+		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_magic_locked"), dev_settings.magic_locked);
+		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_magic_transfer_rate"), dev_settings.magic_transfer_rate);
+		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_magic_idle_value"), dev_settings.magic_idle_value);
+		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_magic_on_low"), dev_settings.magic_on_low);
+		shader_set_uniform_f(shader_get_uniform(_shader, "u_dev_magic_on_high"), dev_settings.magic_on_high);
 	
 		var _color = dev_settings.color;
 		var _blue = _color & 255;
@@ -312,7 +305,7 @@ function CanvasSandShader() constructor {
 		var _surface = get_display_surface();
 		
 		if (display_mode == DisplayMode.VELOCITY || display_mode == DisplayMode.INTENT || display_mode == DisplayMode.ACCEPT || display_mode == DisplayMode.CONFIRM) {
-			shader_set(shdSandSimVelocityDebug);
+			shader_set(shdSandSimDebugVelocity);
 			draw_surface(_surface, 0, 0);
 			shader_reset();
 		} else {

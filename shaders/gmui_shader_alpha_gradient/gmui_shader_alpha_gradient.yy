@@ -4,7 +4,7 @@
   "name":"gmui_shader_alpha_gradient",
   "parent":{
     "name":"Shaders",
-    "path":"folders/GMUI/Shaders.yy",
+    "path":"folders/_Libraries/GMUI/Shaders.yy",
   },
   "resourceType":"GMShader",
   "resourceVersion":"2.0",

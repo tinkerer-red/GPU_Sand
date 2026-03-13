@@ -32,13 +32,17 @@ int bit_shift_right(int x, int n) {
     return int(floor(float(x) / pow(2.0, float(n))));
 }
 
-int bitwise_and(int x, int mask) {
-    return x - (x / (mask + 1)) * (mask + 1); // equivalent to x % (mask + 1) if mask is a power-of-two minus 1
-}
-
-// Or if mask is a power-of-two (e.g., 2^n), just do:
-int bitwise_and_of_pow2(int x, int pow2) {
-    return imod(x, pow2);
+int bitwise_and(int _left, int _right) {
+	int _result = 0;
+	for (int i = 0; i < 32; ++i) {
+		int _bit_value = int(pow(2.0, float(i)));
+		bool _left_has_bit = mod(float(_left), float(_bit_value * 2)) >= float(_bit_value);
+		bool _right_has_bit = mod(float(_right), float(_bit_value * 2)) >= float(_bit_value);
+		if (_left_has_bit && _right_has_bit) {
+			_result += _bit_value;
+		}
+	}
+	return _result;
 }
 
 // Emulate `x | y` using base-2 binary math

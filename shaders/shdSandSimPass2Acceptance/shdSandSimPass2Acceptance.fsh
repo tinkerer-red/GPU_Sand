@@ -9,16 +9,23 @@ uniform sampler2D gm_SecondaryTexture;
 
 float compute_claim_score(ElementStaticData _source_static_data, vec2 _offset) {
 	float _score = dot(_offset, _offset);
+	int _vertical_step = 0;
 
-	if (_source_static_data.gravity_force > 0.0 && _offset.y > 0.0) {
-		_score -= 0.25;
+	if (_source_static_data.vertical_drive > 0.0) {
+		_vertical_step = 1;
+	} else if (_source_static_data.vertical_drive < 0.0) {
+		_vertical_step = -1;
 	}
-	if (_source_static_data.gravity_force < 0.0 && _offset.y < 0.0) {
-		_score -= 0.25;
+
+	if (_vertical_step != 0 && (_offset.y * float(_vertical_step)) > 0.0) {
+		_score -= 0.35;
 	}
 	if (_offset.x == 0.0) {
 		_score -= 0.05;
 	}
+	_score -= _source_static_data.momentum_retention * 0.08;
+	_score -= _source_static_data.surface_response * 0.04;
+	_score -= clamp(_source_static_data.lateral_spread, 0.0, float(SIM_MAX_MOVE_RADIUS)) * (abs_float(_offset.x) / float(SIM_MAX_MOVE_RADIUS)) * 0.05;
 
 	return _score;
 }

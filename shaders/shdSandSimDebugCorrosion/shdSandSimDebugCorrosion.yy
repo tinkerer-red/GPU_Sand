@@ -1,0 +1,12 @@
+{
+  "$GMShader":"",
+  "%Name":"shdSandSimDebugCorrosion",
+  "name":"shdSandSimDebugCorrosion",
+  "parent":{
+    "name":"Visualizers",
+    "path":"folders/GPU_Sand/Shaders/Visualizers.yy",
+  },
+  "resourceType":"GMShader",
+  "resourceVersion":"2.0",
+  "type":1,
+}

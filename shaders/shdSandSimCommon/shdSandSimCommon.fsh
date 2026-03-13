@@ -36,60 +36,46 @@
 #region Uniforms
 #pragma shady: macro_begin Uniforms
 uniform float u_dev_state_of_matter;
-uniform float u_dev_movement_class;
-uniform float u_dev_feature_flags;
-uniform float u_dev_dynamic_mode;
+uniform float u_dev_flow_mode;
 
-uniform float u_dev_gravity_force;
-uniform float u_dev_max_vel_x;
-uniform float u_dev_max_vel_y;
-
-uniform float u_dev_can_slip;
-uniform float u_dev_x_slip_search_range;
-uniform float u_dev_y_slip_search_range;
-
-uniform float u_dev_wake_chance;
-uniform float u_dev_stickiness_chance;
-
-uniform float u_dev_bounce_chance;
-uniform float u_dev_bounce_dampening_multiplier;
-
-uniform float u_dev_airborne_vel_decay_chance;
-uniform float u_dev_friction_vel_decay_chance;
-
-uniform float u_dev_mass;
+uniform float u_dev_vertical_drive;
+uniform float u_dev_max_speed;
+uniform float u_dev_lateral_spread;
+uniform float u_dev_momentum_retention;
+uniform float u_dev_support_resistance;
+uniform float u_dev_clump_factor;
+uniform float u_dev_surface_response;
 uniform float u_dev_density;
 uniform float u_dev_immovable;
-
-uniform float u_dev_replace_mode;
 uniform float u_dev_replace_mask;
-uniform float u_dev_replace_count;
-uniform float u_dev_replace_id_0;
-uniform float u_dev_replace_id_1;
-uniform float u_dev_replace_id_2;
-uniform float u_dev_replace_id_3;
 
-uniform float u_dev_interaction_group;
-uniform float u_dev_interaction_mask;
+uniform float u_dev_temp_contribute;
+uniform float u_dev_temp_locked;
+uniform float u_dev_temp_transfer_rate;
+uniform float u_dev_temp_idle_value;
+uniform float u_dev_temp_on_low;
+uniform float u_dev_temp_on_high;
 
-uniform float u_dev_lifetime_max;
-uniform float u_dev_lifetime_decay_chance;
-uniform float u_dev_transition_on_life_end;
+uniform float u_dev_moisture_contribute;
+uniform float u_dev_moisture_locked;
+uniform float u_dev_moisture_transfer_rate;
+uniform float u_dev_moisture_idle_value;
+uniform float u_dev_moisture_on_low;
+uniform float u_dev_moisture_on_high;
 
-uniform float u_dev_temperature_decay;
-uniform float u_dev_temperature_spread_chance;
-uniform float u_dev_temperature_min;
-uniform float u_dev_temperature_max;
-uniform float u_dev_transition_on_temp_low;
-uniform float u_dev_transition_on_temp_high;
-uniform float u_dev_ignition_threshold;
-uniform float u_dev_burn_product;
-uniform float u_dev_cooling_product;
+uniform float u_dev_corrosion_contribute;
+uniform float u_dev_corrosion_locked;
+uniform float u_dev_corrosion_transfer_rate;
+uniform float u_dev_corrosion_idle_value;
+uniform float u_dev_corrosion_on_low;
+uniform float u_dev_corrosion_on_high;
 
-uniform float u_dev_corrosion_resistance;
-uniform float u_dev_wetness_capacity;
-uniform float u_dev_quench_threshold;
-uniform float u_dev_viscosity;
+uniform float u_dev_magic_contribute;
+uniform float u_dev_magic_locked;
+uniform float u_dev_magic_transfer_rate;
+uniform float u_dev_magic_idle_value;
+uniform float u_dev_magic_on_low;
+uniform float u_dev_magic_on_high;
 
 uniform float u_dev_color;
 #pragma shady: macro_end
@@ -138,115 +124,205 @@ uniform float u_dev_color;
 #define MATTER_LIQUID 2
 #define MATTER_SOLID 3
 
-#define MOVE_CLASS_NONE_STATIC 0
-#define MOVE_CLASS_POWDER 1
-#define MOVE_CLASS_LIQUID 2
-#define MOVE_CLASS_GAS 3
-#define MOVE_CLASS_VISCOUS_LIQUID 4
-#define MOVE_CLASS_DRIFTING_SOLID 5
-#define MOVE_CLASS_HEAVY_POWDER 6
-#define MOVE_CLASS_STICKY_POWDER 7
+#define FLOW_MODE_STATIC 0
+#define FLOW_MODE_POWDER 1
+#define FLOW_MODE_LIQUID 2
+#define FLOW_MODE_GAS 3
+#define FLOW_MODE_GOO 4
 
-#define FEATURE_USES_LIFETIME 1
-#define FEATURE_USES_TEMPERATURE 2
-#define FEATURE_CAN_IGNITE 4
-#define FEATURE_PHASE_CHANGES 8
-#define FEATURE_CAN_WET 16
-#define FEATURE_CAN_CORRODE 32
-#define FEATURE_EMITS_HEAT 64
-#define FEATURE_REACTS_AS_COOLANT 128
-
-#define DYNAMIC_MODE_NONE 0
-#define DYNAMIC_MODE_LIFETIME 1
-#define DYNAMIC_MODE_TEMPERATURE 2
-#define DYNAMIC_MODE_MOISTURE 3
-#define DYNAMIC_MODE_CORROSION 4
-#define DYNAMIC_MODE_CHARGE_RESERVED 5
-
-#define REPLACE_MODE_EMPTY_ONLY 0
-#define REPLACE_MODE_LESS_DENSE 1
-#define REPLACE_MODE_LESS_DENSE_OR_EQUAL 2
-#define REPLACE_MODE_CLASS_MASK 3
-#define REPLACE_MODE_EXPLICIT_IDS_FALLBACK 4
+#define LANE_TEMPERATURE 0
+#define LANE_MOISTURE 1
+#define LANE_CORROSION 2
+#define LANE_MAGIC 3
 
 #define REPLACE_MASK_EMPTY 1
 #define REPLACE_MASK_GAS 2
 #define REPLACE_MASK_LIQUID 4
 #define REPLACE_MASK_SOLID_MOVABLE 8
 #define REPLACE_MASK_SAME_ELEMENT 16
-#define REPLACE_MASK_SAME_GROUP 32
 
-#define INTERACTION_GROUP_INERT 0
-#define INTERACTION_GROUP_WATER_LIKE 1
-#define INTERACTION_GROUP_OIL_LIKE 2
-#define INTERACTION_GROUP_MOLTEN 3
-#define INTERACTION_GROUP_ACID_LIKE 4
-#define INTERACTION_GROUP_COMBUSTIBLE_GAS 5
-#define INTERACTION_GROUP_SMOKE_LIKE 6
-#define INTERACTION_GROUP_CRYOGENIC 7
-#define INTERACTION_GROUP_ORGANIC 8
-#define INTERACTION_GROUP_MINERAL 9
-#define INTERACTION_GROUP_METAL 10
 #endregion
 
 #region Data Structures
 struct ElementStaticData {
+	// -------------------------------------------------------------------------
+	// Identity / visual authoring
+	// -------------------------------------------------------------------------
+	// Unique element id used throughout the simulation.
 	int id;
-	int state_of_matter;
-	int movement_class;
-	int feature_flags;
-	int dynamic_mode;
-	float gravity_force;
-	float max_vel_x;
-	float max_vel_y;
-	bool can_slip;
-	float x_slip_search_range;
-	float y_slip_search_range;
-	float wake_chance;
-	float stickiness_chance;
-	float bounce_chance;
-	float bounce_dampening_multiplier;
-	float airborne_vel_decay_chance;
-	float friction_vel_decay_chance;
-	float mass;
-	float density;
-	bool immovable;
-	int replace_mode;
-	int replace_mask;
-	int replace_count;
-	int replace_id_0;
-	int replace_id_1;
-	int replace_id_2;
-	int replace_id_3;
-	int interaction_group;
-	int interaction_mask;
-	float lifetime_max;
-	float lifetime_decay_chance;
-	int transition_on_life_end;
-	float temperature_decay;
-	float temperature_spread_chance;
-	float temperature_min;
-	float temperature_max;
-	int transition_on_temp_low;
-	int transition_on_temp_high;
-	float ignition_threshold;
-	int burn_product;
-	int cooling_product;
-	float corrosion_resistance;
-	float wetness_capacity;
-	float quench_threshold;
-	float viscosity;
+
+	// Packed or encoded base color used for rendering this element.
 	float base_color;
+
+	// -------------------------------------------------------------------------
+	// Material classification
+	// -------------------------------------------------------------------------
+	// What this element fundamentally is for broader simulation meaning.
+	// Example values:
+	// - MATTER_EMPTY
+	// - MATTER_SOLID
+	// - MATTER_LIQUID
+	// - MATTER_GAS
+	//
+	// This is the "what is it?" classification.
+	int state_of_matter;
+
+	// How this element should behave in the movement solver.
+	// Example values:
+	// - FLOW_MODE_STATIC
+	// - FLOW_MODE_POWDER
+	// - FLOW_MODE_LIQUID
+	// - FLOW_MODE_GAS
+	// - FLOW_MODE_GOO
+	//
+	// This is the "how does it move?" classification.
+	int flow_mode;
+
+	// -------------------------------------------------------------------------
+	// Core movement profile
+	// -------------------------------------------------------------------------
+	// Vertical motion drive.
+	// Positive values prefer falling.
+	// Negative values prefer rising.
+	// Zero means no natural vertical preference.
+	float vertical_drive;
+
+	// Maximum travel tendency / movement strength.
+	// Higher values allow the element to preserve and use stronger velocity.
+	// This replaces the need to author separate max X / max Y in most cases.
+	float max_speed;
+
+	// How aggressively the element spreads sideways when blocked or settling.
+	// Higher values help liquids level out faster and gases diffuse more.
+	// Lower values keep powders tighter and more column-like.
+	float lateral_spread;
+
+	// How strongly previous motion should persist from frame to frame.
+	// Higher values preserve momentum longer.
+	// Lower values make the element settle and lose motion faster.
+	float momentum_retention;
+
+	// How resistant the element is to losing its current support structure.
+	// Lower values make piles destabilize and slough more easily.
+	// Higher values make the element hold its shape more stubbornly.
+	//
+	// For powders, lowering this helps prevent perfect pyramid stability.
+	float support_resistance;
+
+	// How strongly the element prefers to stay near like neighbors.
+	// This is a generalized "clump / cohesion / viscosity-like" control.
+	//
+	// Uses:
+	// - Slightly helps sand cluster instead of forming perfect clean slopes
+	// - Makes goo, slime, or lava feel more connected
+	// - Higher values can encourage blob-like or stream-like behavior
+	float clump_factor;
+
+	// Broad collision / contact response when hitting surfaces or blockers.
+	// Lower values favor dead settling.
+	// Higher values favor livelier rebound / slide / reaction.
+	//
+	// Keep this broad for now. Only split it later if a proven need appears.
+	float surface_response;
+
+	// Relative displacement priority between materials.
+	// This controls who tends to pass through / settle through / displace who.
+	//
+	// Example:
+	// - denser powders can sink through lighter liquids
+	// - lighter gases can rise around denser materials
+	float density;
+
+	// Hard override to prevent movement entirely.
+	// Useful for indestructible walls or materials that must never move
+	// even if their other fields would otherwise allow it.
+	bool immovable;
+
+	// -------------------------------------------------------------------------
+	// Replacement / movement eligibility
+	// -------------------------------------------------------------------------
+	// Bitmask describing which materials this element is allowed to replace
+	// when attempting to move into another cell.
+	//
+	// This should be expressive enough to replace old replace_mode logic.
+	// Example:
+	// - water may replace empty and some gases
+	// - lava may replace snow
+	// - sand may replace empty and some liquids depending on design
+	int replace_mask;
+
+	// -------------------------------------------------------------------------
+	// Temperature lane behavior
+	// -------------------------------------------------------------------------
+	// Whether this element contributes to / participates in temperature transfer.
+	bool temp_contribute;
+
+	// If true, this lane is fixed and should not be altered by transfer logic.
+	bool temp_locked;
+
+	// How quickly this element exchanges this property with neighbors.
+	float temp_transfer_rate;
+
+	// Natural resting value this property tends toward when left alone.
+	float temp_idle_value;
+
+	// Element transformation when this property reaches a low threshold.
+	int temp_on_low;
+
+	// Element transformation when this property reaches a high threshold.
+	int temp_on_high;
+
+	// -------------------------------------------------------------------------
+	// Moisture lane behavior
+	// -------------------------------------------------------------------------
+	bool moisture_contribute;
+	bool moisture_locked;
+	float moisture_transfer_rate;
+	float moisture_idle_value;
+	int moisture_on_low;
+	int moisture_on_high;
+
+	// -------------------------------------------------------------------------
+	// Corrosion lane behavior
+	// -------------------------------------------------------------------------
+	bool corrosion_contribute;
+	bool corrosion_locked;
+	float corrosion_transfer_rate;
+	float corrosion_idle_value;
+	int corrosion_on_low;
+	int corrosion_on_high;
+
+	// -------------------------------------------------------------------------
+	// Magic lane behavior
+	// -------------------------------------------------------------------------
+	bool magic_contribute;
+	bool magic_locked;
+	float magic_transfer_rate;
+	float magic_idle_value;
+	int magic_on_low;
+	int magic_on_high;
 };
 
 struct ElementDynamicData {
 	int id;
 	vec2 vel;
+
 	int x_dir;
 	int y_dir;
 	int x_speed;
 	int y_speed;
-	int dynamic_byte;
+
+	int temp_dir;
+	int temp_magnitude;
+
+	int moisture_dir;
+	int moisture_magnitude;
+
+	int corrosion_dir;
+	int corrosion_magnitude;
+
+	int magic_dir;
+	int magic_magnitude;
 };
 #endregion
 
@@ -256,10 +332,6 @@ bool flag_enabled(int _mask_value, int _flag_value) {
 		return false;
 	}
 	return imod(int(floor(float(_mask_value) / float(_flag_value))), 2) == 1;
-}
-
-bool feature_enabled(int _feature_flags, int _flag_value) {
-	return flag_enabled(_feature_flags, _flag_value);
 }
 
 int element_id_from_pixel(vec4 _pixel) {
@@ -307,51 +379,48 @@ int int_to_signed_byte(float _signed_value) {
 ElementStaticData make_empty_static_data() {
 	ElementStaticData _elem_static_data;
 	_elem_static_data.id = ELEM_ID_EMPTY;
+	_elem_static_data.base_color = 0.0;
 	_elem_static_data.state_of_matter = MATTER_EMPTY;
-	_elem_static_data.movement_class = MOVE_CLASS_NONE_STATIC;
-	_elem_static_data.feature_flags = 0;
-	_elem_static_data.dynamic_mode = DYNAMIC_MODE_NONE;
-	_elem_static_data.gravity_force = 0.0;
-	_elem_static_data.max_vel_x = 0.0;
-	_elem_static_data.max_vel_y = 0.0;
-	_elem_static_data.can_slip = false;
-	_elem_static_data.x_slip_search_range = 0.0;
-	_elem_static_data.y_slip_search_range = 0.0;
-	_elem_static_data.wake_chance = 0.0;
-	_elem_static_data.stickiness_chance = 0.0;
-	_elem_static_data.bounce_chance = 0.0;
-	_elem_static_data.bounce_dampening_multiplier = 0.0;
-	_elem_static_data.airborne_vel_decay_chance = 0.0;
-	_elem_static_data.friction_vel_decay_chance = 0.0;
-	_elem_static_data.mass = 0.0;
+	_elem_static_data.flow_mode = FLOW_MODE_STATIC;
+	_elem_static_data.vertical_drive = 0.0;
+	_elem_static_data.max_speed = 0.0;
+	_elem_static_data.lateral_spread = 0.0;
+	_elem_static_data.momentum_retention = 0.0;
+	_elem_static_data.support_resistance = 1.0;
+	_elem_static_data.clump_factor = 0.0;
+	_elem_static_data.surface_response = 0.0;
 	_elem_static_data.density = 0.0;
 	_elem_static_data.immovable = false;
-	_elem_static_data.replace_mode = REPLACE_MODE_EMPTY_ONLY;
 	_elem_static_data.replace_mask = REPLACE_MASK_EMPTY;
-	_elem_static_data.replace_count = 0;
-	_elem_static_data.replace_id_0 = 0;
-	_elem_static_data.replace_id_1 = 0;
-	_elem_static_data.replace_id_2 = 0;
-	_elem_static_data.replace_id_3 = 0;
-	_elem_static_data.interaction_group = INTERACTION_GROUP_INERT;
-	_elem_static_data.interaction_mask = 0;
-	_elem_static_data.lifetime_max = 0.0;
-	_elem_static_data.lifetime_decay_chance = 0.0;
-	_elem_static_data.transition_on_life_end = ELEM_ID_EMPTY;
-	_elem_static_data.temperature_decay = 0.0;
-	_elem_static_data.temperature_spread_chance = 0.0;
-	_elem_static_data.temperature_min = -128.0;
-	_elem_static_data.temperature_max = 127.0;
-	_elem_static_data.transition_on_temp_low = ELEM_ID_EMPTY;
-	_elem_static_data.transition_on_temp_high = ELEM_ID_EMPTY;
-	_elem_static_data.ignition_threshold = 0.0;
-	_elem_static_data.burn_product = ELEM_ID_EMPTY;
-	_elem_static_data.cooling_product = ELEM_ID_EMPTY;
-	_elem_static_data.corrosion_resistance = 1.0;
-	_elem_static_data.wetness_capacity = 0.0;
-	_elem_static_data.quench_threshold = 0.0;
-	_elem_static_data.viscosity = 0.0;
-	_elem_static_data.base_color = 0.0;
+	
+	_elem_static_data.temp_contribute = false;
+	_elem_static_data.temp_locked = true;
+	_elem_static_data.temp_transfer_rate = 0.0;
+	_elem_static_data.temp_idle_value = 0.0;
+	_elem_static_data.temp_on_low = ELEM_ID_EMPTY;
+	_elem_static_data.temp_on_high = ELEM_ID_EMPTY;
+	
+	_elem_static_data.moisture_contribute = false;
+	_elem_static_data.moisture_locked = true;
+	_elem_static_data.moisture_transfer_rate = 0.0;
+	_elem_static_data.moisture_idle_value = 0.0;
+	_elem_static_data.moisture_on_low = ELEM_ID_EMPTY;
+	_elem_static_data.moisture_on_high = ELEM_ID_EMPTY;
+	
+	_elem_static_data.corrosion_contribute = false;
+	_elem_static_data.corrosion_locked = true;
+	_elem_static_data.corrosion_transfer_rate = 0.0;
+	_elem_static_data.corrosion_idle_value = 0.0;
+	_elem_static_data.corrosion_on_low = ELEM_ID_EMPTY;
+	_elem_static_data.corrosion_on_high = ELEM_ID_EMPTY;
+	
+	_elem_static_data.magic_contribute = false;
+	_elem_static_data.magic_locked = true;
+	_elem_static_data.magic_transfer_rate = 0.0;
+	_elem_static_data.magic_idle_value = 0.0;
+	_elem_static_data.magic_on_low = ELEM_ID_EMPTY;
+	_elem_static_data.magic_on_high = ELEM_ID_EMPTY;
+	
 	return _elem_static_data;
 }
 
@@ -499,28 +568,221 @@ bool dynamic_has_motion(ElementDynamicData _elem_dynamic_data) {
 	return _elem_dynamic_data.x_speed != 0 || _elem_dynamic_data.y_speed != 0;
 }
 
+int lane_pack_nibble(int _lane_value) {
+	int _lane_sign = (_lane_value < 0) ? 1 : 0;
+	int _lane_magnitude = clamp(abs_int(_lane_value), 0, 7);
+	if (_lane_magnitude == 0) {
+		return 0;
+	}
+	return bitwise_or(bit_shift_left(_lane_sign, 3), _lane_magnitude);
+}
+
+int lane_unpack_nibble(int _lane_nibble) {
+	int _lane_sign = imod(bit_shift_right(_lane_nibble, 3), 2);
+	int _lane_magnitude = imod(_lane_nibble, 8);
+	if (_lane_magnitude == 0) {
+		return 0;
+	}
+	return (_lane_sign == 1) ? -_lane_magnitude : _lane_magnitude;
+}
+
+int lane_value_from_parts(int _lane_dir, int _lane_magnitude) {
+	if (_lane_magnitude <= 0) {
+		return 0;
+	}
+	return (_lane_dir == 1) ? -_lane_magnitude : _lane_magnitude;
+}
+
+int dynamic_temperature_get(ElementDynamicData _elem_dynamic_data) {
+	return lane_value_from_parts(_elem_dynamic_data.temp_dir, _elem_dynamic_data.temp_magnitude);
+}
+
+ElementDynamicData dynamic_temperature_set(ElementDynamicData _elem_dynamic_data, int _lane_value) {
+	int _lane_dir = (_lane_value < 0) ? 1 : 0;
+	int _lane_magnitude = clamp(abs_int(_lane_value), 0, 7);
+
+	if (_lane_magnitude == 0) {
+		_lane_dir = 0;
+	}
+
+	_elem_dynamic_data.temp_dir = _lane_dir;
+	_elem_dynamic_data.temp_magnitude = _lane_magnitude;
+	return _elem_dynamic_data;
+}
+
+int dynamic_moisture_get(ElementDynamicData _elem_dynamic_data) {
+	return lane_value_from_parts(_elem_dynamic_data.moisture_dir, _elem_dynamic_data.moisture_magnitude);
+}
+
+ElementDynamicData dynamic_moisture_set(ElementDynamicData _elem_dynamic_data, int _lane_value) {
+	int _lane_dir = (_lane_value < 0) ? 1 : 0;
+	int _lane_magnitude = clamp(abs_int(_lane_value), 0, 7);
+
+	if (_lane_magnitude == 0) {
+		_lane_dir = 0;
+	}
+
+	_elem_dynamic_data.moisture_dir = _lane_dir;
+	_elem_dynamic_data.moisture_magnitude = _lane_magnitude;
+	return _elem_dynamic_data;
+}
+
+int dynamic_corrosion_get(ElementDynamicData _elem_dynamic_data) {
+	return lane_value_from_parts(_elem_dynamic_data.corrosion_dir, _elem_dynamic_data.corrosion_magnitude);
+}
+
+ElementDynamicData dynamic_corrosion_set(ElementDynamicData _elem_dynamic_data, int _lane_value) {
+	int _lane_dir = (_lane_value < 0) ? 1 : 0;
+	int _lane_magnitude = clamp(abs_int(_lane_value), 0, 7);
+
+	if (_lane_magnitude == 0) {
+		_lane_dir = 0;
+	}
+
+	_elem_dynamic_data.corrosion_dir = _lane_dir;
+	_elem_dynamic_data.corrosion_magnitude = _lane_magnitude;
+	return _elem_dynamic_data;
+}
+
+int dynamic_magic_get(ElementDynamicData _elem_dynamic_data) {
+	return lane_value_from_parts(_elem_dynamic_data.magic_dir, _elem_dynamic_data.magic_magnitude);
+}
+
+ElementDynamicData dynamic_magic_set(ElementDynamicData _elem_dynamic_data, int _lane_value) {
+	int _lane_dir = (_lane_value < 0) ? 1 : 0;
+	int _lane_magnitude = clamp(abs_int(_lane_value), 0, 7);
+
+	if (_lane_magnitude == 0) {
+		_lane_dir = 0;
+	}
+
+	_elem_dynamic_data.magic_dir = _lane_dir;
+	_elem_dynamic_data.magic_magnitude = _lane_magnitude;
+	return _elem_dynamic_data;
+}
+
+bool static_lane_contribute(ElementStaticData _elem_static_data, int _lane_index) {
+	if (_lane_index == LANE_TEMPERATURE) return _elem_static_data.temp_contribute;
+	if (_lane_index == LANE_MOISTURE) return _elem_static_data.moisture_contribute;
+	if (_lane_index == LANE_CORROSION) return _elem_static_data.corrosion_contribute;
+	return _elem_static_data.magic_contribute;
+}
+
+bool static_lane_locked(ElementStaticData _elem_static_data, int _lane_index) {
+	if (_lane_index == LANE_TEMPERATURE) return _elem_static_data.temp_locked;
+	if (_lane_index == LANE_MOISTURE) return _elem_static_data.moisture_locked;
+	if (_lane_index == LANE_CORROSION) return _elem_static_data.corrosion_locked;
+	return _elem_static_data.magic_locked;
+}
+
+float static_lane_transfer_rate(ElementStaticData _elem_static_data, int _lane_index) {
+	if (_lane_index == LANE_TEMPERATURE) return _elem_static_data.temp_transfer_rate;
+	if (_lane_index == LANE_MOISTURE) return _elem_static_data.moisture_transfer_rate;
+	if (_lane_index == LANE_CORROSION) return _elem_static_data.corrosion_transfer_rate;
+	return _elem_static_data.magic_transfer_rate;
+}
+
+bool static_lane_ignored(ElementStaticData _elem_static_data, int _lane_index) {
+	if (static_lane_locked(_elem_static_data, _lane_index)) {
+		return true;
+	}
+	if (!static_lane_contribute(_elem_static_data, _lane_index) && static_lane_transfer_rate(_elem_static_data, _lane_index) <= 0.0) {
+		return true;
+	}
+	return false;
+}
+
+float static_lane_idle_value(ElementStaticData _elem_static_data, int _lane_index) {
+	if (_lane_index == LANE_TEMPERATURE) return _elem_static_data.temp_idle_value;
+	if (_lane_index == LANE_MOISTURE) return _elem_static_data.moisture_idle_value;
+	if (_lane_index == LANE_CORROSION) return _elem_static_data.corrosion_idle_value;
+	return _elem_static_data.magic_idle_value;
+}
+
+int static_lane_on_low(ElementStaticData _elem_static_data, int _lane_index) {
+	if (_lane_index == LANE_TEMPERATURE) return _elem_static_data.temp_on_low;
+	if (_lane_index == LANE_MOISTURE) return _elem_static_data.moisture_on_low;
+	if (_lane_index == LANE_CORROSION) return _elem_static_data.corrosion_on_low;
+	return _elem_static_data.magic_on_low;
+}
+
+int static_lane_on_high(ElementStaticData _elem_static_data, int _lane_index) {
+	if (_lane_index == LANE_TEMPERATURE) return _elem_static_data.temp_on_high;
+	if (_lane_index == LANE_MOISTURE) return _elem_static_data.moisture_on_high;
+	if (_lane_index == LANE_CORROSION) return _elem_static_data.corrosion_on_high;
+	return _elem_static_data.magic_on_high;
+}
+
+float lane_saturated_effective_value(ElementStaticData _elem_static_data, int _lane_index, bool _toward_high) {
+	int _target_id = _toward_high ? static_lane_on_high(_elem_static_data, _lane_index) : static_lane_on_low(_elem_static_data, _lane_index);
+	ElementStaticData _target_static_data = get_element_static_data(_target_id);
+	float _current_idle_value = static_lane_idle_value(_elem_static_data, _lane_index);
+	float _target_idle_value = static_lane_idle_value(_target_static_data, _lane_index);
+	return _current_idle_value + ((_target_idle_value - _current_idle_value) * 0.5);
+}
+
+float lane_effective_value(ElementStaticData _elem_static_data, int _lane_index, int _lane_value) {
+	float _current_idle_value;
+	float _high_saturated_value;
+	float _low_saturated_value;
+
+	if (static_lane_ignored(_elem_static_data, _lane_index)) {
+		return 0.0;
+	}
+
+	_current_idle_value = static_lane_idle_value(_elem_static_data, _lane_index);
+	if (_lane_value == 0) {
+		return _current_idle_value;
+	}
+	if (_lane_value > 0) {
+		_high_saturated_value = lane_saturated_effective_value(_elem_static_data, _lane_index, true);
+		return _current_idle_value + ((_high_saturated_value - _current_idle_value) * (float(_lane_value) / 7.0));
+	}
+	_low_saturated_value = lane_saturated_effective_value(_elem_static_data, _lane_index, false);
+	return _current_idle_value + ((_low_saturated_value - _current_idle_value) * (float(abs_int(_lane_value)) / 7.0));
+}
+#endregion
+
+#region Pack / Unpack
 ElementDynamicData unpack_elem_dynamic_data(vec4 _pixel) {
 	ElementDynamicData _elem_dynamic_data;
 	ElementStaticData _elem_static_data = get_element_static_data(element_id_from_pixel(_pixel));
 	int _green_byte = float_to_byte(_pixel.g);
+	int _lane_byte_b = float_to_byte(_pixel.b);
+	int _lane_byte_a = float_to_byte(_pixel.a);
+	int _temp_nibble = imod(bit_shift_right(_lane_byte_b, 4), 16);
+	int _moisture_nibble = imod(_lane_byte_b, 16);
+	int _corrosion_nibble = imod(bit_shift_right(_lane_byte_a, 4), 16);
+	int _magic_nibble = imod(_lane_byte_a, 16);
+	int _temp_value = lane_unpack_nibble(_temp_nibble);
+	int _moisture_value = lane_unpack_nibble(_moisture_nibble);
+	int _corrosion_value = lane_unpack_nibble(_corrosion_nibble);
+	int _magic_value = lane_unpack_nibble(_magic_nibble);
 
 	_elem_dynamic_data.id = element_id_from_pixel(_pixel);
-	_elem_dynamic_data.dynamic_byte = dynamic_byte_from_pixel(_pixel);
+	_elem_dynamic_data.y_dir = imod(bit_shift_right(_green_byte, 7), 2);
+	_elem_dynamic_data.y_speed = imod(bit_shift_right(_green_byte, 4), 8);
+	_elem_dynamic_data.x_dir = imod(bit_shift_right(_green_byte, 3), 2);
+	_elem_dynamic_data.x_speed = imod(_green_byte, 8);
 
-	_elem_dynamic_data.y_dir = bitwise_and(bit_shift_right(_green_byte, 7), 1);
-	_elem_dynamic_data.y_speed = bitwise_and(bit_shift_right(_green_byte, 4), 7);
-	_elem_dynamic_data.x_dir = bitwise_and(bit_shift_right(_green_byte, 3), 1);
-	_elem_dynamic_data.x_speed = bitwise_and(_green_byte, 7);
+	_elem_dynamic_data.temp_dir = (_temp_value < 0) ? 1 : 0;
+	_elem_dynamic_data.temp_magnitude = clamp(abs_int(_temp_value), 0, 7);
+	_elem_dynamic_data.moisture_dir = (_moisture_value < 0) ? 1 : 0;
+	_elem_dynamic_data.moisture_magnitude = clamp(abs_int(_moisture_value), 0, 7);
+	_elem_dynamic_data.corrosion_dir = (_corrosion_value < 0) ? 1 : 0;
+	_elem_dynamic_data.corrosion_magnitude = clamp(abs_int(_corrosion_value), 0, 7);
+	_elem_dynamic_data.magic_dir = (_magic_value < 0) ? 1 : 0;
+	_elem_dynamic_data.magic_magnitude = clamp(abs_int(_magic_value), 0, 7);
 
 	_elem_dynamic_data.vel = vec2(0.0);
-	if (_elem_static_data.max_vel_x > 0.0) {
-		_elem_dynamic_data.vel.x = (float(_elem_dynamic_data.x_speed) / 7.0) * _elem_static_data.max_vel_x;
+	if (_elem_static_data.max_speed > 0.0) {
+		_elem_dynamic_data.vel.x = (float(_elem_dynamic_data.x_speed) / 7.0) * _elem_static_data.max_speed;
 		if (_elem_dynamic_data.x_dir == 1) {
 			_elem_dynamic_data.vel.x = -_elem_dynamic_data.vel.x;
 		}
 	}
-	if (_elem_static_data.max_vel_y > 0.0) {
-		_elem_dynamic_data.vel.y = (float(_elem_dynamic_data.y_speed) / 7.0) * _elem_static_data.max_vel_y;
+	if (_elem_static_data.max_speed > 0.0) {
+		_elem_dynamic_data.vel.y = (float(_elem_dynamic_data.y_speed) / 7.0) * _elem_static_data.max_speed;
 		if (_elem_dynamic_data.y_dir == 1) {
 			_elem_dynamic_data.vel.y = -_elem_dynamic_data.vel.y;
 		}
@@ -535,12 +797,18 @@ vec4 pack_elem_dynamic_data(ElementDynamicData _elem_dynamic_data, ElementStatic
 	int _y_speed = 0;
 	int _x_dir = 0;
 	int _y_dir = 0;
+	int _temp_nibble = lane_pack_nibble(dynamic_temperature_get(_elem_dynamic_data));
+	int _moisture_nibble = lane_pack_nibble(dynamic_moisture_get(_elem_dynamic_data));
+	int _corrosion_nibble = lane_pack_nibble(dynamic_corrosion_get(_elem_dynamic_data));
+	int _magic_nibble = lane_pack_nibble(dynamic_magic_get(_elem_dynamic_data));
+	int _lane_byte_b = (_temp_nibble * 16) + _moisture_nibble;
+	int _lane_byte_a = (_corrosion_nibble * 16) + _magic_nibble;
 
-	if (_elem_static_data.max_vel_x > 0.0) {
-		_x_speed = int(round(clamp(abs(_elem_dynamic_data.vel.x) / _elem_static_data.max_vel_x, 0.0, 1.0) * 7.0));
+	if (_elem_static_data.max_speed > 0.0) {
+		_x_speed = int(round(clamp(abs_float(_elem_dynamic_data.vel.x) / _elem_static_data.max_speed, 0.0, 1.0) * 7.0));
 	}
-	if (_elem_static_data.max_vel_y > 0.0) {
-		_y_speed = int(round(clamp(abs(_elem_dynamic_data.vel.y) / _elem_static_data.max_vel_y, 0.0, 1.0) * 7.0));
+	if (_elem_static_data.max_speed > 0.0) {
+		_y_speed = int(round(clamp(abs_float(_elem_dynamic_data.vel.y) / _elem_static_data.max_speed, 0.0, 1.0) * 7.0));
 	}
 	_x_dir = (_elem_dynamic_data.vel.x < 0.0) ? 1 : 0;
 	_y_dir = (_elem_dynamic_data.vel.y < 0.0) ? 1 : 0;
@@ -553,8 +821,8 @@ vec4 pack_elem_dynamic_data(ElementDynamicData _elem_dynamic_data, ElementStatic
 	return vec4(
 		byte_to_float(clamp(_elem_dynamic_data.id, 0, 255)),
 		byte_to_float(_green_byte),
-		byte_to_float(clamp(_elem_dynamic_data.dynamic_byte, 0, 255)),
-		1.0
+		byte_to_float(clamp(_lane_byte_b, 0, 255)),
+		byte_to_float(clamp(_lane_byte_a, 0, 255))
 	);
 }
 #endregion
@@ -603,10 +871,6 @@ bool replace_mask_allows(ElementStaticData _source_static_data, ElementStaticDat
 		return flag_enabled(_source_static_data.replace_mask, REPLACE_MASK_SAME_ELEMENT);
 	}
 
-	if (_source_static_data.interaction_group != INTERACTION_GROUP_INERT && _source_static_data.interaction_group == _target_static_data.interaction_group) {
-		return flag_enabled(_source_static_data.replace_mask, REPLACE_MASK_SAME_GROUP);
-	}
-
 	if (elem_is_gas(_target_static_data)) {
 		return flag_enabled(_source_static_data.replace_mask, REPLACE_MASK_GAS);
 	}
@@ -622,32 +886,9 @@ bool replace_mask_allows(ElementStaticData _source_static_data, ElementStaticDat
 	return false;
 }
 
-bool replace_ids_match(ElementStaticData _source_static_data, int _target_id) {
-	if (_source_static_data.replace_count <= 0) {
-		return false;
-	}
-	if (_source_static_data.replace_id_0 == _target_id) {
-		return true;
-	}
-	if (_source_static_data.replace_count > 1 && _source_static_data.replace_id_1 == _target_id) {
-		return true;
-	}
-	if (_source_static_data.replace_count > 2 && _source_static_data.replace_id_2 == _target_id) {
-		return true;
-	}
-	if (_source_static_data.replace_count > 3 && _source_static_data.replace_id_3 == _target_id) {
-		return true;
-	}
-	return false;
-}
-
 bool element_can_enter(ElementStaticData _source_static_data, ElementStaticData _target_static_data, int _target_id) {
 	if (_source_static_data.id == ELEM_ID_EMPTY) {
 		return false;
-	}
-
-	if (elem_is_empty(_target_static_data)) {
-		return true;
 	}
 
 	if (_target_static_data.immovable) {
@@ -655,36 +896,18 @@ bool element_can_enter(ElementStaticData _source_static_data, ElementStaticData 
 	}
 
 	if (!replace_mask_allows(_source_static_data, _target_static_data)) {
-		if (_source_static_data.replace_mode != REPLACE_MODE_EXPLICIT_IDS_FALLBACK) {
-			return false;
-		}
-		return replace_ids_match(_source_static_data, _target_id);
-	}
-
-	if (_source_static_data.replace_mode == REPLACE_MODE_EMPTY_ONLY) {
 		return false;
 	}
 
-	if (_source_static_data.replace_mode == REPLACE_MODE_LESS_DENSE) {
-		return _source_static_data.density > _target_static_data.density;
-	}
-
-	if (_source_static_data.replace_mode == REPLACE_MODE_LESS_DENSE_OR_EQUAL) {
-		return _source_static_data.density >= _target_static_data.density;
-	}
-
-	if (_source_static_data.replace_mode == REPLACE_MODE_CLASS_MASK) {
+	if (elem_is_empty(_target_static_data)) {
 		return true;
 	}
 
-	if (_source_static_data.replace_mode == REPLACE_MODE_EXPLICIT_IDS_FALLBACK) {
-		if (_source_static_data.density >= _target_static_data.density) {
-			return true;
-		}
-		return replace_ids_match(_source_static_data, _target_id);
+	if (_source_static_data.id == _target_static_data.id) {
+		return flag_enabled(_source_static_data.replace_mask, REPLACE_MASK_SAME_ELEMENT);
 	}
 
-	return false;
+	return _source_static_data.density > _target_static_data.density;
 }
 #endregion
 
@@ -727,8 +950,8 @@ vec2 rand_round_vel(vec2 _velocity, vec2 _texcoord, float _seed) {
 
 
 vec2 clamp_velocity_to_static(vec2 _velocity, ElementStaticData _elem_static_data) {
-	_velocity.x = clamp(_velocity.x, -_elem_static_data.max_vel_x, _elem_static_data.max_vel_x);
-	_velocity.y = clamp(_velocity.y, -_elem_static_data.max_vel_y, _elem_static_data.max_vel_y);
+	_velocity.x = clamp(_velocity.x, -_elem_static_data.max_speed, _elem_static_data.max_speed);
+	_velocity.y = clamp(_velocity.y, -_elem_static_data.max_speed, _elem_static_data.max_speed);
 	return _velocity;
 }
 
@@ -736,18 +959,18 @@ vec2 snap_velocity_to_storage(vec2 _velocity, ElementStaticData _elem_static_dat
 	float _step_x = 0.0;
 	float _step_y = 0.0;
 
-	if (_elem_static_data.max_vel_x > 0.0) {
-		_step_x = _elem_static_data.max_vel_x / 7.0;
-		if (abs(_velocity.x) < (_step_x * 0.5)) {
+	if (_elem_static_data.max_speed > 0.0) {
+		_step_x = _elem_static_data.max_speed / 7.0;
+		if (abs_float(_velocity.x) < (_step_x * 0.5)) {
 			_velocity.x = 0.0;
 		}
 	} else {
 		_velocity.x = 0.0;
 	}
 
-	if (_elem_static_data.max_vel_y > 0.0) {
-		_step_y = _elem_static_data.max_vel_y / 7.0;
-		if (abs(_velocity.y) < (_step_y * 0.5)) {
+	if (_elem_static_data.max_speed > 0.0) {
+		_step_y = _elem_static_data.max_speed / 7.0;
+		if (abs_float(_velocity.y) < (_step_y * 0.5)) {
 			_velocity.y = 0.0;
 		}
 	} else {

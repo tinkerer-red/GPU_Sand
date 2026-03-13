@@ -5,7 +5,7 @@ ui_dev();
 ui_pass();
 
 simulation.dev_settings = dev_settings;
-simulation.display_mode = ui_passes[selected_pass_index].mode;
+simulation.display_mode = ui_passes[selected_pass_index].display_mode;
 
 var _mouse_gui_x = device_mouse_x_to_gui(0);
 var _mouse_gui_y = device_mouse_y_to_gui(0);
@@ -35,9 +35,9 @@ if (viewport_focused) {
 }
 
 var _step_start = current_time;
-repeat (10) {
+//repeat (10) {
 	simulation.step();
-}
+//}
 var _step_end = current_time;
 
 step_times[frame_index mod fps_window] = (_step_end - _step_start);
