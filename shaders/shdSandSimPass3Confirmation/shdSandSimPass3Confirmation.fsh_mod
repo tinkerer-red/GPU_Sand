@@ -1,4 +1,4 @@
-// Date: 2026-03-11T00:23:05.3378423-05:00
+// Date: 2026-03-14T01:26:37.0000000-05:00
 // begin import shdSandSimCommon.fsh.__shady_macro_Uniforms
 #line 33
 uniform float u_dev_state_of_matter;
@@ -1972,27 +1972,27 @@ ElementStaticData get_element_static_data(int _element_id) {
 #line 34
 	_elem_static_data.id = ELEM_ID_LAVA;
 #line 34
-	_elem_static_data.base_color = 16729344.0;
+	_elem_static_data.base_color = 16732160.0;
 #line 34
 	_elem_static_data.state_of_matter = MATTER_LIQUID;
 #line 34
-	_elem_static_data.flow_mode = FLOW_MODE_GOO;
+	_elem_static_data.flow_mode = FLOW_MODE_LIQUID;
 #line 34
 	_elem_static_data.vertical_drive = 1.0;
 #line 34
-	_elem_static_data.max_speed = 3.0;
+	_elem_static_data.max_speed = 2.5;
 #line 34
 	_elem_static_data.lateral_spread = 2.0;
 #line 34
-	_elem_static_data.momentum_retention = 0.70;
+	_elem_static_data.momentum_retention = 0.75;
 #line 34
-	_elem_static_data.support_resistance = 0.35;
+	_elem_static_data.support_resistance = 0.20;
 #line 34
-	_elem_static_data.clump_factor = 0.45;
+	_elem_static_data.clump_factor = 0.55;
 #line 34
-	_elem_static_data.surface_response = 0.0;
+	_elem_static_data.surface_response = 0.05;
 #line 34
-	_elem_static_data.density = 2700.0;
+	_elem_static_data.density = 2200.0;
 #line 34
 	_elem_static_data.immovable = false;
 #line 34
@@ -2002,11 +2002,11 @@ ElementStaticData get_element_static_data(int _element_id) {
 #line 34
 	_elem_static_data.temp_locked = false;
 #line 34
-	_elem_static_data.temp_transfer_rate = 0.65;
+	_elem_static_data.temp_transfer_rate = 0.30;
 #line 34
-	_elem_static_data.temp_idle_value = 120.0;
+	_elem_static_data.temp_idle_value = 200.0;
 #line 34
-	_elem_static_data.temp_on_low = ELEM_ID_OBSIDIAN;
+	_elem_static_data.temp_on_low = ELEM_ID_STONE;
 #line 34
 	_elem_static_data.temp_on_high = ELEM_ID_LAVA;
 #line 34

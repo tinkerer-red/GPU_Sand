@@ -16,8 +16,8 @@
     {"name":"GPU_Sand","order":5,"path":"folders/GPU_Sand.yy",},
     {"name":"Shaders","order":5,"path":"folders/GPU_Sand/Shaders.yy",},
     {"name":"Elements","order":1,"path":"folders/GPU_Sand/Shaders/Elements.yy",},
-    {"name":"Visualizers","order":3,"path":"folders/GPU_Sand/Shaders/Visualizers.yy",},
     {"name":"Helpers","order":2,"path":"folders/GPU_Sand/Shaders/Helpers.yy",},
+    {"name":"Visualizers","order":3,"path":"folders/GPU_Sand/Shaders/Visualizers.yy",},
   ],
   "ResourceOrderSettings":[
     {"name":"oInputManager","order":1,"path":"objects/oInputManager/oInputManager.yy",},

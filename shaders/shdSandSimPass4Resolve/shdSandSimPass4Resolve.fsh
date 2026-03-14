@@ -548,7 +548,16 @@ void main() {
 	ElementDynamicData _output_dynamic_data = _current_dynamic_data;
 	ElementStaticData _output_static_data = _current_static_data;
 
+	// _encode_rest: true → override green byte with rest state bits after pack.
+	// _rest_bias:   0 = left wake-bias, 1 = right wake-bias (stored in y_dir).
+	bool _encode_rest = false;
+	int _rest_bias = 0;
+
 	if (_swap_offset.x != 0.0 || _swap_offset.y != 0.0) {
+		// -----------------------------------------------------------------------
+		// A swap confirmed: an element from another cell is moving into this one.
+		// Adopt that element's dynamic data and use its intent as its new velocity.
+		// -----------------------------------------------------------------------
 		vec2 _other_texcoord = v_vTexcoord + (_swap_offset * u_texel_size);
 		vec4 _other_pixel = texture2D(gm_BaseTexture, _other_texcoord);
 		vec2 _other_intent = rg_to_vel(texture2D(gm_SecondaryTexture, _other_texcoord).rg);
@@ -561,10 +570,88 @@ void main() {
 
 		_resolved_velocity = sanitize_velocity_to_static(_other_intent, _output_static_data);
 		_output_dynamic_data.vel = _resolved_velocity;
+
 	} else {
-		_output_dynamic_data.vel = vec2(0.0);
+		// -----------------------------------------------------------------------
+		// No swap: the element stays in this cell.
+		//
+		// Design doc changes applied here:
+		//
+		// 1. DETERMINISTIC REST ENCODING
+		//    Pass1 signals via the B channel of gm_SecondaryTexture (the intent
+		//    surface) whether the element should enter or maintain rest.
+		//    B = 1.0  →  powder has valid support and no escape; encode rest bits.
+		//    B = 0.0  →  no rest intent; apply collision response or zero vel.
+		//
+		//    Rest state is packed into the green byte when x_speed=y_speed=0:
+		//      x_dir = 1  (is_resting)
+		//      y_dir      (rest_bias: preferred wake direction, 0=left, 1=right)
+		//    This is consistent with the unpack in Pass1 that reads is_resting
+		//    from those bits.
+		//
+		// 2. COLLISION-DRIVEN SLOUGHING
+		//    Design doc: "when a grain impacts a surface with speed, some of that
+		//    impact should become sideways or along-surface motion, then
+		//    friction/damping should remove that motion over time."
+		//
+		//    When the element was moving (stored velocity is nonzero) and no swap
+		//    happened (it was blocked), we convert the incident velocity into a
+		//    tangential component using the generalized normal/tangent formulation:
+		//
+		//      n = -vel_dir          (surface normal opposes incoming motion)
+		//      t = (-n.y, n.x)       (2D tangent perpendicular to normal)
+		//      impact = |vel|        (= -dot(vel, n) when n = -vel_dir)
+		//      v_out = t * t_sign * impact * surface_response
+		//
+		//    The tangent sign is chosen deterministically from position so each
+		//    cell has a consistent slough preference, but varied across the grid.
+		//    This is the generalized version of FallingSandJava's flat-ground
+		//    "vertical impact becomes horizontal motion" behavior.
+		// -----------------------------------------------------------------------
+
+		float _self_rest_signal = texture2D(gm_SecondaryTexture, v_vTexcoord).b;
+
+		if (_self_rest_signal > 0.5) {
+			// Pass1 signaled rest entry / maintenance for this powder.
+			_output_dynamic_data.vel = vec2(0.0);
+			_encode_rest = true;
+			// Assign a deterministic wake-bias so the element has a consistent
+			// preferred direction when it eventually sloughs.  This breaks the
+			// symmetric deadlock that produces perfect pyramids.
+			_rest_bias = (rand(v_vTexcoord, 203.0) < 0.5) ? 0 : 1;
+
+		} else {
+			// No rest signal.  Check whether the element had meaningful velocity
+			// before being blocked this frame, and if so, convert impact into
+			// tangential sloughing velocity.
+			float _old_vel_len = length(_current_dynamic_data.vel);
+
+			if (_old_vel_len > 0.1 && _current_static_data.surface_response > 0.0) {
+				// Compute surface normal from incoming velocity direction.
+				vec2 _vel_dir = _current_dynamic_data.vel / _old_vel_len;
+				vec2 _n = -_vel_dir;          // Normal opposes motion.
+				vec2 _t = vec2(-_n.y, _n.x);  // 2D tangent from normal.
+
+				// Deterministic tangent sign: consistent per cell position.
+				float _t_sign = (rand(v_vTexcoord, 77.0) < 0.5) ? -1.0 : 1.0;
+
+				// impact = -dot(vel, n) = |vel| (since n = -vel/|vel|).
+				// v_out = t_signed * impact * surface_response
+				// (v_t is zero for a pure-direction impact, which is the common case.)
+				vec2 _collision_vel = _t * _t_sign * _old_vel_len * _current_static_data.surface_response;
+				_output_dynamic_data.vel = sanitize_velocity_to_static(_collision_vel, _output_static_data);
+
+			} else {
+				_output_dynamic_data.vel = vec2(0.0);
+			}
+		}
 	}
 
+	// -------------------------------------------------------------------------
+	// Lane updates (temperature, moisture, corrosion, magic).
+	// Track id before update so we know if a transformation occurred.
+	// -------------------------------------------------------------------------
+	int _pre_update_id = _output_dynamic_data.id;
 	_output_dynamic_data = apply_generic_dynamic_update(_output_dynamic_data, _output_static_data, v_vTexcoord, u_frame);
 	_output_static_data = get_element_static_data(_output_dynamic_data.id);
 	_output_dynamic_data.vel = sanitize_velocity_to_static(_output_dynamic_data.vel, _output_static_data);
@@ -576,5 +663,29 @@ void main() {
 	}
 	#endif
 
-	gl_FragColor = pack_elem_dynamic_data(_output_dynamic_data, _output_static_data);
+	vec4 _packed = pack_elem_dynamic_data(_output_dynamic_data, _output_static_data);
+
+	// -------------------------------------------------------------------------
+	// Rest state encoding.
+	//
+	// If Pass1 signaled rest AND the element did not transform via a lane update
+	// (transformation creates a new element that should not start resting), write
+	// the rest state into the green byte.
+	//
+	// Green byte layout when speeds are zero:
+	//   bit 7 : y_dir  = rest_bias   (0 = wake left, 1 = wake right)
+	//   bits 4-6 : y_speed = 0
+	//   bit 3 : x_dir  = is_resting  (always 1 here)
+	//   bits 0-2 : x_speed = 0
+	//
+	// Decimal: (rest_bias * 128) + 8
+	//   rest_bias=0 → green = 8   (0b00001000)
+	//   rest_bias=1 → green = 136 (0b10001000)
+	// -------------------------------------------------------------------------
+	if (_encode_rest && _output_dynamic_data.id == _pre_update_id) {
+		int _rest_green = (_rest_bias * 128) + 8;
+		_packed.g = byte_to_float(_rest_green);
+	}
+
+	gl_FragColor = _packed;
 }

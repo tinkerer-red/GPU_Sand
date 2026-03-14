@@ -28,8 +28,8 @@
     {"$GMFolder":"","%Name":"Shaders","folderPath":"folders/GPU_Sand/Shaders.yy","name":"Shaders","resourceType":"GMFolder","resourceVersion":"2.0",},
     {"$GMFolder":"","%Name":"Core","folderPath":"folders/GPU_Sand/Shaders/Core.yy","name":"Core","resourceType":"GMFolder","resourceVersion":"2.0",},
     {"$GMFolder":"","%Name":"Elements","folderPath":"folders/GPU_Sand/Shaders/Elements.yy","name":"Elements","resourceType":"GMFolder","resourceVersion":"2.0",},
-    {"$GMFolder":"","%Name":"Visualizers","folderPath":"folders/GPU_Sand/Shaders/Visualizers.yy","name":"Visualizers","resourceType":"GMFolder","resourceVersion":"2.0",},
     {"$GMFolder":"","%Name":"Helpers","folderPath":"folders/GPU_Sand/Shaders/Helpers.yy","name":"Helpers","resourceType":"GMFolder","resourceVersion":"2.0",},
+    {"$GMFolder":"","%Name":"Visualizers","folderPath":"folders/GPU_Sand/Shaders/Visualizers.yy","name":"Visualizers","resourceType":"GMFolder","resourceVersion":"2.0",},
   ],
   "ForcedPrefabProjectReferences":[],
   "IncludedFiles":[
